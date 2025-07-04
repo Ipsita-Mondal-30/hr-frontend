@@ -24,10 +24,15 @@ export interface Job {
     name: string;
     email: string;
     phone: string;
-    portfolio: string;
-    resumeUrl: string;
+    job?: {
+      title: string;
+    };
     matchScore?: number;
-    createdAt: string;
-    job: Job;
+    resumeUrl: string;
+    matchInsights?: {
+      explanation: string;
+      matchingSkills: string[];
+      missingSkills: string[];
+      tags: string[];
+    };
   }
-  
