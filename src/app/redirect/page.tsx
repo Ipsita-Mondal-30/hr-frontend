@@ -1,25 +1,32 @@
 'use client';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/AuthContext';
+import api from '@/lib/api';
 
 export default function RedirectPage() {
-  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.push('/login');
-      } else if (user.role === 'admin') {
-        router.push('/admin/dashboard');
-      } else if (user.role === 'hr') {
-        router.push('/hr/dashboard');
-      } else {
-        router.push('/jobs');
-      }
-    }
-  }, [user, loading, router]);
+    const fetchUser = async () => {
+      try {
+        const res = await api.get('/me', { withCredentials: true });
+        const user = res.data;
 
-  return <div className="p-4">Redirecting...</div>;
+        if (user.role === 'admin') {
+          router.push('/admin/dashboard');
+        } else if (user.role === 'hr') {
+          router.push('/hr/jobs');
+        } else {
+          router.push('/candidate/jobs');
+        }
+      } catch (err) {
+        console.error('User fetch failed', err);
+        router.push('/');
+      }
+    };
+
+    fetchUser();
+  }, [router]);
+
+  return <p className="p-6">Logging you in...</p>;
 }

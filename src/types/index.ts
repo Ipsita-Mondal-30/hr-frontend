@@ -36,3 +36,7 @@ export interface Job {
       tags: string[];
     };
   }
+  export interface User {
+    name: string;
+    role: string;
+  }
