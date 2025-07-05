@@ -70,10 +70,18 @@ export default function Navbar() {
               {user.name} <span className="text-gray-400">({user.role || 'no role'})</span>
             </div>
             <button
-              onClick={async () => {
-                await api.get('/auth/logout');
-                window.location.href = '/';
+            onClick={async () => {
+                try {
+                  await fetch('http://localhost:8080/auth/logout', {
+                    method: 'GET',
+                    credentials: 'include',
+                  });
+                  window.location.href = '/';
+                } catch (err) {
+                  console.error('Logout failed:', err);
+                }
               }}
+              
               className="text-sm bg-gray-100 px-3 py-1 rounded hover:bg-gray-200"
             >
               Logout
