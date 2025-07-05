@@ -89,7 +89,15 @@ function ApplicationCard({ app }: { app: Application }) {
         <div className="text-right space-y-1">
           {app.matchScore !== undefined && (
             <p className="text-sm">
-              Match Score: <span className="font-semibold">{app.matchScore}</span>
+              Match Score: <span
+  className={`font-semibold px-2 py-1 rounded-full text-white text-xs ${
+    app.matchScore >= 80 ? 'bg-green-500' :
+    app.matchScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+  }`}
+>
+  {app.matchScore}
+</span>
+
             </p>
           )}
           <a
