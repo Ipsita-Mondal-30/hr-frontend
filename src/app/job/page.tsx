@@ -36,12 +36,27 @@ export default function JobsPage() {
               Department: {job.department?.name || 'N/A'}
             </p>
             <p className="text-sm mt-2">{job.description?.slice(0, 120)}...</p>
-            <Link
-              href={`/apply/${job._id}`}
-              className="mt-2 inline-block text-blue-600 text-sm underline"
-            >
-              Apply Now
-            </Link>
+            {job.status === 'closed' ? (
+  <span className="mt-2 inline-block text-red-500 text-sm font-medium">Applications Closed</span>
+  
+) : (
+  <Link
+    href={`/apply/${job._id}`}
+    className="mt-2 inline-block text-blue-600 text-sm underline"
+  >
+    Apply Now
+  </Link>
+)}
+<span
+  className={`px-2 py-1 text-xs rounded ${
+    job.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'
+  }`}
+>
+  {job.status}
+</span>
+
+
+
           </div>
         ))}
       </div>

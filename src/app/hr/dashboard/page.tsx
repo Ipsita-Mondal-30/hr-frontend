@@ -36,6 +36,14 @@ export default function HRDashboardPage() {
 
     fetchDashboardData();
   }, []);
+  useEffect(() => {
+    const fetchUser = async () => {
+      const res = await api.get('/auth/me');
+      console.log("🔐 Current User:", res.data);
+    };
+    fetchUser();
+  }, []);
+  
 
 
 if (loading) return <div className="p-6">Loading dashboard...</div>;
