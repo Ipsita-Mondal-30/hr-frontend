@@ -11,6 +11,10 @@ export default function HRLayout({ children }: { children: ReactNode }) {
         <Link href="/admin/departments" className="text-sm text-gray-600 hover:text-black">
   Departments
 </Link>
+<Link href="/admin/roles" className="text-sm text-gray-600 hover:text-black">
+  Roles
+</Link>
+
         </nav>
       </aside>
       <main className="flex-1 bg-white p-6">
