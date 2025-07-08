@@ -14,6 +14,16 @@ export default function HRLayout({ children }: { children: ReactNode }) {
 <Link href="/admin/roles" className="text-sm text-gray-600 hover:text-black">
   Roles
 </Link>
+<Link href="/admin/users" className="text-sm text-gray-600 hover:text-black">
+  User Management
+</Link>
+<Link href="/admin/jobs" className="text-sm text-gray-700 hover:text-black">
+  All Jobs
+</Link>
+<Link href="/admin/applications" className="text-sm text-gray-700 hover:text-black">
+  All Applications
+</Link>
+
 
         </nav>
       </aside>

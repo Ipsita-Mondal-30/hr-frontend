@@ -26,6 +26,9 @@ export interface Job {
     phone: string;
     job?: {
       title: string;
+      department?: {
+        name: string;
+      };
     };
     matchScore?: number;
     resumeUrl: string;
@@ -35,7 +38,14 @@ export interface Job {
       missingSkills: string[];
       tags: string[];
     };
+    status: string;
+    candidate?: {
+        name: string;
+        email: string;
+      };
   }
+  
+  
   export interface User {
     name: string;
     role: string;
