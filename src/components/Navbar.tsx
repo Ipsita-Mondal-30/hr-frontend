@@ -52,7 +52,7 @@ export default function Navbar() {
         )}
 
         {user && user.role === 'candidate' && (
-          <Link href="/jobs" className="text-sm text-gray-700 hover:text-black">
+          <Link href="/job" className="text-sm text-gray-700 hover:text-black">
             Jobs
           </Link>
         )}

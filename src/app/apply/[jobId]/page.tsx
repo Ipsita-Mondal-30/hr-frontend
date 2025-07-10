@@ -59,11 +59,11 @@ export default function ApplyPage() {
     setSubmitting(true);
     try {
       await api.post('/applications', data);
-      alert('Application submitted!');
+      alert('✅ Application submitted successfully! You will receive feedback soon.');
       router.push('/jobs');
     } catch (err) {
       console.error('Error submitting application:', err);
-      alert('Failed to submit.');
+      alert('❌ Failed to submit. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -121,7 +121,7 @@ export default function ApplyPage() {
         />
         <button
           type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${submitting ? 'opacity-50' : ''}`}
           disabled={submitting}
         >
           {submitting ? 'Submitting...' : 'Submit Application'}
