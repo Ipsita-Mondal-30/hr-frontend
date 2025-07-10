@@ -25,7 +25,7 @@ export default function HRDashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const res = await api.get("/admin/stats");
+        const res = await api.get("/admin/dashboard");
         setData(res.data);
       } catch (err) {
         console.error("Error fetching HR dashboard data:", err);
