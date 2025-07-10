@@ -25,11 +25,9 @@ export interface Job {
     email: string;
     phone: string;
     job?: {
-      title: string;
-      department?: {
-        name: string;
+        title: string;
+        department: { name: string };
       };
-    };
     matchScore?: number;
     resumeUrl: string;
     matchInsights?: {
@@ -39,10 +37,9 @@ export interface Job {
       tags: string[];
     };
     status: string;
-    candidate?: {
-        name: string;
-        email: string;
-      };
+    candidate: { name: string; email: string };
+    resume?: string; // Added resume property
+  
   }
   
   
