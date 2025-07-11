@@ -6,9 +6,17 @@ import { Job } from '@/types';
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [departments, setDepartments] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formVisible, setFormVisible] = useState(false);
-  const [form, setForm] = useState({ title: '', description: '', status: 'open' });
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    status: 'open',
+    departmentId: '',
+    roleId: ''
+  });
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const fetchJobs = async () => {
@@ -17,8 +25,21 @@ export default function JobsPage() {
     setLoading(false);
   };
 
+  const fetchDepartmentsAndRoles = async () => {
+    const [depRes, roleRes] = await Promise.all([
+      api.get('/departments'),
+      api.get('/roles')
+    ]);
+    console.log('Departments:', depRes.data); // 👈 add this
+    console.log('Roles:', roleRes.data); // 👈 add this
+    setDepartments(depRes.data);
+    setRoles(roleRes.data);
+  };
+  
+
   useEffect(() => {
     fetchJobs();
+    fetchDepartmentsAndRoles();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,7 +50,7 @@ export default function JobsPage() {
       } else {
         await api.post('/jobs', form);
       }
-      setForm({ title: '', description: '', status: 'open' });
+      setForm({ title: '', description: '', status: 'open', departmentId: '', roleId: '' });
       setEditingId(null);
       setFormVisible(false);
       fetchJobs();
@@ -40,7 +61,13 @@ export default function JobsPage() {
 
   const startEdit = (job: Job) => {
     setFormVisible(true);
-    setForm({ title: job.title, description: job.description, status: job.status });
+    setForm({
+      title: job.title,
+      description: job.description,
+      status: job.status,
+      departmentId: job.department?._id || '',
+      roleId: job.role?._id || ''
+    });
     setEditingId(job._id);
   };
 
@@ -53,7 +80,13 @@ export default function JobsPage() {
           onClick={() => {
             setFormVisible(!formVisible);
             setEditingId(null);
-            setForm({ title: '', description: '', status: 'open' });
+            setForm({
+              title: '',
+              description: '',
+              status: 'open',
+              departmentId: '',
+              roleId: ''
+            });
           }}
         >
           {formVisible ? 'Cancel' : '➕ Add Job'}
@@ -78,6 +111,34 @@ export default function JobsPage() {
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             required
           />
+          <select
+            className="w-full border px-3 py-2 rounded"
+            value={form.departmentId}
+            onChange={(e) => setForm({ ...form, departmentId: e.target.value })}
+            required
+          >
+            <option value="">Select Department</option>
+            {departments.map((dep: any) => (
+              <option key={dep._id} value={dep._id}>
+                {dep.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="w-full border px-3 py-2 rounded"
+            value={form.roleId}
+            onChange={(e) => setForm({ ...form, roleId: e.target.value })}
+            required
+          >
+            <option value="">Select Role</option>
+            {roles.map((role: any) => (
+              <option key={role._id} value={role._id}>
+                {role.title} ({role.department?.name || 'No Dept'})
+              </option>
+            ))}
+          </select>
+
           <select
             className="w-full border px-3 py-2 rounded"
             value={form.status}

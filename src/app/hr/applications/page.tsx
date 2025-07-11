@@ -125,7 +125,7 @@ export default function ApplicationsPage() {
               </div>
 
               <Link
-                href={`/admin/dashboard/applications/${app._id}`}
+                href={`/hr/applications/${app._id}`}
                 className="text-blue-600 underline text-sm"
               >
                 View Full Application
