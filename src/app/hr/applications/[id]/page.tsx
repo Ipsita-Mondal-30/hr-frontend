@@ -25,6 +25,22 @@ export default function ApplicationDetailPage() {
     if (id) fetchApplication();
   }, [id]);
 
+  // Ensure applicationId is defined or remove this line if not needed
+  const applicationId = ''; // Replace with actual application ID
+  useEffect(() => {
+    const updateApplicationStatus = async () => {
+      try {
+        await api.put(`/applications/${applicationId}/status`, {
+          status: '', // Replace with the desired status value
+        });
+      } catch (err) {
+        console.error('Error updating application status:', err);
+      }
+    };
+
+    if (applicationId) updateApplicationStatus();
+  }, [applicationId]);
+
   if (loading) return <div className="p-6">Loading...</div>;
   if (!application) return <div className="p-6">Application not found.</div>;
 

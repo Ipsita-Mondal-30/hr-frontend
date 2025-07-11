@@ -6,16 +6,16 @@ import { Job } from '@/types';
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [departments, setDepartments] = useState([]);
-  const [roles, setRoles] = useState([]);
+  const [departments, setDepartments] = useState<{ _id: string; name: string }[]>([]);
+  const [roles, setRoles] = useState<{ _id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [formVisible, setFormVisible] = useState(false);
   const [form, setForm] = useState({
     title: '',
     description: '',
     status: 'open',
-    departmentId: '',
-    roleId: ''
+    department: '',
+    role: '',
   });
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -26,20 +26,19 @@ export default function JobsPage() {
   };
 
   const fetchDepartmentsAndRoles = async () => {
-    const [depRes, roleRes] = await Promise.all([
-      api.get('/departments'),
-      api.get('/roles')
-    ]);
-    console.log('Departments:', depRes.data); // 👈 add this
-    console.log('Roles:', roleRes.data); // 👈 add this
-    setDepartments(depRes.data);
-    setRoles(roleRes.data);
+    try {
+      const depRes = await api.get('/departments');
+      const roleRes = await api.get('/roles');
+      setDepartments(depRes.data);
+      setRoles(roleRes.data);
+    } catch (err) {
+      console.error('Failed to fetch departments or roles:', err);
+    }
   };
-  
 
   useEffect(() => {
     fetchJobs();
-    fetchDepartmentsAndRoles();
+    fetchDepartmentsAndRoles(); // 👈 Fetch here
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,7 +49,8 @@ export default function JobsPage() {
       } else {
         await api.post('/jobs', form);
       }
-      setForm({ title: '', description: '', status: 'open', departmentId: '', roleId: '' });
+      
+      setForm({ title: '', description: '', status: 'open', department: '', role: '' });
       setEditingId(null);
       setFormVisible(false);
       fetchJobs();
@@ -65,11 +65,12 @@ export default function JobsPage() {
       title: job.title,
       description: job.description,
       status: job.status,
-      departmentId: job.department?._id || '',
-      roleId: job.role?._id || ''
+      department: job.department?._id || '',
+      role: job.role?._id || '',
     });
     setEditingId(job._id);
   };
+
 
   return (
     <div className="p-6">
@@ -84,8 +85,8 @@ export default function JobsPage() {
               title: '',
               description: '',
               status: 'open',
-              departmentId: '',
-              roleId: ''
+              department: '',
+              role: ''
             });
           }}
         >
@@ -111,33 +112,30 @@ export default function JobsPage() {
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             required
           />
-          <select
-            className="w-full border px-3 py-2 rounded"
-            value={form.departmentId}
-            onChange={(e) => setForm({ ...form, departmentId: e.target.value })}
-            required
-          >
-            <option value="">Select Department</option>
-            {departments.map((dep: any) => (
-              <option key={dep._id} value={dep._id}>
-                {dep.name}
-              </option>
-            ))}
-          </select>
+        <select
+  className="w-full border px-3 py-2 rounded"
+  value={form.department}
+  onChange={(e) => setForm({ ...form, department: e.target.value })}
+  required
+>
+  <option value="">Select Department</option>
+  {departments.map((d) => (
+    <option key={d._id} value={d._id}>{d.name}</option>
+  ))}
+</select>
 
-          <select
-            className="w-full border px-3 py-2 rounded"
-            value={form.roleId}
-            onChange={(e) => setForm({ ...form, roleId: e.target.value })}
-            required
-          >
-            <option value="">Select Role</option>
-            {roles.map((role: any) => (
-              <option key={role._id} value={role._id}>
-                {role.title} ({role.department?.name || 'No Dept'})
-              </option>
-            ))}
-          </select>
+<select
+  className="w-full border px-3 py-2 rounded"
+  value={form.role}
+  onChange={(e) => setForm({ ...form, role: e.target.value })}
+  required
+>
+  <option value="">Select Role</option>
+  {roles.map((r) => (
+    <option key={r._id} value={r._id}>{r.name}</option>
+  ))}
+</select>
+
 
           <select
             className="w-full border px-3 py-2 rounded"
