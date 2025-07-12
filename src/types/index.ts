@@ -18,6 +18,19 @@ export interface Job {
     status: "open" | "closed";
     createdAt: string;
   }
+
+  export interface Interview {
+    _id: string;
+    application: Application;
+    interviewer: any;
+    candidateEmail: string;
+    scheduledAt: string;
+    scorecard?: {
+      generatedQuestions?: string[];
+      notes?: string;
+      rating?: number;
+    };
+  }
   
   export interface Application {
     _id: string;
