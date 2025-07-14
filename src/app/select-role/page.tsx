@@ -13,7 +13,7 @@ export default function SelectRolePage() {
     if (!role) return alert('Please select a role');
 
     try {
-      await api.post('/auth/set-role', { role });
+      await api.post('/redirect', { role });
       
       // Redirect based on role
       if (role === 'admin') router.push('/admin/dashboard');
