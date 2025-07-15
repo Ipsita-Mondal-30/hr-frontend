@@ -2,31 +2,39 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import api from '@/lib/api';
-import { User } from '@/types';
 import { useRouter } from 'next/navigation';
+import {jwtDecode } from 'jwt-decode';
+
+type DecodedUser = {
+  name: string;
+  email: string;
+  role: string;
+};
 
 export default function Navbar() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<DecodedUser | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
       try {
-        const res = await api.get('/auth/me');
-        const userData = res.data;
-        setUser(userData);
-
-        // Redirect to /select-role if role is not set
-        if (!userData.role && window.location.pathname !== '/select-role') {
-          router.push('/select-role');
-        }
+        const decoded = jwtDecode<DecodedUser>(token);
+        setUser(decoded);
       } catch (err) {
-        setUser(null); // Not logged in
+        console.error('Invalid token');
+        localStorage.removeItem('token');
+        setUser(null);
       }
-    };
-    fetchUser();
-  }, [router]);
+    } else {
+      setUser(null);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    router.push('/');
+  };
 
   return (
     <nav className="bg-white shadow-md p-4 flex justify-between items-center">
@@ -39,19 +47,19 @@ export default function Navbar() {
           Raise a Ticket
         </Link>
 
-        {user && user.role === 'admin' && (
+        {user?.role === 'admin' && (
           <Link href="/admin/dashboard" className="text-sm text-gray-700 hover:text-black">
             Admin Dashboard
           </Link>
         )}
 
-        {user && user.role === 'hr' && (
+        {user?.role === 'hr' && (
           <Link href="/hr/dashboard" className="text-sm text-gray-700 hover:text-black">
             HR Dashboard
           </Link>
         )}
 
-        {user && user.role === 'candidate' && (
+        {user?.role === 'candidate' && (
           <Link href="/job" className="text-sm text-gray-700 hover:text-black">
             Jobs
           </Link>
@@ -67,21 +75,10 @@ export default function Navbar() {
         ) : (
           <div className="flex items-center space-x-3">
             <div className="text-sm text-gray-700">
-              {user.name} <span className="text-gray-400">({user.role || 'no role'})</span>
+              {user.name} <span className="text-gray-400">({user.role})</span>
             </div>
             <button
-            onClick={async () => {
-                try {
-                  await fetch('http://localhost:8080/auth/logout', {
-                    method: 'GET',
-                    credentials: 'include',
-                  });
-                  window.location.href = '/';
-                } catch (err) {
-                  console.error('Logout failed:', err);
-                }
-              }}
-              
+              onClick={handleLogout}
               className="text-sm bg-gray-100 px-3 py-1 rounded hover:bg-gray-200"
             >
               Logout
