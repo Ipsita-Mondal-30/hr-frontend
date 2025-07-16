@@ -2,32 +2,56 @@
 
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { jwtDecode } from 'jwt-decode'; // ✅ Correct import
+import { jwtDecode } from 'jwt-decode';
 
-export default function AuthCallback() {
+interface DecodedToken {
+  id: string;
+  name: string;
+  email: string;
+  role?: 'admin' | 'hr' | 'candidate' | 'employee';
+}
+
+export default function AuthCallbackPage() {
   const router = useRouter();
   const params = useSearchParams();
-  const token = params.get('token');
 
   useEffect(() => {
-    if (token) {
-      localStorage.setItem('token', token);
-
-      const decoded: any = jwtDecode(token);
-      const role = decoded.role;
-
-      localStorage.setItem('role', role);
-      localStorage.setItem('user', JSON.stringify(decoded));
-
-      if (role === 'admin') router.replace('/admin');
-      else if (role === 'hr') router.replace('/hr');
-      else if (role === 'candidate') router.replace('/candidate');
-      else if (role === 'employee') router.replace('/employee');
-      else router.replace('/select-role');
-    } else {
-      router.replace('/login');
+    const token = params.get('token');
+    if (!token) {
+      router.push('/');
+      return;
     }
-  }, [token, router]);
 
-  return <p className="p-8 text-center">Processing login...</p>;
+    try {
+      localStorage.setItem('token', token);
+      const decoded: DecodedToken = jwtDecode(token);
+
+      if (!decoded.role) {
+        // Send token to select-role
+        router.push(`/select-role?token=${token}`);
+      } else {
+        switch (decoded.role) {
+          case 'admin':
+            router.push('/admin/dashboard');
+            break;
+          case 'hr':
+            router.push('/hr/dashboard');
+            break;
+          case 'candidate':
+            router.push('/candidate/dashboard');
+            break;
+          case 'employee':
+            router.push('/employee/dashboard');
+            break;
+          default:
+            router.push('/');
+        }
+      }
+    } catch (err) {
+      console.error('Token decode error:', err);
+      router.push('/');
+    }
+  }, [params, router]);
+
+  return <p>Logging you in...</p>;
 }
