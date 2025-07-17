@@ -16,11 +16,39 @@ export default function SelectRolePage() {
   const [token, setToken] = useState('');
   const router = useRouter();
   const searchParams = useSearchParams();
-
+  
   useEffect(() => {
     const jwtFromQuery = searchParams.get('token');
+    console.log('Token from query:', jwtFromQuery);
     if (!jwtFromQuery) return router.push('/');
     setToken(jwtFromQuery);
+    localStorage.setItem('token', jwtFromQuery); // <-- Store token immediately
+
+    // 🚫 Decode token and redirect if role is already set
+    try {
+      const decoded = jwtDecode<CustomJwtPayload>(jwtFromQuery);
+      if (decoded.role) {
+        // Redirect to correct dashboard
+        switch (decoded.role) {
+          case 'admin':
+            router.push('/admin/dashboard');
+            break;
+          case 'hr':
+            router.push('/hr/dashboard');
+            break;
+          case 'candidate':
+            router.push('/');
+            break;
+          case 'employee':
+            router.push('/employee/dashboard');
+            break;
+          default:
+            router.push('/');
+        }
+      }
+    } catch (err) {
+      router.push('/');
+    }
   }, [searchParams, router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -28,7 +56,7 @@ export default function SelectRolePage() {
     if (!role) return alert('Please select a role');
 
     try {
-      const res = await fetch('http://localhost:8080/auth/set-role', {
+      const res = await fetch('http://localhost:8080/api/auth/set-role', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,7 +74,7 @@ export default function SelectRolePage() {
 
       // ✅ Redirect to dashboard
       const decoded = jwtDecode<CustomJwtPayload>(newToken);
-      switch (decoded.role) {
+switch (decoded.role) {
         case 'admin':
           router.push('/admin/dashboard');
           break;

@@ -16,19 +16,25 @@ export default function Navbar() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const decoded = jwtDecode<DecodedUser>(token);
-        setUser(decoded);
-      } catch (err) {
-        console.error('Invalid token');
-        localStorage.removeItem('token');
+    const updateUser = () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const decoded = jwtDecode<DecodedUser>(token);
+          setUser(decoded);
+        } catch (err) {
+          localStorage.removeItem('token');
+          setUser(null);
+        }
+      } else {
         setUser(null);
       }
-    } else {
-      setUser(null);
-    }
+    };
+
+    updateUser();
+
+    window.addEventListener('storage', updateUser);
+    return () => window.removeEventListener('storage', updateUser);
   }, []);
 
   const handleLogout = () => {
@@ -67,7 +73,7 @@ export default function Navbar() {
 
         {!user ? (
           <a
-            href="http://localhost:8080/auth/google"
+            href="http://localhost:8080/api/auth/google"
             className="px-4 py-1 bg-blue-600 text-white rounded-full text-sm"
           >
             Login with Google

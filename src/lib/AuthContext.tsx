@@ -25,9 +25,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const fetchUser = async () => {
       const token = localStorage.getItem('token');
+      console.log('AuthContext token:', token);
       if (!token) {
         // Allow /select-role page to work even if no token in localStorage
         if (window.location.pathname === '/select-role') {
+          // Check if token is in URL
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.get('token')) {
+            // Wait for select-role page to store the token
+            setUser(null);
+            setLoading(false);
+            return;
+          }
           setUser(null);
           setLoading(false);
           return;
