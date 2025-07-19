@@ -18,39 +18,8 @@ export default function SelectRolePage() {
   const searchParams = useSearchParams();
   
   useEffect(() => {
-    // 1. Check if a valid token with a role exists in localStorage
-    const localToken = localStorage.getItem('token');
-    if (localToken) {
-      try {
-        const decoded: CustomJwtPayload = jwtDecode(localToken);
-        if (decoded.role) {
-          // Already has a role, redirect to dashboard
-          switch (decoded.role) {
-            case 'admin':
-              router.push('/admin/dashboard');
-              return;
-            case 'hr':
-              router.push('/hr/dashboard');
-              return;
-            case 'candidate':
-              router.push('/candidate/dashboard');
-              return;
-            case 'employee':
-              router.push('/employee/dashboard');
-              return;
-            default:
-              router.push('/');
-              return;
-          }
-        }
-      } catch (err) {
-        // Invalid token, remove it
-        localStorage.removeItem('token');
-      }
-    }
-
-    // 2. If no valid token with role, check URL token
     const jwtFromQuery = searchParams.get('token');
+    console.log('Token from query:', jwtFromQuery);
     if (!jwtFromQuery) return router.push('/');
     setToken(jwtFromQuery);
     localStorage.setItem('token', jwtFromQuery); // <-- Store token immediately
