@@ -9,13 +9,13 @@ export default function RedirectPage() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await api.get('/me', { withCredentials: true });
+        const res = await api.get('/auth/me');
         const user = res.data;
 
         if (user.role === 'admin') {
           router.push('/admin/dashboard');
         } else if (user.role === 'hr') {
-          router.push('/hr/jobs');
+          router.push('/hr/dashboard');
         } else {
           router.push('/candidate/jobs');
         }

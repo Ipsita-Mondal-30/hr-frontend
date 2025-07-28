@@ -95,7 +95,7 @@ export default function JobsPage() {
       </div>
 
       {formVisible && (
-        <form onSubmit={handleSubmit} className="bg-gray-100 p-4 rounded mb-6 space-y-3">
+        <form onSubmit={handleSubmit} className="bg-gray-900 p-4 rounded mb-6 space-y-3">
           <input
             type="text"
             placeholder="Job Title"

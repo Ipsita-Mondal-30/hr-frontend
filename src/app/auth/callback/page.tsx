@@ -3,9 +3,10 @@
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
+import { setAuthToken } from '@/lib/cookies';
 
 interface DecodedToken {
-  id: string;
+  _id: string;
   name: string;
   email: string;
   role?: 'admin' | 'hr' | 'candidate' | 'employee';
@@ -23,7 +24,7 @@ export default function AuthCallbackPage() {
     }
 
     try {
-      localStorage.setItem('token', token);
+      setAuthToken(token);
       const decoded: DecodedToken = jwtDecode(token);
 
       if (!decoded.role) {

@@ -21,14 +21,20 @@ export default function HRDashboardPage() {
 
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
+        console.log("🔍 Fetching HR dashboard data...");
         const res = await api.get("/admin/dashboard");
+        console.log("✅ Dashboard data received:", res.data);
         setData(res.data);
-      } catch (err) {
-        console.error("Error fetching HR dashboard data:", err);
+        setError(null);
+      } catch (err: any) {
+        console.error("❌ Error fetching HR dashboard data:", err);
+        console.error("❌ Error response:", err.response?.data);
+        setError(err.response?.data?.message || err.message || "Failed to load dashboard data");
       } finally {
         setLoading(false);
       }
@@ -36,41 +42,45 @@ export default function HRDashboardPage() {
 
     fetchDashboardData();
   }, []);
+
   useEffect(() => {
     const fetchUser = async () => {
-      const res = await api.get('/auth/me');
-      console.log("🔐 Current User:", res.data);
+      try {
+        const res = await api.get('/auth/me');
+        console.log("🔐 Current User:", res.data);
+      } catch (err) {
+        console.error("❌ Error fetching user:", err);
+      }
     };
     fetchUser();
   }, []);
-  
 
+  if (loading) return <div className="p-6">Loading dashboard...</div>;
+  if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
+  if (!data) return <div className="p-6 text-red-600">Failed to load dashboard data</div>;
 
-if (loading) return <div className="p-6">Loading dashboard...</div>;
-if (!data) return <div className="p-6 text-red-600">Failed to load dashboard data</div>;
+  return (
+    <div className="p-6 space-y-6">
+      <h1 className="text-2xl font-bold">HR Dashboard</h1>
 
-return (
-  <div className="p-6 space-y-6">
-    <h1 className="text-2xl font-bold">HR Dashboard</h1>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <StatCard label="Total Jobs" value={data.totalJobs} />
+        <StatCard label="Open Jobs" value={data.openJobs} />
+        <StatCard label="Closed Jobs" value={data.closedJobs} />
+        <StatCard label="Total Applications" value={data.totalApplications} />
+        <StatCard label="Avg Match Score" value={data.avgMatchScore.toFixed(2)} />
+      </div>
 
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-      <StatCard label="Total Jobs" value={data.totalJobs} />
-      <StatCard label="Open Jobs" value={data.openJobs} />
-      <StatCard label="Closed Jobs" value={data.closedJobs} />
-      <StatCard label="Total Applications" value={data.totalApplications} />
-      <StatCard label="Avg Match Score" value={data.avgMatchScore.toFixed(2)} />
+      {/* 🔜 Add Job Listings or Application Cards Below */}
     </div>
-
-    {/* 🔜 Add Job Listings or Application Cards Below */}
-  </div>
-);
+  );
 }
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
-return (
-  <div className="p-4 bg-white rounded-xl shadow-md text-center">
-    <div className="text-gray-500 text-sm">{label}</div>
-    <div className="text-xl font-semibold text-blue-700">{value}</div>
-  </div>
-);
+  return (
+    <div className="p-4 bg-white rounded-xl shadow-md text-center">
+      <div className="text-gray-500 text-sm">{label}</div>
+      <div className="text-xl font-semibold text-blue-700">{value}</div>
+    </div>
+  );
 }

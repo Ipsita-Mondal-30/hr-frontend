@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
+import { setAuthToken } from '@/lib/cookies';
 
 interface CustomJwtPayload {
-  id: string;
+  _id: string;
   name: string;
   email: string;
   role: string;
@@ -22,7 +23,7 @@ export default function SelectRolePage() {
     console.log('Token from query:', jwtFromQuery);
     if (!jwtFromQuery) return router.push('/');
     setToken(jwtFromQuery);
-    localStorage.setItem('token', jwtFromQuery); // <-- Store token immediately
+    setAuthToken(jwtFromQuery); // <-- Store token in cookies immediately
   }, [searchParams, router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -42,13 +43,13 @@ export default function SelectRolePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to set role');
 
-      // ✅ Store updated token
+      // ✅ Store updated token in cookies
       const newToken = data.token;
-      localStorage.setItem('token', newToken);
+      setAuthToken(newToken);
 
       // ✅ Redirect to dashboard
       const decoded = jwtDecode<CustomJwtPayload>(newToken);
-switch (decoded.role) {
+      switch (decoded.role) {
         case 'admin':
           router.push('/admin/dashboard');
           break;

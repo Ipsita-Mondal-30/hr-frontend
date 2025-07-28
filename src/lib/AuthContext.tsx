@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from './api';
-import router from 'next/router';
+import { getAuthToken, setAuthToken, removeAuthToken, hasAuthToken } from './cookies';
 
 export type User = {
   _id: string;
@@ -14,25 +14,36 @@ export type User = {
 type AuthContextType = {
   user: User | null;
   loading: boolean;
+  logout: () => void;
 };
 
-const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
+const AuthContext = createContext<AuthContextType>({ user: null, loading: true, logout: () => {} });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      removeAuthToken();
+      setUser(null);
+    }
+  };
+
   useEffect(() => {
     const fetchUser = async () => {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       console.log('AuthContext token:', token);
+
       if (!token) {
-        // Allow /select-role page to work even if no token in localStorage
+        // Allow /select-role page to work even if no token in cookies
         if (window.location.pathname === '/select-role') {
-          // Check if token is in URL
           const urlParams = new URLSearchParams(window.location.search);
           if (urlParams.get('token')) {
-            // Wait for select-role page to store the token
             setUser(null);
             setLoading(false);
             return;
@@ -41,40 +52,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setLoading(false);
           return;
         }
-        // Otherwise, redirect to home or login
         window.location.href = '/';
         return;
       }
-  
+
       try {
-        const res = await api.get('/auth/me', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await api.get('/auth/me');
+
         const userData = res.data;
         setUser(userData);
-  
-        // Redirect to /select-role only if role is missing and not already on that page
+
         if (!userData.role && window.location.pathname !== '/select-role') {
           window.location.href = `/select-role?token=${token}`;
         }
       } catch (err) {
         console.error('Auth check failed:', err);
-        localStorage.removeItem('token');
+        removeAuthToken();
         setUser(null);
       } finally {
         setLoading(false);
       }
     };
-  
+
     fetchUser();
   }, []);
-  
-  
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, logout }}>
       {children}
     </AuthContext.Provider>
   );

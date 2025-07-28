@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {jwtDecode } from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
+import { getAuthToken, removeAuthToken } from '@/lib/cookies';
 
 type DecodedUser = {
   name: string;
@@ -17,13 +18,13 @@ export default function Navbar() {
 
   useEffect(() => {
     const updateUser = () => {
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       if (token) {
         try {
           const decoded = jwtDecode<DecodedUser>(token);
           setUser(decoded);
         } catch (err) {
-          localStorage.removeItem('token');
+          removeAuthToken();
           setUser(null);
         }
       } else {
@@ -33,13 +34,28 @@ export default function Navbar() {
 
     updateUser();
 
-    window.addEventListener('storage', updateUser);
-    return () => window.removeEventListener('storage', updateUser);
+    // Listen for cookie changes
+    const checkUser = () => {
+      setTimeout(updateUser, 100);
+    };
+    
+    window.addEventListener('focus', checkUser);
+    return () => window.removeEventListener('focus', checkUser);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    router.push('/');
+  const handleLogout = async () => {
+    try {
+      await fetch('http://localhost:8080/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      removeAuthToken();
+      setUser(null);
+      router.push('/');
+    }
   };
 
   return (
