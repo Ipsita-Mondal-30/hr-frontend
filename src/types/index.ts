@@ -17,6 +17,8 @@ export interface Job {
     };
     status: "open" | "closed";
     createdAt: string;
+    companyName: string; // Added companyName field
+    updatedAt?: string;
   }
 
   export interface Interview {

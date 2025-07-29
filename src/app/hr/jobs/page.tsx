@@ -16,6 +16,7 @@ export default function JobsPage() {
     status: 'open',
     department: '',
     role: '',
+    companyName: '',
   });
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -50,7 +51,7 @@ export default function JobsPage() {
         await api.post('/jobs', form);
       }
       
-      setForm({ title: '', description: '', status: 'open', department: '', role: '' });
+      setForm({ title: '', description: '', status: 'open', department: '', role: '',companyName: '' });
       setEditingId(null);
       setFormVisible(false);
       fetchJobs();
@@ -67,6 +68,7 @@ export default function JobsPage() {
       status: job.status,
       department: job.department?._id || '',
       role: job.role?._id || '',
+      companyName: job.companyName || '',
     });
     setEditingId(job._id);
   };
@@ -86,7 +88,8 @@ export default function JobsPage() {
               description: '',
               status: 'open',
               department: '',
-              role: ''
+              role: '',
+              companyName: ''
             });
           }}
         >
@@ -104,6 +107,15 @@ export default function JobsPage() {
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             required
           />
+          <input
+  type="text"
+  placeholder="Company Name"
+  className="w-full border px-3 py-2 rounded"
+  value={form.companyName}
+  onChange={(e) => setForm({ ...form, companyName: e.target.value })}
+  required
+/>
+
           <textarea
             placeholder="Job Description"
             className="w-full border px-3 py-2 rounded"
