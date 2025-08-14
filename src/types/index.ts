@@ -17,7 +17,17 @@ export interface Job {
     };
     status: "open" | "closed";
     createdAt: string;
-    companyName: string; // Added companyName field
+    companyName: string;
+    location?: string;
+    remote?: boolean;
+    employmentType?: "full-time" | "part-time" | "internship";
+    experienceRequired?: number;
+    minSalary?: number;
+    maxSalary?: number;
+    companySize?: "1-10" | "11-50" | "51-200" | "201-500" | "500+";
+    skills?: string[];
+    tags?: string[];
+    rating?: number;
     updatedAt?: string;
   }
 

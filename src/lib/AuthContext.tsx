@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from './api';
-import { getAuthToken, setAuthToken, removeAuthToken, hasAuthToken } from './cookies';
+import { getAuthToken, removeAuthToken } from './cookies';
 
 export type User = {
   _id: string;
@@ -17,7 +17,7 @@ type AuthContextType = {
   logout: () => void;
 };
 
-const AuthContext = createContext<AuthContextType>({ user: null, loading: true, logout: () => {} });
+const AuthContext = createContext<AuthContextType>({ user: null, loading: true, logout: () => { } });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -31,6 +31,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       removeAuthToken();
       setUser(null);
+      // Redirect to home page after logout
+      window.location.href = '/';
     }
   };
 
@@ -39,31 +41,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const token = getAuthToken();
       console.log('AuthContext token:', token);
 
+      // Special pages that should work without authentication
+      const publicPages = ['/', '/select-role', '/role-select', '/auth/callback'];
+      const currentPath = window.location.pathname;
+      
       if (!token) {
-        // Allow /select-role page to work even if no token in cookies
-        if (window.location.pathname === '/select-role') {
-          const urlParams = new URLSearchParams(window.location.search);
-          if (urlParams.get('token')) {
-            setUser(null);
-            setLoading(false);
-            return;
-          }
+        // If we're on a public page, just set loading to false
+        if (publicPages.includes(currentPath)) {
           setUser(null);
           setLoading(false);
           return;
         }
-        window.location.href = '/';
+        
+        // Only redirect to home if we're not already there
+        if (currentPath !== '/') {
+          console.log('No token, redirecting to home');
+          window.location.href = '/';
+          return;
+        }
+        
+        setLoading(false);
         return;
       }
 
       try {
         const res = await api.get('/auth/me');
-
         const userData = res.data;
         setUser(userData);
 
-        if (!userData.role && window.location.pathname !== '/select-role') {
-          window.location.href = `/select-role?token=${token}`;
+        // Only redirect to role selection if user has no role and we're not already on role selection pages
+        if (!userData.role && !currentPath.includes('role') && currentPath !== '/select-role') {
+          console.log('User has no role, redirecting to role selection');
+          window.location.href = `/role-select?token=${token}`;
         }
       } catch (err) {
         console.error('Auth check failed:', err);
