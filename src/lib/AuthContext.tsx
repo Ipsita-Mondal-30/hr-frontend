@@ -41,25 +41,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const token = getAuthToken();
       console.log('AuthContext token:', token);
 
-      // Special pages that should work without authentication
-      const publicPages = ['/', '/select-role', '/role-select', '/auth/callback'];
+      // Always allow access to public pages without redirects
+      const publicPages = ['/', '/debug', '/select-role', '/role-select', '/auth/callback'];
       const currentPath = window.location.pathname;
       
       if (!token) {
-        // If we're on a public page, just set loading to false
-        if (publicPages.includes(currentPath)) {
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-        
-        // Only redirect to home if we're not already there
-        if (currentPath !== '/') {
-          console.log('No token, redirecting to home');
-          window.location.href = '/';
-          return;
-        }
-        
+        console.log('No token found, user not authenticated');
+        setUser(null);
         setLoading(false);
         return;
       }
@@ -67,11 +55,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const res = await api.get('/auth/me');
         const userData = res.data;
+        console.log('User data from token:', userData);
         setUser(userData);
 
-        // Only redirect to role selection if user has no role and we're not already on role selection pages
-        if (!userData.role && !currentPath.includes('role') && currentPath !== '/select-role') {
-          console.log('User has no role, redirecting to role selection');
+        // Only redirect to role selection if:
+        // 1. User has no role
+        // 2. We're not already on a role selection page
+        // 3. We're not on the home page (let users stay on home if they want)
+        if (!userData.role && 
+            !currentPath.includes('role') && 
+            !publicPages.includes(currentPath)) {
+          console.log('User has no role and is on protected page, redirecting to role selection');
           window.location.href = `/role-select?token=${token}`;
         }
       } catch (err) {

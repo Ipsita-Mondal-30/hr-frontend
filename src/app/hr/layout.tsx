@@ -67,6 +67,12 @@ export default function HRLayout({ children }: { children: ReactNode }) {
         
         <nav className="flex flex-col space-y-2">
           <Link 
+            href="/" 
+            className="px-3 py-2 rounded hover:bg-gray-700 transition-colors border-b border-gray-700 mb-2"
+          >
+            🏠 Back to Home
+          </Link>
+          <Link 
             href="/hr/dashboard" 
             className="px-3 py-2 rounded hover:bg-gray-700 transition-colors"
           >

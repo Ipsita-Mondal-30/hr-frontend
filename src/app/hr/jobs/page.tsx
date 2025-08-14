@@ -7,7 +7,7 @@ import { Job } from '@/types';
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [departments, setDepartments] = useState<{ _id: string; name: string }[]>([]);
-  const [roles, setRoles] = useState<{ _id: string; name: string }[]>([]);
+  const [roles, setRoles] = useState<{ _id: string; title?: string; name?: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [formVisible, setFormVisible] = useState(false);
   const [form, setForm] = useState({
@@ -30,9 +30,17 @@ export default function JobsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const fetchJobs = async () => {
-    const res = await api.get('/jobs');
-    setJobs(res.data);
-    setLoading(false);
+    try {
+      console.log('🔄 Fetching jobs for HR management...');
+      const res = await api.get('/jobs/manage');
+      console.log(`📊 Received ${res.data.length} jobs`);
+      setJobs(res.data);
+    } catch (err) {
+      console.error('Failed to fetch jobs:', err);
+      alert('Failed to load jobs. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchDepartmentsAndRoles = async () => {
@@ -217,7 +225,7 @@ export default function JobsPage() {
               >
                 <option value="">Select Role</option>
                 {roles.map((r) => (
-                  <option key={r._id} value={r._id}>{r.name}</option>
+                  <option key={r._id} value={r._id}>{r.title || r.name}</option>
                 ))}
               </select>
             </div>

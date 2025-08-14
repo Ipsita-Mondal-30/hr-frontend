@@ -62,28 +62,46 @@ export default function RoleSelectPage() {
     setError('');
 
     try {
-      console.log('Submitting role:', role);
+      console.log('🔄 Submitting role:', role);
+      console.log('🔑 Using token:', token ? 'Present' : 'Missing');
+      
+      // First test if backend is reachable
+      const testRes = await fetch('http://localhost:8080/api/test', {
+        method: 'GET',
+      });
+      
+      if (!testRes.ok) {
+        throw new Error('Backend server is not running. Please start the backend server.');
+      }
+      
+      console.log('✅ Backend server is reachable');
+      
       const res = await fetch('http://localhost:8080/api/auth/set-role', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({ role }),
       });
 
       const data = await res.json();
-      console.log('Set role response:', data);
+      console.log('📝 Set role response:', data);
       
-      if (!res.ok) throw new Error(data.error || 'Failed to set role');
+      if (!res.ok) {
+        throw new Error(data.error || `Server error: ${res.status} ${res.statusText}`);
+      }
 
       const newToken = data.token;
       setAuthToken(newToken);
-      console.log('New token set, redirecting...');
+      console.log('✅ New token set, redirecting...');
 
       // Add a small delay before redirect to ensure token is set
       setTimeout(() => {
         const decoded = jwtDecode<CustomJwtPayload>(newToken);
+        console.log('🎯 Redirecting to:', decoded.role, 'dashboard');
+        
         switch (decoded.role) {
           case 'admin':
             window.location.href = '/admin/dashboard';
@@ -102,10 +120,32 @@ export default function RoleSelectPage() {
         }
       }, 500);
       
-    } catch (err) {
-      console.error('Error setting role:', err);
-      setError('Failed to set role. Please try again.');
+    } catch (err: any) {
+      console.error('❌ Error setting role:', err);
+      
+      let errorMessage = 'Failed to set role. ';
+      
+      if (err.message.includes('Backend server is not running')) {
+        errorMessage += 'The backend server is not running. Please start it and try again.';
+      } else if (err.message.includes('Failed to fetch')) {
+        errorMessage += 'Cannot connect to server. Please check if the backend is running on port 8080.';
+      } else if (err.message.includes('Database connection failed')) {
+        errorMessage += 'Database connection issue. Please try again in a moment.';
+      } else {
+        errorMessage += err.message || 'Please try again.';
+      }
+      
+      setError(errorMessage);
       setSubmitting(false);
+      
+      // Auto-retry after 3 seconds for database connection issues
+      if (err.message.includes('Database connection failed')) {
+        setTimeout(() => {
+          console.log('🔄 Auto-retrying after database connection issue...');
+          setError('Retrying...');
+          handleSubmit(e);
+        }, 3000);
+      }
     }
   };
 

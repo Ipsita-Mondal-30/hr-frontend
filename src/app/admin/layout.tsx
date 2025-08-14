@@ -69,14 +69,22 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="p-4 space-y-2 max-h-screen overflow-y-auto">
+          {/* Home Link */}
+          <Link
+            href="/"
+            className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 mb-4 border-b border-gray-200"
+          >
+            🏠 Back to Home
+          </Link>
+          
           {navItems.map((item, index) => (
             <div key={index}>
               {item.href ? (
                 <Link
                   href={item.href}
                   className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive(item.href)
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'text-gray-700 hover:bg-gray-100'
                     }`}
                 >
                   {item.label}
@@ -92,8 +100,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                         key={subIndex}
                         href={subItem.href}
                         className={`flex items-center px-3 py-2 rounded-md text-sm transition-colors ${isActive(subItem.href)
-                            ? 'bg-blue-100 text-blue-700 font-medium'
-                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                          ? 'bg-blue-100 text-blue-700 font-medium'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                           }`}
                       >
                         {subItem.label}

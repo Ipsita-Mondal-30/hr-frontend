@@ -15,7 +15,8 @@ export default function CandidateLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navigation = [
-    { name: 'Dashboard', href: '/candidate/dashboard', icon: '🏠' },
+    { name: 'Back to Home', href: '/', icon: '🏠' },
+    { name: 'Dashboard', href: '/candidate/dashboard', icon: '📊' },
     { name: 'Search Jobs', href: '/candidate/jobs', icon: '🔍' },
     { name: 'Applied Jobs', href: '/candidate/applications', icon: '📋' },
     { name: 'Saved Jobs', href: '/candidate/saved', icon: '💾' },
@@ -108,11 +109,10 @@ function CandidateSidebar({ navigation, pathname, user, logout }: any) {
                 <li key={item.name}>
                   <Link
                     href={item.href}
-                    className={`group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold ${
-                      pathname === item.href
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-                    }`}
+                    className={`group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold ${pathname === item.href
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      }`}
                   >
                     <span className="text-lg">{item.icon}</span>
                     {item.name}
