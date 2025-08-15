@@ -17,11 +17,11 @@ export default function CandidateLayout({
   const navigation = [
     { name: 'Back to Home', href: '/', icon: '🏠' },
     { name: 'Dashboard', href: '/candidate/dashboard', icon: '📊' },
-    { name: 'Search Jobs', href: '/candidate/jobs', icon: '🔍' },
+    { name: 'Browse Jobs', href: '/candidate/jobs', icon: '🔍' },
     { name: 'Applied Jobs', href: '/candidate/applications', icon: '📋' },
-    { name: 'Saved Jobs', href: '/candidate/saved', icon: '💾' },
-    { name: 'Search Salary', href: '/candidate/salary', icon: '💰' },
-    { name: 'Profile', href: '/candidate/profile', icon: '👤' },
+    { name: 'Saved Jobs', href: '/candidate/saved', icon: '�' },
+    { name: 'Search Salary', href: '/candidate/salary', icon: '�' },
+    { name: 'Profile', href: '/candidate/profile', icon: '�' },
   ];
 
   return (

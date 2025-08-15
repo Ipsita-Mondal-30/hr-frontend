@@ -13,6 +13,24 @@ interface DashboardStats {
   rejectedApplications: number;
   savedJobs: number;
   profileCompleteness: number;
+  scheduledInterviews: number;
+}
+
+interface Interview {
+  _id: string;
+  scheduledAt: string;
+  duration: number;
+  type: string;
+  status: string;
+  application: {
+    job: {
+      title: string;
+      companyName: string;
+    };
+  };
+  interviewer: {
+    name: string;
+  };
 }
 
 export default function CandidateDashboard() {
@@ -24,52 +42,81 @@ export default function CandidateDashboard() {
     shortlistedApplications: 0,
     rejectedApplications: 0,
     savedJobs: 0,
-    profileCompleteness: 75
+    profileCompleteness: 75,
+    scheduledInterviews: 0
   });
   const [loading, setLoading] = useState(true);
   const [recentJobs, setRecentJobs] = useState<any[]>([]);
+  const [upcomingInterviews, setUpcomingInterviews] = useState<Interview[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
+    
+    // Set up interval to refresh data every 30 seconds
+    const interval = setInterval(fetchDashboardData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardData = async () => {
     try {
+      console.log('🔄 Fetching candidate dashboard data...');
+      
       // Fetch applications
       const appsRes = await api.get('/applications/my');
-      const applications = appsRes.data;
+      const applications = appsRes.data || [];
+      console.log(`📋 Found ${applications.length} applications`);
       setApplications(applications.slice(0, 5)); // Show only recent 5
 
       // Fetch saved jobs
       let savedJobs = [];
       try {
         const savedRes = await api.get('/candidate/saved-jobs');
-        savedJobs = savedRes.data;
+        savedJobs = savedRes.data || [];
+        console.log(`💾 Found ${savedJobs.length} saved jobs`);
       } catch (err) {
         console.error('Error fetching saved jobs:', err);
         savedJobs = [];
       }
 
-      // Fetch recent jobs
+      // Fetch recent jobs for recommendations
       let recentJobs = [];
       try {
-        const jobsRes = await api.get('/jobs');
-        recentJobs = jobsRes.data.slice(0, 3);
+        const jobsRes = await api.get('/jobs?limit=3');
+        recentJobs = jobsRes.data || [];
+        console.log(`🔍 Found ${recentJobs.length} recent jobs`);
         setRecentJobs(recentJobs);
       } catch (err) {
         console.error('Error fetching jobs:', err);
         setRecentJobs([]);
       }
 
+      // Fetch upcoming interviews
+      let interviews = [];
+      try {
+        const interviewsRes = await api.get('/candidate/interviews');
+        interviews = interviewsRes.data || [];
+        console.log(`📅 Found ${interviews.length} interviews`);
+        setUpcomingInterviews(interviews.filter((interview: Interview) => 
+          new Date(interview.scheduledAt) > new Date() && interview.status === 'scheduled'
+        ).slice(0, 3));
+      } catch (err) {
+        console.error('Error fetching interviews:', err);
+        setUpcomingInterviews([]);
+      }
+
       // Calculate stats
-      setStats({
+      const stats = {
         totalApplications: applications.length,
         pendingApplications: applications.filter((app: Application) => app.status === 'pending').length,
-        shortlistedApplications: applications.filter((app: Application) => app.status === 'shortlisted').length,
+        shortlistedApplications: applications.filter((app: Application) => app.status === 'shortlisted' || app.status === 'reviewed').length,
         rejectedApplications: applications.filter((app: Application) => app.status === 'rejected').length,
         savedJobs: savedJobs.length,
-        profileCompleteness: 75 // This would be calculated based on profile data
-      });
+        profileCompleteness: 75, // This would be calculated based on profile data
+        scheduledInterviews: interviews.filter((interview: Interview) => interview.status === 'scheduled').length
+      };
+      
+      console.log('📊 Dashboard stats:', stats);
+      setStats(stats);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
     } finally {
@@ -117,6 +164,12 @@ export default function CandidateDashboard() {
           icon="💾"
           color="bg-purple-50 text-purple-600"
         />
+        <StatCard
+          title="Interviews"
+          value={stats.scheduledInterviews}
+          icon="📅"
+          color="bg-orange-50 text-orange-600"
+        />
       </div>
 
       {/* Profile Completeness Alert */}
@@ -138,6 +191,37 @@ export default function CandidateDashboard() {
             >
               Complete Profile
             </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Upcoming Interviews */}
+      {upcomingInterviews.length > 0 && (
+        <div className="bg-orange-50 rounded-lg p-6 border border-orange-200">
+          <h2 className="text-lg font-semibold text-orange-900 mb-4">🎯 Upcoming Interviews</h2>
+          <div className="space-y-3">
+            {upcomingInterviews.map((interview) => (
+              <div key={interview._id} className="bg-white rounded-lg p-4 border border-orange-200">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-medium text-gray-900">{interview.application.job.title}</h3>
+                    <p className="text-sm text-gray-600">{interview.application.job.companyName}</p>
+                    <p className="text-sm text-gray-500">with {interview.interviewer.name}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-orange-600">
+                      {new Date(interview.scheduledAt).toLocaleDateString()}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(interview.scheduledAt).toLocaleTimeString()}
+                    </p>
+                    <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded capitalize">
+                      {interview.type}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

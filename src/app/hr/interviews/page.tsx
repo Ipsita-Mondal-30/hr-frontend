@@ -5,20 +5,20 @@ import api from '@/lib/api';
 
 interface Interview {
   _id: string;
-  application: {
+  application?: {
     _id: string;
-    name: string;
-    email: string;
-    phone: string;
-    job: {
-      title: string;
-      companyName: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+    job?: {
+      title?: string;
+      companyName?: string;
     };
   };
-  interviewer: {
+  interviewer?: {
     _id: string;
-    name: string;
-    email: string;
+    name?: string;
+    email?: string;
   };
   scheduledAt: string;
   duration: number;
@@ -62,10 +62,13 @@ export default function InterviewsPage() {
 
   const fetchInterviews = async () => {
     try {
+      console.log('🔄 HR fetching interviews...');
       const res = await api.get('/interviews');
-      setInterviews(res.data);
+      console.log(`📊 HR received ${res.data?.length || 0} interviews`);
+      setInterviews(res.data || []);
     } catch (err) {
       console.error('Failed to fetch interviews:', err);
+      setInterviews([]);
     } finally {
       setLoading(false);
     }
@@ -73,26 +76,33 @@ export default function InterviewsPage() {
 
   const fetchApplications = async () => {
     try {
+      console.log('🔄 HR fetching applications for interview scheduling...');
       const res = await api.get('/applications?status=shortlisted');
-      setApplications(res.data);
+      console.log(`📊 HR received ${res.data?.length || 0} shortlisted applications`);
+      setApplications(res.data || []);
     } catch (err) {
       console.error('Failed to fetch applications:', err);
+      setApplications([]);
     }
   };
 
   const scheduleInterview = async (interviewData: any) => {
     try {
-      await api.post('/interviews', interviewData);
-      fetchInterviews();
+      console.log('📅 Scheduling interview:', interviewData);
+      const response = await api.post('/interviews', interviewData);
+      console.log('✅ Interview scheduled successfully:', response.data);
+      
+      // Refresh both interviews and applications
+      await Promise.all([fetchInterviews(), fetchApplications()]);
       setShowScheduleModal(false);
       alert('Interview scheduled successfully!');
     } catch (err) {
       console.error('Failed to schedule interview:', err);
-      alert('Failed to schedule interview');
+      alert('Failed to schedule interview: ' + (err.response?.data?.error || err.message));
     }
   };
 
-  const updateInterviewStatus = async (interviewId: string, status: string) => {
+  const updateInterviewStatus = async (interviewId: string, status: 'scheduled' | 'completed' | 'cancelled' | 'no-show') => {
     try {
       await api.put(`/interviews/${interviewId}/status`, { status });
       setInterviews(prev => 
@@ -342,9 +352,15 @@ function InterviewCard({ interview, onUpdateStatus, onViewScorecard, getStatusCo
           <div className="flex items-center space-x-3 mb-2">
             <span className="text-2xl">{getTypeIcon(interview.type)}</span>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">{interview.application.name}</h3>
-              <p className="text-gray-600">{interview.application.job.title}</p>
-              <p className="text-sm text-gray-500">{interview.application.job.companyName}</p>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {interview.application?.name || 'Candidate Name Not Available'}
+              </h3>
+              <p className="text-gray-600">
+                {interview.application?.job?.title || 'Job Title Not Available'}
+              </p>
+              <p className="text-sm text-gray-500">
+                {interview.application?.job?.companyName || 'Company Not Available'}
+              </p>
             </div>
           </div>
           
@@ -355,9 +371,9 @@ function InterviewCard({ interview, onUpdateStatus, onViewScorecard, getStatusCo
               <p><strong>Duration:</strong> {interview.duration} minutes</p>
             </div>
             <div>
-              <p><strong>Interviewer:</strong> {interview.interviewer.name}</p>
-              <p><strong>Email:</strong> {interview.application.email}</p>
-              <p><strong>Phone:</strong> {interview.application.phone}</p>
+              <p><strong>Interviewer:</strong> {interview.interviewer?.name || 'Not Available'}</p>
+              <p><strong>Email:</strong> {interview.application?.email || 'Not Available'}</p>
+              <p><strong>Phone:</strong> {interview.application?.phone || 'Not Available'}</p>
             </div>
           </div>
 
@@ -482,10 +498,12 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: a
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
-              <option value="">Select candidate</option>
+              <option value="">
+                {applications.length > 0 ? 'Select candidate' : 'No candidates available'}
+              </option>
               {applications.map((app: any) => (
                 <option key={app._id} value={app._id}>
-                  {app.name} - {app.job?.title}
+                  {app.name || 'Unknown Candidate'} - {app.job?.title || 'Unknown Job'}
                 </option>
               ))}
             </select>
@@ -625,8 +643,12 @@ function ScorecardModal({ isOpen, onClose, interview, onSubmit }: any) {
         </div>
 
         <div className="mb-4 p-4 bg-gray-50 rounded">
-          <h4 className="font-medium">{interview.application.name}</h4>
-          <p className="text-sm text-gray-600">{interview.application.job.title}</p>
+          <h4 className="font-medium">
+            {interview.application?.name || 'Candidate Name Not Available'}
+          </h4>
+          <p className="text-sm text-gray-600">
+            {interview.application?.job?.title || 'Job Title Not Available'}
+          </p>
           <p className="text-sm text-gray-500">
             {new Date(interview.scheduledAt).toLocaleDateString()} at {new Date(interview.scheduledAt).toLocaleTimeString()}
           </p>

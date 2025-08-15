@@ -144,27 +144,13 @@ export default function AdminJobs() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Job Management</h1>
-          <p className="text-gray-600">Manage all jobs posted on the platform</p>
-        </div>
-        <div className="flex space-x-3">
-          <Link
-            href="/admin/jobs/pending"
-            className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
-          >
-            Pending Approval ({jobs.filter(j => j.status === 'pending').length})
-          </Link>
-          <Link
-            href="/admin/jobs/categories"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Manage Categories
-          </Link>
+          <h1 className="text-2xl font-bold text-gray-900">All Jobs</h1>
+          <p className="text-gray-600">View and manage all jobs posted on the platform</p>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg shadow-sm border p-4 text-center">
           <div className="text-2xl font-bold text-gray-900">{jobs.length}</div>
           <div className="text-sm text-gray-600">Total Jobs</div>
@@ -174,12 +160,6 @@ export default function AdminJobs() {
             {jobs.filter(j => j.status === 'active').length}
           </div>
           <div className="text-sm text-gray-600">Active Jobs</div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border p-4 text-center">
-          <div className="text-2xl font-bold text-yellow-600">
-            {jobs.filter(j => j.status === 'pending').length}
-          </div>
-          <div className="text-sm text-gray-600">Pending Approval</div>
         </div>
         <div className="bg-white rounded-lg shadow-sm border p-4 text-center">
           <div className="text-2xl font-bold text-purple-600">
@@ -200,8 +180,7 @@ export default function AdminJobs() {
             >
               <option value="all">All Jobs</option>
               <option value="active">Active</option>
-              <option value="pending">Pending</option>
-              <option value="rejected">Rejected</option>
+              <option value="inactive">Inactive</option>
             </select>
             
             <input
@@ -219,17 +198,17 @@ export default function AdminJobs() {
                 onClick={() => bulkAction('approve')}
                 className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
               >
-                Approve ({selectedJobs.length})
+                Activate ({selectedJobs.length})
               </button>
               <button
                 onClick={() => bulkAction('reject')}
-                className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
+                className="px-3 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 text-sm"
               >
-                Reject ({selectedJobs.length})
+                Deactivate ({selectedJobs.length})
               </button>
               <button
                 onClick={() => bulkAction('delete')}
-                className="px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
+                className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
               >
                 Delete ({selectedJobs.length})
               </button>
@@ -332,26 +311,6 @@ export default function AdminJobs() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex space-x-2">
-                      {job.status === 'pending' && (
-                        <>
-                          <button
-                            onClick={() => updateJobStatus(job._id, 'active')}
-                            className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => {
-                              const reason = prompt('Reason for rejection:');
-                              if (reason) updateJobStatus(job._id, 'rejected', reason);
-                            }}
-                            className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
-                          >
-                            Reject
-                          </button>
-                        </>
-                      )}
-                      
                       {job.status === 'active' && (
                         <button
                           onClick={() => updateJobStatus(job._id, 'inactive')}

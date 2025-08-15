@@ -15,6 +15,7 @@ interface Stats {
   activeJobs: number;
   pendingApplications: number;
   pendingHRVerifications: number;
+  pendingJobApprovals: number;
   recentActivity: {
     newCandidates: number;
     newHRs: number;
@@ -35,17 +36,27 @@ export default function AdminDashboard() {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchData = async () => {
+    try {
+      const [statsRes, activityRes] = await Promise.all([
+        api.get('/admin/stats'),
+        api.get('/admin/recent-activity')
+      ]);
+      setStats(statsRes.data);
+      setRecentActivity(activityRes.data);
+    } catch (err) {
+      console.error('Error fetching admin data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    Promise.all([
-      api.get('/admin/stats'),
-      api.get('/admin/recent-activity')
-    ])
-      .then(([statsRes, activityRes]) => {
-        setStats(statsRes.data);
-        setRecentActivity(activityRes.data);
-      })
-      .catch(err => console.error('Error fetching admin data:', err))
-      .finally(() => setLoading(false));
+    fetchData();
+    
+    // Refresh data every 30 seconds to keep counts updated
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
@@ -65,9 +76,9 @@ export default function AdminDashboard() {
 
   const quickActions = [
     { label: 'Verify HR Accounts', href: '/admin/users/verification', count: stats?.pendingHRVerifications, color: 'bg-yellow-500' },
-    { label: 'Review Jobs', href: '/admin/jobs/pending', count: stats?.activeJobs, color: 'bg-blue-500' },
-    { label: 'Support Tickets', href: '/admin/support/tickets', count: 0, color: 'bg-red-500' },
-    { label: 'User Reports', href: '/admin/support/reports', count: 0, color: 'bg-purple-500' }
+    { label: 'Approve Jobs', href: '/admin/jobs/pending', count: stats?.pendingJobApprovals, color: 'bg-orange-500' },
+    { label: 'Review Jobs', href: '/admin/jobs', count: stats?.activeJobs, color: 'bg-blue-500' },
+    { label: 'Support Tickets', href: '/admin/support/tickets', count: 0, color: 'bg-red-500' }
   ];
 
   return (

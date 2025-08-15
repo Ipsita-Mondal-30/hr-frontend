@@ -14,8 +14,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       label: '👥 User Management',
       items: [
         { href: '/admin/users', label: 'All Users' },
-        { href: '/admin/users/candidates', label: 'Candidates' },
-        { href: '/admin/users/hr', label: 'HR Users' },
+        { href: '/admin/users/candidates', label: 'View Candidates' },
+        { href: '/admin/users/hr', label: 'View HR Users' },
         { href: '/admin/users/verification', label: 'HR Verification' }
       ]
     },
@@ -23,14 +23,22 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       label: '💼 Job Management',
       items: [
         { href: '/admin/jobs', label: 'All Jobs' },
-        { href: '/admin/jobs/pending', label: 'Pending Approval' },
-        { href: '/admin/jobs/categories', label: 'Categories' }
+        { href: '/admin/jobs/pending', label: 'Pending Approval' }
+      ]
+    },
+    {
+      label: '📅 Interview Management',
+      items: [
+        { href: '/admin/interviews', label: 'All Interviews' },
+        { href: '/admin/interviews/scheduled', label: 'Scheduled' },
+        { href: '/admin/interviews/completed', label: 'Completed' }
       ]
     },
     {
       label: '📈 Reports & Analytics',
       items: [
-        { href: '/admin/reports', label: 'Platform Analytics' },
+        { href: '/admin/analytics', label: 'Platform Analytics' },
+        { href: '/admin/reports', label: 'Basic Reports' },
         { href: '/admin/reports/hiring', label: 'Hiring Trends' },
         { href: '/admin/reports/activity', label: 'User Activity' }
       ]
@@ -38,17 +46,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     {
       label: '⚙️ Settings',
       items: [
-        { href: '/admin/settings/system', label: 'System Settings' },
-        { href: '/admin/settings/skills', label: 'Skills Management' },
         { href: '/admin/settings/departments', label: 'Departments' },
         { href: '/admin/settings/roles', label: 'Roles' }
-      ]
-    },
-    {
-      label: '📄 Content Management',
-      items: [
-        { href: '/admin/content/pages', label: 'Static Pages' },
-        { href: '/admin/content/notifications', label: 'Notifications' }
       ]
     },
     {

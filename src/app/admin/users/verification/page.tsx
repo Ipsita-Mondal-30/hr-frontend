@@ -42,19 +42,29 @@ export default function HRVerification() {
 
   const verifyHR = async (hrId: string, approved: boolean) => {
     try {
-      await api.put(`/admin/users/${hrId}/verify`, {
-        approved,
+      console.log(`🔄 ${approved ? 'Approving' : 'Rejecting'} HR:`, hrId);
+      
+      const response = await api.put(`/admin/users/${hrId}/verify-hr`, {
+        action: approved ? 'approve' : 'reject',
         notes: verificationNotes
       });
       
-      setPendingHRs(pendingHRs.filter(hr => hr._id !== hrId));
+      console.log('✅ HR verification response:', response.data);
+      
+      // Remove from pending list immediately
+      setPendingHRs(prev => prev.filter(hr => hr._id !== hrId));
       setSelectedHR(null);
       setVerificationNotes('');
       
       alert(`HR ${approved ? 'approved' : 'rejected'} successfully`);
+      
+      // Also refresh the list to ensure consistency
+      setTimeout(fetchPendingHRs, 1000);
     } catch (err) {
       console.error('Failed to verify HR:', err);
       alert('Failed to process verification');
+      // Refresh on error to ensure consistency
+      fetchPendingHRs();
     }
   };
 

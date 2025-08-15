@@ -38,6 +38,7 @@ interface Application {
     missingSkills: string[];
     tags: string[];
   };
+  hrNotes?: string;
   createdAt: string;
 }
 
@@ -48,6 +49,10 @@ export default function ApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedApplications, setSelectedApplications] = useState<string[]>([]);
   const [messageModal, setMessageModal] = useState<{ isOpen: boolean; applicationId: string | null }>({
+    isOpen: false,
+    applicationId: null
+  });
+  const [notesModal, setNotesModal] = useState<{ isOpen: boolean; applicationId: string | null }>({
     isOpen: false,
     applicationId: null
   });
@@ -164,16 +169,45 @@ export default function ApplicationsPage() {
 
   const updateStatus = async (id: string, newStatus: string) => {
     try {
-      await api.put(`/applications/${id}/status`, { status: newStatus });
+      console.log(`🔄 Updating application ${id} status to ${newStatus}`);
+      const response = await api.put(`/applications/${id}/status`, { status: newStatus });
+      console.log('✅ Status updated successfully:', response.data);
+      
+      // Update local state immediately
       setApplications(prev => 
         prev.map(app => 
           app._id === id ? { ...app, status: newStatus } : app
         )
       );
-      alert(`Status updated to ${newStatus}`);
+      
+      // Show success message
+      alert(`Status updated to ${newStatus} successfully`);
     } catch (err) {
       console.error('Status update failed', err);
-      alert('Failed to update status');
+      alert('Failed to update status: ' + (err.response?.data?.error || err.message));
+      // Refresh on error to ensure consistency
+      fetchApplications();
+    }
+  };
+
+  const saveNotes = async (id: string, notes: string) => {
+    try {
+      console.log(`📝 Saving notes for application ${id}`);
+      const response = await api.put(`/applications/${id}/notes`, { notes });
+      console.log('✅ Notes saved successfully:', response.data);
+      
+      // Update local state immediately
+      setApplications(prev => 
+        prev.map(app => 
+          app._id === id ? { ...app, hrNotes: notes } : app
+        )
+      );
+      
+      setNotesModal({ isOpen: false, applicationId: null });
+      alert('Notes saved successfully');
+    } catch (err) {
+      console.error('Failed to save notes', err);
+      alert('Failed to save notes: ' + (err.response?.data?.error || err.message));
     }
   };
 
@@ -184,11 +218,17 @@ export default function ApplicationsPage() {
     }
 
     try {
-      await api.post('/hr/bulk-update-status', {
-        applicationIds: selectedApplications,
-        status
-      });
+      console.log(`🔄 Bulk updating ${selectedApplications.length} applications to ${status}`);
       
+      // Update each application individually for better reliability
+      const updatePromises = selectedApplications.map(appId => 
+        api.put(`/applications/${appId}/status`, { status })
+      );
+      
+      await Promise.all(updatePromises);
+      console.log('✅ Bulk update completed successfully');
+      
+      // Update local state immediately
       setApplications(prev => 
         prev.map(app => 
           selectedApplications.includes(app._id) ? { ...app, status } : app
@@ -196,10 +236,12 @@ export default function ApplicationsPage() {
       );
       
       setSelectedApplications([]);
-      alert(`${selectedApplications.length} applications updated to ${status}`);
+      alert(`${selectedApplications.length} applications updated to ${status} successfully`);
     } catch (err) {
       console.error('Bulk update failed', err);
-      alert('Failed to update applications');
+      alert('Failed to update applications: ' + (err.response?.data?.error || err.message));
+      // Refresh on error to ensure consistency
+      fetchApplications();
     }
   };
 
@@ -511,6 +553,7 @@ export default function ApplicationsPage() {
                     onStatusUpdate={updateStatus}
                     onDownloadResume={downloadResume}
                     onSendMessage={(appId) => setMessageModal({ isOpen: true, applicationId: appId })}
+                    onEditNotes={(appId) => setNotesModal({ isOpen: true, applicationId: appId })}
                     getStatusColor={getStatusColor}
                     getScoreColor={getScoreColor}
                   />
@@ -528,6 +571,15 @@ export default function ApplicationsPage() {
         onClose={() => setMessageModal({ isOpen: false, applicationId: null })}
         applications={applications}
       />
+
+      {/* Notes Modal */}
+      <NotesModal
+        isOpen={notesModal.isOpen}
+        applicationId={notesModal.applicationId}
+        onClose={() => setNotesModal({ isOpen: false, applicationId: null })}
+        onSave={saveNotes}
+        applications={applications}
+      />
     </div>
   );
 }
@@ -540,6 +592,7 @@ function ApplicationRow({
   onStatusUpdate, 
   onDownloadResume, 
   onSendMessage,
+  onEditNotes,
   getStatusColor,
   getScoreColor 
 }: any) {
@@ -626,6 +679,12 @@ function ApplicationRow({
             className="text-purple-600 hover:text-purple-900"
           >
             Message
+          </button>
+          <button
+            onClick={() => onEditNotes(application._id)}
+            className="text-orange-600 hover:text-orange-900"
+          >
+            {application.hrNotes ? 'Edit Notes' : 'Add Notes'}
           </button>
         </div>
       </td>
@@ -722,6 +781,81 @@ function MessageModal({ isOpen, applicationId, onClose, applications }: any) {
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
             >
               {sending ? 'Sending...' : 'Send Message'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Notes Modal Component
+function NotesModal({ isOpen, applicationId, onClose, onSave, applications }: any) {
+  const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const application = applications.find((app: any) => app._id === applicationId);
+
+  useEffect(() => {
+    if (application?.hrNotes) {
+      setNotes(application.hrNotes);
+    } else {
+      setNotes('');
+    }
+  }, [application]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSave(applicationId, notes);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">HR Notes</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+
+        {application && (
+          <div className="mb-4 p-3 bg-gray-50 rounded">
+            <p className="text-sm"><strong>Candidate:</strong> {application.name}</p>
+            <p className="text-sm"><strong>Job:</strong> {application.job.title}</p>
+            <p className="text-sm"><strong>Status:</strong> {application.status}</p>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={8}
+              placeholder="Add your notes about this candidate, interview feedback, next steps, etc..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+            >
+              {saving ? 'Saving...' : 'Save Notes'}
             </button>
           </div>
         </div>
