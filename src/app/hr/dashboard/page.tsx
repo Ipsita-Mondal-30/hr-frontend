@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import api from "@/lib/api";
 
 export default function HRDashboardPage() {
@@ -19,7 +20,36 @@ export default function HRDashboardPage() {
     }[];
   }
 
+  interface EmployeeData {
+    totalEmployees: number;
+    activeProjects: number;
+    completedProjects: number;
+    averagePerformance: number;
+    topPerformers: {
+      employee: {
+        _id: string;
+        user: { name: string };
+        position: string;
+        performanceScore: number;
+      };
+      metrics: {
+        projectsInvolved: number;
+        averageRating: number;
+        feedbackCount: number;
+      };
+    }[];
+    recentFeedback: {
+      _id: string;
+      employee: { user: { name: string }; position: string };
+      reviewer: { name: string };
+      overallRating: number;
+      type: string;
+      createdAt: string;
+    }[];
+  }
+
   const [data, setData] = useState<DashboardData | null>(null);
+  const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [seeding, setSeeding] = useState(false);
@@ -38,6 +68,44 @@ export default function HRDashboardPage() {
         const res = await api.get("/admin/dashboard");
         console.log("✅ Dashboard data received:", res.data);
         setData(res.data);
+
+        // Fetch employee performance data
+        try {
+          const [employeesRes, projectsRes, topPerformersRes, feedbackRes] = await Promise.all([
+            api.get("/employees?limit=1000"),
+            api.get("/projects?limit=1000"),
+            api.get("/employees/top-performers?limit=5"),
+            api.get("/feedback?limit=10")
+          ]);
+
+          const employees = employeesRes.data?.employees || [];
+          const projects = projectsRes.data?.projects || [];
+          const topPerformers = topPerformersRes.data?.topPerformers || [];
+          const feedback = feedbackRes.data?.feedback || [];
+
+          setEmployeeData({
+            totalEmployees: employees.length,
+            activeProjects: projects.filter((p: any) => p.status === 'active').length,
+            completedProjects: projects.filter((p: any) => p.status === 'completed').length,
+            averagePerformance: employees.length > 0 
+              ? employees.reduce((sum: number, emp: any) => sum + (emp.performanceScore || 0), 0) / employees.length
+              : 0,
+            topPerformers,
+            recentFeedback: feedback
+          });
+        } catch (empErr) {
+          console.warn("⚠️ Could not fetch employee data:", empErr);
+          // Set default empty data
+          setEmployeeData({
+            totalEmployees: 0,
+            activeProjects: 0,
+            completedProjects: 0,
+            averagePerformance: 0,
+            topPerformers: [],
+            recentFeedback: []
+          });
+        }
+
         setError(null);
       } catch (err: any) {
         console.error("❌ Error fetching HR dashboard data:", err);
@@ -135,36 +203,153 @@ export default function HRDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-        <StatCard label="Total Jobs" value={data.totalJobs} />
-        <StatCard label="Open Jobs" value={data.openJobs} />
-        <StatCard label="Closed Jobs" value={data.closedJobs} />
-        <StatCard label="Total Applications" value={data.totalApplications} />
-        <StatCard label="Avg Match Score" value={data.avgMatchScore ? data.avgMatchScore.toFixed(2) : '0'} />
+      {/* Recruitment Stats */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold mb-4 text-blue-800">📋 Recruitment Overview</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+          <StatCard label="Total Jobs" value={data.totalJobs} color="blue" />
+          <StatCard label="Open Jobs" value={data.openJobs} color="green" />
+          <StatCard label="Closed Jobs" value={data.closedJobs} color="gray" />
+          <StatCard label="Total Applications" value={data.totalApplications} color="purple" />
+          <StatCard label="Avg Match Score" value={data.avgMatchScore ? data.avgMatchScore.toFixed(1) + '%' : '0%'} color="orange" />
+        </div>
       </div>
 
-      {/* Recent Applications */}
-      {data.recentApplications && data.recentApplications.length > 0 && (
+      {/* Employee Performance Stats */}
+      {employeeData && (
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Recent Applications</h2>
-          <div className="space-y-3">
-            {data.recentApplications.map((app) => (
-              <div key={app._id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                <div>
-                  <div className="font-medium">{app.name}</div>
-                  <div className="text-sm text-gray-600">{app.email}</div>
-                  <div className="text-sm text-gray-500">{app.job?.title}</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-semibold text-blue-600">
-                    {app.matchScore ? `${app.matchScore}%` : 'N/A'}
+          <h2 className="text-lg font-semibold mb-4 text-green-800">👥 Employee Performance Overview</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <StatCard label="Total Employees" value={employeeData.totalEmployees} color="blue" />
+            <StatCard label="Active Projects" value={employeeData.activeProjects} color="green" />
+            <StatCard label="Completed Projects" value={employeeData.completedProjects} color="purple" />
+            <StatCard label="Avg Performance" value={employeeData.averagePerformance.toFixed(1) + '%'} color="orange" />
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Performers */}
+        {employeeData && employeeData.topPerformers.length > 0 && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">🏆 Top Performers</h2>
+              <Link href="/hr/employees" className="text-sm text-blue-600 hover:text-blue-800">
+                View All →
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {employeeData.topPerformers.map((performer, index) => (
+                <div key={performer.employee._id} className="flex items-center justify-between p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-yellow-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <div className="font-medium">{performer.employee?.user?.name || 'Unknown Employee'}</div>
+                      <div className="text-sm text-gray-600">{performer.employee?.position || 'No Position'}</div>
+                      <div className="text-xs text-gray-500">
+                        {performer.metrics?.projectsInvolved || 0} projects • {performer.metrics?.feedbackCount || 0} feedback
+                      </div>
+                    </div>
                   </div>
+                  <div className="text-right">
+                    <div className="font-bold text-green-600 text-lg">
+                      {performer.employee.performanceScore}%
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {performer.metrics.averageRating.toFixed(1)}★ avg
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Recent Applications */}
+        {data.recentApplications && data.recentApplications.length > 0 && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">📋 Recent Applications</h2>
+              <Link href="/hr/applications" className="text-sm text-blue-600 hover:text-blue-800">
+                View All →
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {data.recentApplications.map((app) => (
+                <div key={app._id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                  <div>
+                    <div className="font-medium">{app.name}</div>
+                    <div className="text-sm text-gray-600">{app.email}</div>
+                    <div className="text-sm text-gray-500">{app.job?.title}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold text-blue-600">
+                      {app.matchScore ? `${app.matchScore}%` : 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Recent Feedback */}
+      {employeeData && employeeData.recentFeedback.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">💬 Recent Feedback</h2>
+            <Link href="/hr/feedback" className="text-sm text-blue-600 hover:text-blue-800">
+              View All →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {employeeData.recentFeedback.slice(0, 4).map((feedback) => (
+              <div key={feedback._id} className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-medium text-sm">{feedback.employee?.user?.name || 'Unknown Employee'}</div>
+                  <div className="flex items-center space-x-1">
+                    <span className="text-yellow-500">★</span>
+                    <span className="text-sm font-medium">{feedback.overallRating || 0}/5</span>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-600 mb-1">{feedback.employee?.position || 'No Position'}</div>
+                <div className="text-xs text-gray-500">
+                  {feedback.type || 'Feedback'} by {feedback.reviewer?.name || 'Unknown'} • {new Date(feedback.createdAt).toLocaleDateString()}
                 </div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      {/* Quick Actions */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold mb-4">⚡ Quick Actions</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <QuickActionCard 
+            title="Manage Employees" 
+            description="View and manage employee profiles" 
+            icon="👥" 
+            href="/hr/employees" 
+          />
+
+          <QuickActionCard 
+            title="Give Feedback" 
+            description="Provide employee feedback" 
+            icon="💬" 
+            href="/hr/feedback/give" 
+          />
+          <QuickActionCard 
+            title="Performance Reports" 
+            description="View performance analytics" 
+            icon="📈" 
+            href="/hr/reports" 
+          />
+        </div>
+      </div>
 
       {/* Show message if no data */}
       {data.totalJobs === 0 && data.totalApplications === 0 && (
@@ -184,11 +369,31 @@ export default function HRDashboardPage() {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
+function StatCard({ label, value, color = 'blue' }: { label: string; value: string | number; color?: string }) {
+  const colorClasses = {
+    blue: 'text-blue-700 bg-blue-50 border-blue-200',
+    green: 'text-green-700 bg-green-50 border-green-200',
+    purple: 'text-purple-700 bg-purple-50 border-purple-200',
+    orange: 'text-orange-700 bg-orange-50 border-orange-200',
+    gray: 'text-gray-700 bg-gray-50 border-gray-200'
+  };
+
   return (
-    <div className="p-4 bg-white rounded-xl shadow-md text-center">
-      <div className="text-gray-500 text-sm">{label}</div>
-      <div className="text-xl font-semibold text-blue-700">{value}</div>
+    <div className={`p-4 rounded-lg border text-center ${colorClasses[color as keyof typeof colorClasses] || colorClasses.blue}`}>
+      <div className="text-gray-600 text-sm font-medium">{label}</div>
+      <div className="text-xl font-bold mt-1">{value}</div>
     </div>
+  );
+}
+
+function QuickActionCard({ title, description, icon, href }: { title: string; description: string; icon: string; href: string }) {
+  return (
+    <Link href={href} className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all group">
+      <div className="text-center">
+        <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">{icon}</div>
+        <h3 className="font-medium text-gray-900 mb-1">{title}</h3>
+        <p className="text-xs text-gray-600">{description}</p>
+      </div>
+    </Link>
   );
 }

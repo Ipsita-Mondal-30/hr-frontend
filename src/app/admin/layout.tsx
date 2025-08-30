@@ -27,6 +27,21 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       ]
     },
     {
+      label: '👥 Employee Management',
+      items: [
+        { href: '/admin/employees', label: 'View Employees' },
+        { href: '/admin/employees/create', label: 'Add Employee' },
+        { href: '/admin/payroll', label: 'Payroll Management' }
+      ]
+    },
+    {
+      label: '📊 Project Management',
+      items: [
+        { href: '/admin/projects', label: 'All Projects' },
+        { href: '/admin/projects/create', label: 'Create Project' }
+      ]
+    },
+    {
       label: '📅 Interview Management',
       items: [
         { href: '/admin/interviews', label: 'All Interviews' },

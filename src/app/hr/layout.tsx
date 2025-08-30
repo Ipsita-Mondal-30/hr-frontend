@@ -85,11 +85,36 @@ export default function HRLayout({ children }: { children: ReactNode }) {
             👥 Candidate Management
           </Link>
           <Link 
+            href="/hr/employees" 
+            className="px-3 py-2 rounded hover:bg-gray-700 transition-colors"
+          >
+            👨‍💼 Employee Management
+          </Link>
+          <Link 
+            href="/hr/payroll" 
+            className="px-3 py-2 rounded hover:bg-gray-700 transition-colors"
+          >
+            💰 Payroll Management
+          </Link>
+          <Link 
+            href="/hr/performance" 
+            className="px-3 py-2 rounded hover:bg-gray-700 transition-colors"
+          >
+            📈 Performance & OKRs
+          </Link>
+          <Link 
             href="/hr/jobs" 
             className="px-3 py-2 rounded hover:bg-gray-700 transition-colors"
           >
             💼 Manage Jobs
           </Link>
+          <Link 
+            href="/hr/projects" 
+            className="px-3 py-2 rounded hover:bg-gray-700 transition-colors"
+          >
+            📊 View Projects
+          </Link>
+
           <Link 
             href="/hr/reports" 
             className="px-3 py-2 rounded hover:bg-gray-700 transition-colors"

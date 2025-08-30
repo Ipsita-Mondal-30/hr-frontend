@@ -8,6 +8,7 @@ interface Stats {
   jobsCount: number;
   applicationsCount: number;
   hrCount: number;
+  count: number;
   candidateCount: number;
   departmentsCount: number;
   rolesCount: number;
@@ -55,7 +56,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchData();
-    
+
     // Refresh data every 30 seconds to keep counts updated
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
@@ -77,9 +78,11 @@ export default function AdminDashboard() {
   }
 
   const quickActions = [
+    { label: 'Manage Employees', href: '/admin/employees', count: stats?.employeeCount, color: 'bg-blue-500' },
+    { label: 'Create Project', href: '/admin/projects/create', count: undefined, color: 'bg-green-500' },
     { label: 'Verify HR Accounts', href: '/admin/users/verification', count: stats?.pendingHRVerifications, color: 'bg-yellow-500' },
+    { label: 'View Projects', href: '/admin/projects', count: stats?.projectCount, color: 'bg-purple-500' },
     { label: 'Approve Jobs', href: '/admin/jobs/pending', count: stats?.pendingJobApprovals, color: 'bg-orange-500' },
-    { label: 'Review Jobs', href: '/admin/jobs', count: stats?.activeJobs, color: 'bg-blue-500' },
     { label: 'Support Tickets', href: '/admin/support/tickets', count: 0, color: 'bg-red-500' }
   ];
 
@@ -98,40 +101,76 @@ export default function AdminDashboard() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatCard 
-          label="Total Users" 
-          value={(stats?.hrCount || 0) + (stats?.candidateCount || 0)} 
-          icon="👥"
-          trend="+12% this month"
+        <StatCard
+          label="Total Employees"
+          value={stats?.employeeCount || 0}
+          icon="�‍💼"
+          trend="+3 new hires this month"
           color="bg-blue-500"
         />
-        <StatCard 
-          label="Active Jobs" 
-          value={stats?.activeJobs || stats?.jobsCount} 
-          icon="💼"
-          trend="+5% this week"
+        <StatCard
+          label="Active Projects"
+          value={stats?.projectCount || 0}
+          icon="�"
+          trend="+2 projects started"
           color="bg-green-500"
         />
-        <StatCard 
-          label="Applications" 
-          value={stats?.applicationsCount} 
-          icon="📄"
-          trend="+18% this month"
+        <StatCard
+          label="HR Staff"
+          value={stats?.hrCount}
+          icon="�‍💼"
+          trend="Managing operations"
           color="bg-purple-500"
         />
-        <StatCard 
-          label="Match Score Avg" 
-          value={stats?.avgMatchScore} 
-          icon="🎯"
-          trend="↑ 2.3% improvement"
+        <StatCard
+          label="Candidates"
+          value={stats?.candidateCount}
+          icon="👤"
+          trend="+18% this month"
           color="bg-orange-500"
         />
       </div>
 
-      {/* Detailed Stats */}
+      {/* Employee Performance Overview */}
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Employee Performance Overview</h2>
+          <Link href="/admin/employees" className="text-blue-600 hover:text-blue-800 text-sm">
+            View All Employees →
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <StatCard
+            label="Active Employees"
+            value={stats?.employeeCount || 0}
+            icon="👥"
+            color="bg-blue-500"
+          />
+          <StatCard
+            label="Active Projects"
+            value={stats?.projectCount || 0}
+            icon="📊"
+            color="bg-green-500"
+          />
+          <StatCard
+            label="Total Applications"
+            value={stats?.applicationsCount || 0}
+            icon="📄"
+            color="bg-yellow-500"
+          />
+          <StatCard
+            label="HR Users"
+            value={stats?.hrCount || 0}
+            icon="👨‍💼"
+            color="bg-purple-500"
+          />
+        </div>
+      </div>
+
+      {/* System Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatCard label="HR Users" value={stats?.hrCount} icon="🏢" />
-        <StatCard label="Candidates" value={stats?.candidateCount} icon="👤" />
+        <StatCard label="Active Jobs" value={stats?.activeJobs || stats?.jobsCount} icon="💼" />
+        <StatCard label="Applications" value={stats?.applicationsCount} icon="📄" />
         <StatCard label="Total Interviews" value={stats?.totalInterviews} icon="📅" />
         <StatCard label="Upcoming Interviews" value={stats?.upcomingInterviews} icon="⏰" />
       </div>
@@ -160,7 +199,7 @@ export default function AdminDashboard() {
                   <div className={`w-3 h-3 rounded-full ${action.color}`}></div>
                   <span className="font-medium text-gray-900">{action.label}</span>
                 </div>
-                {action.count > 0 && (
+                {action.count !== undefined && action.count > 0 && (
                   <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
                     {action.count}
                   </span>
@@ -222,15 +261,15 @@ export default function AdminDashboard() {
   );
 }
 
-function StatCard({ 
-  label, 
-  value, 
-  icon, 
-  trend, 
-  color = 'bg-gray-500' 
-}: { 
-  label: string; 
-  value: number | string | undefined; 
+function StatCard({
+  label,
+  value,
+  icon,
+  trend,
+  color = 'bg-gray-500'
+}: {
+  label: string;
+  value: number | string | undefined;
   icon?: string;
   trend?: string;
   color?: string;
