@@ -15,7 +15,7 @@ export default function AppliedJobsPage() {
 
   const fetchApplications = async () => {
     try {
-      const res = await api.get('/applications/my');
+      const res = await api.get('/candidate/applications');
       setApplications(res.data);
     } catch (err) {
       console.error('Error fetching applications:', err);

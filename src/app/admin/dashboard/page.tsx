@@ -16,6 +16,8 @@ interface Stats {
   pendingApplications: number;
   pendingHRVerifications: number;
   pendingJobApprovals: number;
+  totalInterviews: number;
+  upcomingInterviews: number;
   recentActivity: {
     newCandidates: number;
     newHRs: number;
@@ -130,8 +132,16 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCard label="HR Users" value={stats?.hrCount} icon="🏢" />
         <StatCard label="Candidates" value={stats?.candidateCount} icon="👤" />
+        <StatCard label="Total Interviews" value={stats?.totalInterviews} icon="📅" />
+        <StatCard label="Upcoming Interviews" value={stats?.upcomingInterviews} icon="⏰" />
+      </div>
+
+      {/* Additional Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCard label="Departments" value={stats?.departmentsCount} icon="🏛️" />
         <StatCard label="Job Roles" value={stats?.rolesCount} icon="📋" />
+        <StatCard label="Pending Applications" value={stats?.pendingApplications} icon="⏳" />
+        <StatCard label="Pending HR Verifications" value={stats?.pendingHRVerifications} icon="✅" />
       </div>
 
       {/* Quick Actions & Recent Activity */}

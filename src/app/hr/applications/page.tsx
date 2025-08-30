@@ -9,15 +9,15 @@ interface Application {
   name: string;
   email: string;
   phone: string;
-  candidate: { 
+  candidate: {
     _id: string;
-    name: string; 
+    name: string;
     email: string;
     skills?: string[];
     experience?: string;
   };
-  job: { 
-    _id: string; 
+  job: {
+    _id: string;
     title: string;
     companyName: string;
     department: { name: string };
@@ -103,40 +103,40 @@ export default function ApplicationsPage() {
     let filtered = applications.filter(app => {
       // Job filter
       if (filters.job && app.job._id !== filters.job) return false;
-      
+
       // Status filter
       if (filters.status && app.status !== filters.status) return false;
-      
+
       // Minimum score filter
       if (filters.minScore && (!app.matchScore || app.matchScore < parseInt(filters.minScore))) return false;
-      
+
       // Skills filter
       if (filters.skills) {
         const skillsToFind = filters.skills.toLowerCase().split(',').map(s => s.trim());
         const candidateSkills = app.candidate?.skills?.map(s => s.toLowerCase()) || [];
-        const hasSkills = skillsToFind.some(skill => 
+        const hasSkills = skillsToFind.some(skill =>
           candidateSkills.some(candidateSkill => candidateSkill.includes(skill))
         );
         if (!hasSkills) return false;
       }
-      
+
       // Experience filter
       if (filters.experience && app.candidate?.experience !== filters.experience) return false;
-      
+
       // Search filter (name, email, job title)
       if (filters.search) {
         const searchTerm = filters.search.toLowerCase();
         const searchableText = `${app.name} ${app.email} ${app.job.title} ${app.job.companyName}`.toLowerCase();
         if (!searchableText.includes(searchTerm)) return false;
       }
-      
+
       return true;
     });
 
     // Sort applications
     filtered.sort((a, b) => {
       let aValue, bValue;
-      
+
       switch (sortBy) {
         case 'matchScore':
           aValue = a.matchScore || 0;
@@ -156,7 +156,7 @@ export default function ApplicationsPage() {
           bValue = new Date(b.createdAt).getTime();
           break;
       }
-      
+
       if (sortOrder === 'asc') {
         return aValue > bValue ? 1 : -1;
       } else {
@@ -172,14 +172,14 @@ export default function ApplicationsPage() {
       console.log(`🔄 Updating application ${id} status to ${newStatus}`);
       const response = await api.put(`/applications/${id}/status`, { status: newStatus });
       console.log('✅ Status updated successfully:', response.data);
-      
+
       // Update local state immediately
-      setApplications(prev => 
-        prev.map(app => 
+      setApplications(prev =>
+        prev.map(app =>
           app._id === id ? { ...app, status: newStatus } : app
         )
       );
-      
+
       // Show success message
       alert(`Status updated to ${newStatus} successfully`);
     } catch (err) {
@@ -195,14 +195,14 @@ export default function ApplicationsPage() {
       console.log(`📝 Saving notes for application ${id}`);
       const response = await api.put(`/applications/${id}/notes`, { notes });
       console.log('✅ Notes saved successfully:', response.data);
-      
+
       // Update local state immediately
-      setApplications(prev => 
-        prev.map(app => 
+      setApplications(prev =>
+        prev.map(app =>
           app._id === id ? { ...app, hrNotes: notes } : app
         )
       );
-      
+
       setNotesModal({ isOpen: false, applicationId: null });
       alert('Notes saved successfully');
     } catch (err) {
@@ -219,22 +219,22 @@ export default function ApplicationsPage() {
 
     try {
       console.log(`🔄 Bulk updating ${selectedApplications.length} applications to ${status}`);
-      
+
       // Update each application individually for better reliability
-      const updatePromises = selectedApplications.map(appId => 
+      const updatePromises = selectedApplications.map(appId =>
         api.put(`/applications/${appId}/status`, { status })
       );
-      
+
       await Promise.all(updatePromises);
       console.log('✅ Bulk update completed successfully');
-      
+
       // Update local state immediately
-      setApplications(prev => 
-        prev.map(app => 
+      setApplications(prev =>
+        prev.map(app =>
           selectedApplications.includes(app._id) ? { ...app, status } : app
         )
       );
-      
+
       setSelectedApplications([]);
       alert(`${selectedApplications.length} applications updated to ${status} successfully`);
     } catch (err) {
@@ -250,7 +250,7 @@ export default function ApplicationsPage() {
       alert('No resume available');
       return;
     }
-    
+
     const link = document.createElement('a');
     link.href = resumeUrl;
     link.download = `${candidateName}_Resume.pdf`;
@@ -370,7 +370,7 @@ export default function ApplicationsPage() {
             onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          
+
           <select
             value={filters.job}
             onChange={(e) => setFilters(prev => ({ ...prev, job: e.target.value }))}
@@ -585,16 +585,16 @@ export default function ApplicationsPage() {
 }
 
 // Application Row Component
-function ApplicationRow({ 
-  application, 
-  isSelected, 
-  onSelect, 
-  onStatusUpdate, 
-  onDownloadResume, 
+function ApplicationRow({
+  application,
+  isSelected,
+  onSelect,
+  onStatusUpdate,
+  onDownloadResume,
   onSendMessage,
   onEditNotes,
   getStatusColor,
-  getScoreColor 
+  getScoreColor
 }: any) {
   return (
     <tr className={isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}>
@@ -714,7 +714,7 @@ function MessageModal({ isOpen, applicationId, onClose, applications }: any) {
         message,
         recipientEmail: application?.email
       });
-      
+
       alert('Message sent successfully!');
       setMessage('');
       setSubject('');

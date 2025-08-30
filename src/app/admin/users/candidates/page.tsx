@@ -41,6 +41,10 @@ export default function ViewCandidatesPage() {
 
   useEffect(() => {
     fetchCandidates();
+    
+    // Set up auto-refresh every 30 seconds to prevent stale data
+    const interval = setInterval(fetchCandidates, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchCandidates = async () => {
@@ -54,6 +58,31 @@ export default function ViewCandidatesPage() {
       console.error('Error fetching candidates:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteCandidate = async (candidateId: string, candidateName: string) => {
+    if (!confirm(`Are you sure you want to delete ${candidateName}? This will also delete all their applications and related data. This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      console.log(`🗑️ Deleting candidate: ${candidateId}`);
+      await api.delete(`/admin/users/${candidateId}`);
+      
+      // Remove from local state
+      setCandidates(prev => prev.filter(candidate => candidate._id !== candidateId));
+      
+      // Close modal if this candidate was selected
+      if (selectedCandidate?._id === candidateId) {
+        setSelectedCandidate(null);
+      }
+      
+      alert(`${candidateName} has been deleted successfully.`);
+      console.log(`✅ Successfully deleted candidate: ${candidateName}`);
+    } catch (error) {
+      console.error('Error deleting candidate:', error);
+      alert('Failed to delete candidate. Please try again.');
     }
   };
 
@@ -88,8 +117,20 @@ export default function ViewCandidatesPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">View Candidates</h1>
-        <div className="text-sm text-gray-600">
-          Total: {candidates.length} candidates
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => {
+              setLoading(true);
+              fetchCandidates();
+            }}
+            className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+            disabled={loading}
+          >
+            {loading ? '🔄 Refreshing...' : '🔄 Refresh'}
+          </button>
+          <div className="text-sm text-gray-600">
+            Total: {candidates.length} candidates
+          </div>
         </div>
       </div>
 
@@ -126,12 +167,21 @@ export default function ViewCandidatesPage() {
                   <p className="text-sm text-gray-500">{candidate.phone}</p>
                 )}
               </div>
-              <button
-                onClick={() => setSelectedCandidate(candidate)}
-                className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200"
-              >
-                View Details
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSelectedCandidate(candidate)}
+                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200"
+                >
+                  View Details
+                </button>
+                <button
+                  onClick={() => deleteCandidate(candidate._id, candidate.name)}
+                  className="px-3 py-1 bg-red-100 text-red-700 rounded-md text-sm hover:bg-red-200"
+                  title="Delete candidate"
+                >
+                  🗑️
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3">

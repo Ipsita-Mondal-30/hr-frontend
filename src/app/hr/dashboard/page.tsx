@@ -32,7 +32,7 @@ export default function HRDashboardPage() {
         
         // First check if we have authentication
         const authRes = await api.get("/auth/me");
-        console.log("🔐 Current user:", authRes.data);
+        console.log("🔐 Current user: line 35", authRes.data);
         
         // Then fetch dashboard data
         const res = await api.get("/admin/dashboard");

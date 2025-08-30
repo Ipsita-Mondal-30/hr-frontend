@@ -19,6 +19,17 @@ interface Interview {
   type: 'phone' | 'video' | 'in-person';
   notes?: string;
   feedback?: string;
+  rating?: number;
+  outcome?: string;
+  scorecard?: {
+    technicalSkills: number;
+    communication: number;
+    problemSolving: number;
+    culturalFit: number;
+    overall: number;
+    feedback: string;
+    recommendation: 'hire' | 'no-hire' | 'maybe';
+  };
   createdAt: string;
 }
 
@@ -268,32 +279,37 @@ export default function AllInterviewsPage() {
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(interview.status)}`}>
                         {interview.status}
                       </span>
-                      {interview.rating && (
+                      {interview.scorecard && (
                         <div className="flex items-center text-xs text-gray-600">
                           <span className="text-yellow-400">⭐</span>
-                          <span className="ml-1">{interview.rating}/5</span>
+                          <span className="ml-1">{interview.scorecard.overall}/5</span>
                         </div>
                       )}
-                      {interview.outcome && (
+                      {interview.scorecard?.recommendation && (
                         <div className="text-xs">
                           <span className={`px-1 py-0.5 rounded text-xs ${
-                            interview.outcome === 'hire' ? 'bg-green-100 text-green-700' :
-                            interview.outcome === 'no-hire' ? 'bg-red-100 text-red-700' :
+                            interview.scorecard.recommendation === 'hire' ? 'bg-green-100 text-green-700' :
+                            interview.scorecard.recommendation === 'no-hire' ? 'bg-red-100 text-red-700' :
                             'bg-yellow-100 text-yellow-700'
                           }`}>
-                            {interview.outcome}
+                            {interview.scorecard.recommendation}
                           </span>
                         </div>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => setSelectedInterview(interview)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      View Details
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => setSelectedInterview(interview)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        View Details
+                      </button>
+                      {interview.scorecard && (
+                        <span className="text-green-600 text-xs">📋 Scorecard</span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -400,8 +416,81 @@ export default function AllInterviewsPage() {
                 </div>
               )}
 
-              {/* Rating and Outcome */}
-              {(selectedInterview.rating || selectedInterview.outcome) && (
+              {/* Scorecard Section */}
+              {selectedInterview.scorecard && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Interview Scorecard</h3>
+                  <div className="bg-blue-50 p-4 rounded-lg space-y-4">
+                    {/* Overall Score */}
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-blue-900">Overall Score:</span>
+                      <div className="flex items-center">
+                        <div className="flex items-center">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <span
+                              key={star}
+                              className={`text-lg ${star <= Math.round(selectedInterview.scorecard.overall) ? 'text-yellow-400' : 'text-gray-300'}`}
+                            >
+                              ⭐
+                            </span>
+                          ))}
+                        </div>
+                        <span className="ml-2 text-blue-800 font-bold text-lg">
+                          {selectedInterview.scorecard.overall}/5
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Individual Scores */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-blue-800">Technical Skills:</span>
+                        <span className="font-medium">{selectedInterview.scorecard.technicalSkills}/5</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-blue-800">Communication:</span>
+                        <span className="font-medium">{selectedInterview.scorecard.communication}/5</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-blue-800">Problem Solving:</span>
+                        <span className="font-medium">{selectedInterview.scorecard.problemSolving}/5</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-blue-800">Cultural Fit:</span>
+                        <span className="font-medium">{selectedInterview.scorecard.culturalFit}/5</span>
+                      </div>
+                    </div>
+
+                    {/* Recommendation */}
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-blue-900">Recommendation:</span>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        selectedInterview.scorecard.recommendation === 'hire' ? 'bg-green-100 text-green-800' :
+                        selectedInterview.scorecard.recommendation === 'no-hire' ? 'bg-red-100 text-red-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {selectedInterview.scorecard.recommendation === 'hire' ? '✅ Hire' :
+                         selectedInterview.scorecard.recommendation === 'no-hire' ? '❌ No Hire' : '🤔 Maybe'}
+                      </span>
+                    </div>
+
+                    {/* Detailed Feedback */}
+                    {selectedInterview.scorecard.feedback && (
+                      <div>
+                        <h4 className="font-medium text-blue-900 mb-2">Detailed Feedback:</h4>
+                        <div className="bg-white p-3 rounded border border-blue-200">
+                          <p className="text-gray-700 text-sm whitespace-pre-wrap">
+                            {selectedInterview.scorecard.feedback}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Legacy Rating and Outcome (for backward compatibility) */}
+              {(selectedInterview.rating || selectedInterview.outcome) && !selectedInterview.scorecard && (
                 <div>
                   <h3 className="text-lg font-semibold mb-3">Interview Results</h3>
                   <div className="bg-blue-50 p-4 rounded-lg space-y-2">
@@ -448,6 +537,13 @@ export default function AllInterviewsPage() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}  
+          </div>
           </div>
         </div>
       )}

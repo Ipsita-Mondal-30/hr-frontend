@@ -18,6 +18,7 @@ interface CandidateProfile {
   linkedIn: string;
   github: string;
   profilePicture: string;
+  profileCompleteness?: number;
 }
 
 export default function CandidateProfilePage() {
@@ -35,7 +36,8 @@ export default function CandidateProfilePage() {
     portfolio: '',
     linkedIn: '',
     github: '',
-    profilePicture: ''
+    profilePicture: '',
+    profileCompleteness: 0
   });
   
   const [editing, setEditing] = useState(false);
@@ -58,7 +60,8 @@ export default function CandidateProfilePage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.put('/candidate/profile', profile);
+      const res = await api.put('/candidate/profile', profile);
+      setProfile({ ...profile, ...res.data }); // Update with response that includes new completeness
       setEditing(false);
       alert('Profile updated successfully!');
     } catch (err) {
@@ -90,24 +93,8 @@ export default function CandidateProfilePage() {
     }));
   };
 
-  const calculateProfileCompleteness = () => {
-    const fields = [
-      profile.name,
-      profile.email,
-      profile.phone,
-      profile.location,
-      profile.expectedSalary,
-      profile.experience,
-      profile.bio,
-      profile.resumeUrl,
-      profile.skills.length > 0 ? 'skills' : ''
-    ];
-    
-    const completedFields = fields.filter(field => field && field.toString().trim()).length;
-    return Math.round((completedFields / fields.length) * 100);
-  };
-
-  const completeness = calculateProfileCompleteness();
+  // Use the backend-calculated profile completeness
+  const completeness = profile.profileCompleteness || 0;
 
   return (
     <div className="p-6 max-w-4xl mx-auto">

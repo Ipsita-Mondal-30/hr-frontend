@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import api from '@/lib/api';
 
 interface SalaryData {
   role: string;
@@ -73,12 +74,68 @@ export default function SalarySearchPage() {
     }
   ];
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     setLoading(true);
     setSearched(true);
     
-    // Simulate API call with more realistic delay
-    setTimeout(() => {
+    try {
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      if (searchParams.role) queryParams.append('role', searchParams.role);
+      if (searchParams.location) queryParams.append('location', searchParams.location);
+      if (searchParams.experience) queryParams.append('experience', searchParams.experience);
+      if (searchParams.company) queryParams.append('company', searchParams.company);
+      
+      console.log('🔍 Searching salary data with params:', searchParams);
+      
+      // Try to get real salary data from jobs
+      const response = await api.get(`/jobs/salary-data?${queryParams.toString()}`);
+      const realData = response.data || [];
+      
+      if (realData.length > 0) {
+        console.log(`📊 Found ${realData.length} salary data points`);
+        setSalaryData(realData);
+      } else {
+        console.log('📊 No real data found, using mock data');
+        // Fallback to mock data with better filtering
+        let filtered = mockSalaryData;
+        
+        if (searchParams.role) {
+          filtered = filtered.filter(data => 
+            data.role.toLowerCase().includes(searchParams.role.toLowerCase())
+          );
+        }
+        
+        if (searchParams.location) {
+          filtered = filtered.filter(data => 
+            data.location.toLowerCase().includes(searchParams.location.toLowerCase())
+          );
+        }
+        
+        if (searchParams.experience) {
+          const expRange = searchParams.experience;
+          filtered = filtered.filter(data => {
+            if (expRange === '0-2') return data.experience.includes('0-2');
+            if (expRange === '3-5') return data.experience.includes('3-5') || data.experience.includes('2-4');
+            if (expRange === '5-8') return data.experience.includes('5-8');
+            if (expRange === '8+') return data.experience.includes('8+');
+            return true;
+          });
+        }
+        
+        if (searchParams.company) {
+          filtered = filtered.filter(data => 
+            data.companies.some(company => 
+              company.toLowerCase().includes(searchParams.company.toLowerCase())
+            )
+          );
+        }
+        
+        setSalaryData(filtered);
+      }
+    } catch (error) {
+      console.error('Error fetching salary data:', error);
+      // Fallback to mock data
       let filtered = mockSalaryData;
       
       if (searchParams.role) {
@@ -93,29 +150,10 @@ export default function SalarySearchPage() {
         );
       }
       
-      if (searchParams.experience) {
-        // Handle experience filtering more flexibly
-        const expRange = searchParams.experience;
-        filtered = filtered.filter(data => {
-          if (expRange === '0-2') return data.experience.includes('0-2');
-          if (expRange === '3-5') return data.experience.includes('3-5') || data.experience.includes('2-4');
-          if (expRange === '5-8') return data.experience.includes('5-8');
-          if (expRange === '8+') return data.experience.includes('8+');
-          return true;
-        });
-      }
-      
-      if (searchParams.company) {
-        filtered = filtered.filter(data => 
-          data.companies.some(company => 
-            company.toLowerCase().includes(searchParams.company.toLowerCase())
-          )
-        );
-      }
-      
       setSalaryData(filtered);
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   const handleInputChange = (key: string, value: string) => {

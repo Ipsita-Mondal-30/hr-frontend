@@ -1,189 +1,125 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/lib/AuthContext';
-import { getAuthToken } from '@/lib/cookies';
-import { jwtDecode } from 'jwt-decode';
-import Link from 'next/link';
+import api from '@/lib/api';
 
 export default function DebugPage() {
-  const { user, loading } = useAuth();
-  const [tokenInfo, setTokenInfo] = useState<any>(null);
-  const [rawToken, setRawToken] = useState<string | null>(null);
+  const [apiTest, setApiTest] = useState<any>(null);
+  const [authTest, setAuthTest] = useState<any>(null);
+  const [candidatesTest, setCandidatesTest] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = getAuthToken();
-    setRawToken(token);
-    
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        setTokenInfo(decoded);
-      } catch (err) {
-        console.error('Token decode error:', err);
-      }
-    }
+    testAll();
   }, []);
 
+  const testAll = async () => {
+    try {
+      // Test basic API
+      console.log('🧪 Testing basic API...');
+      const basicResponse = await api.get('/test');
+      setApiTest(basicResponse.data);
+
+      // Check auth tokens
+      console.log('🔐 Checking auth tokens...');
+      const tokens = {
+        localStorage_token: localStorage.getItem('token'),
+        localStorage_auth_token: localStorage.getItem('auth_token'),
+        cookie_token: document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1],
+        cookie_auth_token: document.cookie.split('; ').find(row => row.startsWith('auth_token='))?.split('=')[1]
+      };
+      setAuthTest(tokens);
+
+      // Test admin candidates endpoint
+      console.log('👥 Testing admin candidates endpoint...');
+      try {
+        const candidatesResponse = await api.get('/admin/candidates');
+        setCandidatesTest({ success: true, count: candidatesResponse.data.length, data: candidatesResponse.data });
+      } catch (error: any) {
+        setCandidatesTest({ success: false, error: error.message, status: error.response?.status });
+      }
+
+    } catch (error: any) {
+      setApiTest({ error: error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const setTestToken = () => {
+    const testToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODlmMzhlNWNjZmVlNjNmODcyMGYxZWYiLCJlbWFpbCI6ImFkbWluQGNvbXBhbnkuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzU1MzEzODk3LCJleHAiOjE3NTU5MTg2OTd9.k9p19gwpWvzf2W04BasuUxQCLvh-42zF3RzpKPjwByA';
+    
+    localStorage.setItem('token', testToken);
+    localStorage.setItem('auth_token', testToken);
+    document.cookie = `token=${testToken}; path=/; max-age=${7 * 24 * 60 * 60}`;
+    document.cookie = `auth_token=${testToken}; path=/; max-age=${7 * 24 * 60 * 60}`;
+    
+    alert('Test token set! Refresh the page to test.');
+  };
+
+  const clearTokens = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('auth_token');
+    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+    document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+    
+    alert('Tokens cleared! Refresh the page to test.');
+  };
+
+  if (loading) {
+    return <div className="p-4">Testing API connection...</div>;
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">🔍 Authentication Debug</h1>
-          
-          {/* Navigation */}
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-            <h2 className="text-lg font-semibold mb-3">Quick Navigation</h2>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => window.location.href = '/'}
-                className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-              >
-                🏠 Force Home
-              </button>
-              <Link href="/" className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600">
-                🏠 Home (Link)
-              </Link>
-              <Link href="/admin/dashboard" className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
-                👑 Admin
-              </Link>
-              <Link href="/hr/dashboard" className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">
-                💼 HR
-              </Link>
-              <Link href="/candidate/dashboard" className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700">
-                👤 Candidate
-              </Link>
-              <a href="http://localhost:8080/api/auth/google" className="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700">
-                🔐 Login
-              </a>
-            </div>
-          </div>
+    <div className="p-4 space-y-6">
+      <h1 className="text-2xl font-bold mb-4">🧪 API & Auth Debug</h1>
+      
+      <div className="flex gap-4">
+        <button 
+          onClick={setTestToken}
+          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        >
+          Set Test Token
+        </button>
+        <button 
+          onClick={clearTokens}
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+        >
+          Clear Tokens
+        </button>
+        <button 
+          onClick={testAll}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Refresh Tests
+        </button>
+      </div>
 
-          {/* Auth Context Info */}
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Auth Context</h2>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <strong>Loading:</strong> {loading ? '✅ Yes' : '❌ No'}
-                </div>
-                <div>
-                  <strong>User:</strong> {user ? '✅ Authenticated' : '❌ Not authenticated'}
-                </div>
-                {user && (
-                  <>
-                    <div>
-                      <strong>Name:</strong> {user.name}
-                    </div>
-                    <div>
-                      <strong>Email:</strong> {user.email}
-                    </div>
-                    <div>
-                      <strong>Role:</strong> {user.role}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Token Info */}
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Token Information</h2>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="mb-4">
-                <strong>Token Present:</strong> {rawToken ? '✅ Yes' : '❌ No'}
-              </div>
-              
-              {tokenInfo && (
-                <div className="space-y-2">
-                  <div><strong>Token ID:</strong> {tokenInfo._id}</div>
-                  <div><strong>Token Name:</strong> {tokenInfo.name}</div>
-                  <div><strong>Token Email:</strong> {tokenInfo.email}</div>
-                  <div><strong>Token Role:</strong> {tokenInfo.role || 'null'}</div>
-                  <div><strong>Issued At:</strong> {new Date(tokenInfo.iat * 1000).toLocaleString()}</div>
-                  <div><strong>Expires At:</strong> {new Date(tokenInfo.exp * 1000).toLocaleString()}</div>
-                </div>
-              )}
-              
-              {rawToken && (
-                <details className="mt-4">
-                  <summary className="cursor-pointer text-blue-600 hover:text-blue-800">
-                    Show Raw Token
-                  </summary>
-                  <div className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono break-all">
-                    {rawToken}
-                  </div>
-                </details>
-              )}
-            </div>
-          </div>
-
-          {/* Backend Test */}
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Backend Connection</h2>
-            <div className="space-y-2">
-              <button
-                onClick={async () => {
-                  try {
-                    const res = await fetch('http://localhost:8080/api/test');
-                    const data = await res.json();
-                    alert('Backend test successful: ' + data.message);
-                  } catch (err) {
-                    alert('Backend test failed: ' + (err as Error).message);
-                  }
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mr-2"
-              >
-                Test Backend
-              </button>
-              
-              <button
-                onClick={async () => {
-                  try {
-                    const res = await fetch('http://localhost:8080/api/auth/test-set-role', {
-                      method: 'POST'
-                    });
-                    const data = await res.json();
-                    alert('Auth test successful: ' + data.message);
-                  } catch (err) {
-                    alert('Auth test failed: ' + (err as Error).message);
-                  }
-                }}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mr-2"
-              >
-                Test Auth
-              </button>
-              
-              <button
-                onClick={() => {
-                  // Clear all cookies
-                  document.cookie.split(";").forEach(function(c) { 
-                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-                  });
-                  localStorage.clear();
-                  sessionStorage.clear();
-                  alert('All cookies and storage cleared! Refreshing page...');
-                  window.location.reload();
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-              >
-                Clear All Data
-              </button>
-            </div>
-          </div>
-
-          {/* Recommendations */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-yellow-800 mb-2">💡 Troubleshooting</h3>
-            <ul className="text-sm text-yellow-700 space-y-1">
-              <li>• If you can't access home page: Click the "🏠 Home" button above</li>
-              <li>• If login fails: Make sure backend is running on port 8080</li>
-              <li>• If role selection fails: Check the "Test Auth" button</li>
-              <li>• If redirects don't work: Clear cookies and try again</li>
-            </ul>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-gray-100 p-4 rounded">
+          <h2 className="font-bold mb-2">🔗 Basic API Test</h2>
+          <pre className="text-xs overflow-auto">{JSON.stringify(apiTest, null, 2)}</pre>
         </div>
+
+        <div className="bg-gray-100 p-4 rounded">
+          <h2 className="font-bold mb-2">🔐 Auth Tokens</h2>
+          <pre className="text-xs overflow-auto">{JSON.stringify(authTest, null, 2)}</pre>
+        </div>
+
+        <div className="bg-gray-100 p-4 rounded">
+          <h2 className="font-bold mb-2">👥 Admin Candidates Test</h2>
+          <pre className="text-xs overflow-auto">{JSON.stringify(candidatesTest, null, 2)}</pre>
+        </div>
+      </div>
+
+      <div className="bg-yellow-100 p-4 rounded">
+        <h3 className="font-bold">🔧 Quick Fix Instructions:</h3>
+        <ol className="list-decimal list-inside mt-2 space-y-1 text-sm">
+          <li>Click "Set Test Token" to authenticate as admin</li>
+          <li>Go to <a href="/admin/users/candidates" className="text-blue-600 underline">/admin/users/candidates</a></li>
+          <li>You should see 3 candidates from the database</li>
+          <li>Use the 🗑️ button to delete users and see real-time updates</li>
+        </ol>
       </div>
     </div>
   );

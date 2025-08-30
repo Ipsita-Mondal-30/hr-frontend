@@ -43,6 +43,10 @@ export default function ViewHRUsersPage() {
 
   useEffect(() => {
     fetchHRUsers();
+    
+    // Set up auto-refresh every 30 seconds to prevent stale data
+    const interval = setInterval(fetchHRUsers, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchHRUsers = async () => {
@@ -56,6 +60,31 @@ export default function ViewHRUsersPage() {
       console.error('Error fetching HR users:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteHRUser = async (hrId: string, hrName: string) => {
+    if (!confirm(`Are you sure you want to delete ${hrName}? This will also delete all their jobs, applications, and interviews. This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      console.log(`🗑️ Deleting HR user: ${hrId}`);
+      await api.delete(`/admin/users/${hrId}`);
+      
+      // Remove from local state
+      setHrUsers(prev => prev.filter(hr => hr._id !== hrId));
+      
+      // Close modal if this HR user was selected
+      if (selectedHR?._id === hrId) {
+        setSelectedHR(null);
+      }
+      
+      alert(`${hrName} has been deleted successfully.`);
+      console.log(`✅ Successfully deleted HR user: ${hrName}`);
+    } catch (error) {
+      console.error('Error deleting HR user:', error);
+      alert('Failed to delete HR user. Please try again.');
     }
   };
 
@@ -89,8 +118,20 @@ export default function ViewHRUsersPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">View HR Users</h1>
-        <div className="text-sm text-gray-600">
-          Total: {hrUsers.length} HR users ({hrUsers.filter(hr => hr.isVerified).length} verified)
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => {
+              setLoading(true);
+              fetchHRUsers();
+            }}
+            className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+            disabled={loading}
+          >
+            {loading ? '🔄 Refreshing...' : '🔄 Refresh'}
+          </button>
+          <div className="text-sm text-gray-600">
+            Total: {hrUsers.length} HR users ({hrUsers.filter(hr => hr.isVerified).length} verified)
+          </div>
         </div>
       </div>
 
@@ -134,12 +175,21 @@ export default function ViewHRUsersPage() {
                   <p className="text-sm text-gray-500">{hr.companyName}</p>
                 )}
               </div>
-              <button
-                onClick={() => setSelectedHR(hr)}
-                className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200"
-              >
-                View Details
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSelectedHR(hr)}
+                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200"
+                >
+                  View Details
+                </button>
+                <button
+                  onClick={() => deleteHRUser(hr._id, hr.name)}
+                  className="px-3 py-1 bg-red-100 text-red-700 rounded-md text-sm hover:bg-red-200"
+                  title="Delete HR user"
+                >
+                  🗑️
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3">

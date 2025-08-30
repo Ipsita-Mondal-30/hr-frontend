@@ -26,6 +26,7 @@ export default function JobsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
+  const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set());
   
   // Filters
   const [filters, setFilters] = useState({
@@ -39,6 +40,7 @@ export default function JobsPage() {
 
   useEffect(() => {
     fetchJobs();
+    fetchSavedJobs();
   }, []);
 
   useEffect(() => {
@@ -57,6 +59,40 @@ export default function JobsPage() {
       setJobs([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSavedJobs = async () => {
+    try {
+      const res = await api.get('/candidate/saved-jobs');
+      const savedJobs = res.data || [];
+      const savedIds = new Set(savedJobs.map((job: any) => job._id));
+      setSavedJobIds(savedIds);
+      console.log(`💾 Found ${savedJobs.length} saved jobs`);
+    } catch (err) {
+      console.error('Error fetching saved jobs:', err);
+    }
+  };
+
+  const handleSaveJob = async (jobId: string) => {
+    try {
+      if (savedJobIds.has(jobId)) {
+        // Remove from saved
+        await api.delete(`/candidate/saved-jobs/${jobId}`);
+        setSavedJobIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(jobId);
+          return newSet;
+        });
+        console.log('💾 Job removed from saved');
+      } else {
+        // Add to saved
+        await api.post('/candidate/save-job', { jobId });
+        setSavedJobIds(prev => new Set([...prev, jobId]));
+        console.log('💾 Job saved successfully');
+      }
+    } catch (err) {
+      console.error('Error saving/unsaving job:', err);
     }
   };
 
@@ -112,9 +148,11 @@ export default function JobsPage() {
   };
 
   const handleApplicationSuccess = () => {
+    console.log('✅ Application submitted successfully');
     setShowApplicationModal(false);
     setSelectedJob(null);
-    // Optionally refresh jobs or show success message
+    // Refresh saved jobs to update counts
+    fetchSavedJobs();
   };
 
   if (loading) {
@@ -228,7 +266,7 @@ export default function JobsPage() {
       ) : (
         <div className="space-y-4">
           {filteredJobs.map((job) => (
-            <JobCard key={job._id} job={job} onApply={handleApply} />
+            <JobCard key={job._id} job={job} onApply={handleApply} onSave={handleSaveJob} isSaved={savedJobIds.has(job._id)} />
           ))}
         </div>
       )}
@@ -249,7 +287,7 @@ export default function JobsPage() {
   );
 }
 
-function JobCard({ job, onApply }: { job: Job; onApply: (job: Job) => void }) {
+function JobCard({ job, onApply, onSave, isSaved }: { job: Job; onApply: (job: Job) => void; onSave: (jobId: string) => void; isSaved: boolean }) {
   const formatSalary = (min?: number, max?: number) => {
     if (!min && !max) return null;
     if (min && max) return `$${min.toLocaleString()} - $${max.toLocaleString()}`;
@@ -311,8 +349,11 @@ function JobCard({ job, onApply }: { job: Job; onApply: (job: Job) => void }) {
         </div>
         
         <div className="flex space-x-2">
-          <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50">
-            💾 Save
+          <button 
+            onClick={() => onSave(job._id)}
+            className={`px-3 py-1 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 ${isSaved ? 'bg-gray-200 text-gray-600' : ''}`}
+          >
+            {isSaved ? '💾 Saved' : '💾 Save'}
           </button>
           <button
             onClick={() => onApply(job)}

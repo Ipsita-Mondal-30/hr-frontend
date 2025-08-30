@@ -27,7 +27,7 @@ export default function SavedJobsPage() {
 
   const fetchAppliedJobs = async () => {
     try {
-      const res = await api.get('/applications/my');
+      const res = await api.get('/candidate/applications');
       setAppliedJobs(res.data.map((app: any) => app.job?._id).filter(Boolean));
     } catch (err) {
       console.error('Error fetching applied jobs:', err);

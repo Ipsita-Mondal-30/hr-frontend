@@ -49,15 +49,23 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
         submitData.append('resume', resumeFile);
       }
 
-      await api.post('/candidate/apply-with-resume', submitData, {
+      const response = await api.post('/candidate/apply-with-resume', submitData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
       
+      console.log('✅ Application submitted successfully:', response.data);
       alert('Application submitted successfully! You will receive a confirmation email shortly.');
+      
+      // Trigger refresh of parent component data
       onSuccess();
       onClose();
+      
+      // Refresh the page to update dashboard stats
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
     } catch (err: any) {
       console.error('Error applying to job:', err);
       const errorMessage = err.response?.data?.error || 'Error submitting application';

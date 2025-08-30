@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
 import { setAuthToken } from '@/lib/cookies';
+import { useAuth } from '@/lib/AuthContext';
 
 interface CustomJwtPayload {
   _id: string;
@@ -19,6 +20,7 @@ export default function RoleSelectPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const { refreshUser } = useAuth();
   
   useEffect(() => {
     // Get token from URL
@@ -95,30 +97,32 @@ export default function RoleSelectPage() {
 
       const newToken = data.token;
       setAuthToken(newToken);
-      console.log('✅ New token set, redirecting...');
+      console.log('✅ New token set, refreshing user context...');
 
-      // Add a small delay before redirect to ensure token is set
+      // Refresh the user context with the new role
+      await refreshUser();
+      
+      // Add a small delay before redirect to ensure context is updated
       setTimeout(() => {
-        const decoded = jwtDecode<CustomJwtPayload>(newToken);
-        console.log('🎯 Redirecting to:', decoded.role, 'dashboard');
+        console.log('🎯 Redirecting to:', role, 'dashboard');
         
-        switch (decoded.role) {
+        switch (role) {
           case 'admin':
-            window.location.href = '/admin/dashboard';
+            router.push('/admin/dashboard');
             break;
           case 'hr':
-            window.location.href = '/hr/dashboard';
+            router.push('/hr/dashboard');
             break;
           case 'candidate':
-            window.location.href = '/candidate/dashboard';
+            router.push('/candidate/dashboard');
             break;
           case 'employee':
-            window.location.href = '/employee/dashboard';
+            router.push('/employee/dashboard');
             break;
           default:
-            window.location.href = '/';
+            router.push('/');
         }
-      }, 500);
+      }, 1000);
       
     } catch (err: any) {
       console.error('❌ Error setting role:', err);

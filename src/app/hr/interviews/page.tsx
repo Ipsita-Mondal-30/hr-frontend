@@ -119,13 +119,19 @@ export default function InterviewsPage() {
 
   const submitScorecard = async (interviewId: string, scorecard: any) => {
     try {
-      await api.put(`/interviews/${interviewId}/scorecard`, { scorecard });
-      fetchInterviews();
+      console.log('📋 Submitting scorecard for interview:', interviewId);
+      console.log('📋 Scorecard data:', scorecard);
+      
+      const response = await api.put(`/interviews/${interviewId}/scorecard`, { scorecard });
+      console.log('✅ Scorecard submitted successfully:', response.data);
+      
+      await fetchInterviews(); // Refresh the interviews list
       setShowScorecardModal(false);
-      alert('Scorecard submitted successfully!');
-    } catch (err) {
-      console.error('Failed to submit scorecard:', err);
-      alert('Failed to submit scorecard');
+      alert('Scorecard submitted successfully! AI-powered emails have been sent to the candidate and HR team.');
+    } catch (err: any) {
+      console.error('❌ Failed to submit scorecard:', err);
+      console.error('❌ Error details:', err.response?.data);
+      alert(`Failed to submit scorecard: ${err.response?.data?.error || err.message || 'Unknown error'}`);
     }
   };
 

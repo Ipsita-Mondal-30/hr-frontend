@@ -19,9 +19,8 @@ export default function CandidateLayout({
     { name: 'Dashboard', href: '/candidate/dashboard', icon: '📊' },
     { name: 'Browse Jobs', href: '/candidate/jobs', icon: '🔍' },
     { name: 'Applied Jobs', href: '/candidate/applications', icon: '📋' },
-    { name: 'Saved Jobs', href: '/candidate/saved', icon: '�' },
-    { name: 'Search Salary', href: '/candidate/salary', icon: '�' },
-    { name: 'Profile', href: '/candidate/profile', icon: '�' },
+    { name: 'Saved Jobs', href: '/candidate/saved', icon: '💾' },
+    { name: 'Profile', href: '/candidate/profile', icon: '💾' },
   ];
 
   return (
@@ -86,10 +85,10 @@ function CandidateSidebar({ navigation, pathname, user, logout }: any) {
           <div className="mt-3">
             <div className="flex items-center justify-between text-xs text-gray-600">
               <span>Profile Completeness</span>
-              <span>75%</span>
+              <span>{user?.profileCompleteness || 0}%</span>
             </div>
             <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
+              <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${user?.profileCompleteness || 0}%` }}></div>
             </div>
           </div>
           <Link
