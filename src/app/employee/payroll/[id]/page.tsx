@@ -317,7 +317,7 @@ export default function EmployeePayrollDetailPage() {
             Print Payslip
           </button>
           <button
-            onClick={() => alert('Download feature coming soon!')}
+            onClick={() => window.open(`/api/employees/me/payroll/${params.id}/download`, '_blank')}
             className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
           >
             Download PDF

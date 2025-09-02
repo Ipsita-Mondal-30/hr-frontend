@@ -16,19 +16,26 @@ api.interceptors.request.use((config) => {
   config.url = `${config.url}${separator}_t=${timestamp}`;
   
   // Add auth token if available
-  const token = localStorage.getItem('token') || 
-    localStorage.getItem('auth_token') || 
-    document.cookie
+  let token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+  
+  // If not in localStorage, try to get from cookies
+  if (!token) {
+    const authCookie = document.cookie
       .split('; ')
-      .find(row => row.startsWith('auth_token='))
-      ?.split('=')[1] ||
-    document.cookie
-      .split('; ')
-      .find(row => row.startsWith('token='))
-      ?.split('=')[1];
+      .find(row => row.startsWith('auth_token='));
+      
+    if (authCookie) {
+      token = authCookie.split('=')[1];
+      // Store in localStorage for future use
+      localStorage.setItem('auth_token', token);
+    }
+  }
     
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+    console.log('Adding auth token to request:', config.url);
+  } else {
+    console.log('No auth token found for request:', config.url);
   }
   
   return config;

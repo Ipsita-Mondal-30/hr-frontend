@@ -206,10 +206,10 @@ export default function PayrollManagement() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {payroll.employee.user.name}
+                          {payroll.employee?.user?.name || 'No Name'}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {payroll.employee.user.email}
+                          {payroll.employee?.user?.email || 'No Email'}
                         </div>
                       </div>
                     </td>

@@ -12,16 +12,19 @@
     "@tabler/icons-react": "^3.34.1",
     "@types/js-cookie": "^3.0.6",
     "axios": "^1.10.0",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cors": "^2.8.5",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
+    "lucide-react": "^0.542.0",
     "motion": "^12.23.12",
     "next": "15.3.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.2",
+    "simplex-noise": "^4.0.3",
     "tailwind-merge": "^3.3.1",
     "yarn": "^1.22.22"
   },
@@ -34,6 +37,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
     "tailwindcss": "^4",
+    "tw-animate-css": "^1.3.7",
     "typescript": "^5"
   }
 }

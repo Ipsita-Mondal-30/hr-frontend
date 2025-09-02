@@ -184,10 +184,10 @@ export default function PerformanceManagement() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {employee.user.name}
+                            {employee.user?.name || 'No Name'}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {employee.user.email}
+                            {employee.user?.email || 'No Email'}
                           </div>
                         </div>
                       </td>

@@ -187,19 +187,6 @@ export default function HRDashboardPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">HR Dashboard</h1>
         <div className="space-x-2">
-          <button 
-            onClick={checkDatabaseData}
-            className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-          >
-            Check DB
-          </button>
-          <button 
-            onClick={handleSeedData}
-            disabled={seeding}
-            className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:bg-gray-400"
-          >
-            {seeding ? 'Seeding...' : 'Seed Data'}
-          </button>
         </div>
       </div>
 

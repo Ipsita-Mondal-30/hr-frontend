@@ -46,13 +46,10 @@ export default function EmployeeProjectsPage() {
 
   const fetchProjects = async () => {
     try {
-      // First get employee profile
-      const profileRes = await api.get('/employees/me');
-      const employeeId = profileRes.data._id;
-      
-      // Then get projects
-      const projectsRes = await api.get(`/employees/${employeeId}/projects`);
+      // Get projects directly from the /me/projects endpoint
+      const projectsRes = await api.get('/employees/me/projects');
       setProjects(projectsRes.data?.projects || []);
+      console.log('Projects loaded:', projectsRes.data?.projects?.length || 0);
     } catch (error) {
       console.error('Error fetching projects:', error);
     } finally {

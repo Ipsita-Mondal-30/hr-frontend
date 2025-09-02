@@ -76,19 +76,19 @@ export default function AdminEmployeesPage() {
       const params = new URLSearchParams();
       if (filters.department) params.append('department', filters.department);
       if (filters.status) params.append('status', filters.status);
-      
+
       const response = await api.get(`/admin/employees?${params.toString()}`);
       let employeeList = response.data?.employees || response.data || [];
-      
+
       // Filter by search term
       if (filters.search) {
         employeeList = employeeList.filter((emp: Employee) =>
-          emp.user.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-          emp.user.email.toLowerCase().includes(filters.search.toLowerCase()) ||
-          emp.position.toLowerCase().includes(filters.search.toLowerCase())
+          emp.user?.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
+          emp.user?.email?.toLowerCase().includes(filters.search.toLowerCase()) ||
+          emp.position?.toLowerCase().includes(filters.search.toLowerCase())
         );
       }
-      
+
       setEmployees(employeeList);
     } catch (error) {
       console.error('Error fetching employees:', error);
@@ -257,7 +257,7 @@ export default function AdminEmployeesPage() {
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold">All Employees ({employees.length})</h2>
         </div>
-        
+
         {employees.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <div className="text-4xl mb-2">👥</div>
@@ -271,18 +271,18 @@ export default function AdminEmployeesPage() {
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                       <span className="text-blue-600 font-semibold">
-                        {employee.user.name.charAt(0).toUpperCase()}
+                        {employee.user?.name?.charAt(0).toUpperCase() || 'N'}
                       </span>
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">{employee.user.name}</h3>
-                      <p className="text-sm text-gray-600">{employee.position}</p>
+                      <h3 className="font-medium text-gray-900">{employee.user?.name || 'No Name'}</h3>
+                      <p className="text-sm text-gray-600">{employee.position || 'No Position'}</p>
                       <p className="text-xs text-gray-500">
-                        {employee.department?.name} • ID: {employee.employeeId}
+                        {employee.department?.name || 'No Department'} • ID: {employee.employeeId || 'N/A'}
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-6">
                     {/* Performance Score */}
                     <div className="text-center">
@@ -291,7 +291,7 @@ export default function AdminEmployeesPage() {
                       </div>
                       <div className="text-xs text-gray-500 mt-1">Performance</div>
                     </div>
-                    
+
                     {/* Project Contribution */}
                     <div className="text-center">
                       <div className="text-sm font-medium text-gray-900">
@@ -299,7 +299,7 @@ export default function AdminEmployeesPage() {
                       </div>
                       <div className="text-xs text-gray-500">Contribution</div>
                     </div>
-                    
+
                     {/* Salary */}
                     {employee.salary && (
                       <div className="text-center">
@@ -309,7 +309,7 @@ export default function AdminEmployeesPage() {
                         <div className="text-xs text-gray-500">Salary</div>
                       </div>
                     )}
-                    
+
                     {/* AI Risk Assessment */}
                     {employee.aiInsights?.attritionRisk && (
                       <div className="text-center">
@@ -319,7 +319,7 @@ export default function AdminEmployeesPage() {
                         <div className="text-xs text-gray-500 mt-1">Risk</div>
                       </div>
                     )}
-                    
+
                     {/* Actions */}
                     <div className="flex space-x-2">
                       <button
@@ -350,9 +350,9 @@ export default function AdminEmployeesPage() {
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-xl font-semibold">{selectedEmployee.user.name}</h2>
-                  <p className="text-gray-600">{selectedEmployee.position} • {selectedEmployee.department?.name}</p>
-                  <p className="text-sm text-gray-500">Employee ID: {selectedEmployee.employeeId}</p>
+                  <h2 className="text-xl font-semibold">{selectedEmployee.user?.name || 'No Name'}</h2>
+                  <p className="text-gray-600">{selectedEmployee.position || 'No Position'} • {selectedEmployee.department?.name || 'No Department'}</p>
+                  <p className="text-sm text-gray-500">Employee ID: {selectedEmployee.employeeId || 'N/A'}</p>
                 </div>
                 <button
                   onClick={() => setSelectedEmployee(null)}
@@ -362,7 +362,7 @@ export default function AdminEmployeesPage() {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-6 space-y-6">
               {/* Employee Overview */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -408,11 +408,10 @@ export default function AdminEmployeesPage() {
                       <div key={project._id} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex justify-between items-start mb-2">
                           <h4 className="font-medium text-gray-900">{project.name}</h4>
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            project.status === 'completed' ? 'bg-green-100 text-green-800' :
+                          <span className={`px-2 py-1 text-xs rounded-full ${project.status === 'completed' ? 'bg-green-100 text-green-800' :
                             project.status === 'active' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
+                              'bg-gray-100 text-gray-800'
+                            }`}>
                             {project.status}
                           </span>
                         </div>
@@ -420,8 +419,8 @@ export default function AdminEmployeesPage() {
                           Role: {project.role} • {project.contributionPercentage}% contribution
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
                             style={{ width: `${project.completionPercentage}%` }}
                           ></div>
                         </div>
@@ -450,7 +449,7 @@ export default function AdminEmployeesPage() {
                         ))}
                       </ul>
                     </div>
-                    
+
                     {/* Attrition Risk */}
                     <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                       <h4 className="font-medium text-red-800 mb-2">

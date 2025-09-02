@@ -29,6 +29,25 @@ export default function QuickTestPage() {
     }
   };
 
+  const adminLogin = async () => {
+    try {
+      setTestResult('Logging in as admin...');
+      const response = await api.post('/auth/login', {
+        email: 'kgipsita30@gmail.com',
+        password: 'any'
+      });
+      
+      if (response.data.success) {
+        localStorage.setItem('auth_token', response.data.token);
+        setTestResult('Admin login successful! Refreshing user data...');
+        await refreshUser();
+        setTestResult('User data refreshed! You should now be authenticated as admin.');
+      }
+    } catch (error: any) {
+      setTestResult('Admin login failed: ' + (error.response?.data?.error || error.message));
+    }
+  };
+
   const testHRAccess = () => {
     router.push('/hr/dashboard');
   };
@@ -65,7 +84,14 @@ export default function QuickTestPage() {
               onClick={quickLogin}
               className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             >
-              🔑 Quick Login as Ipsita
+              🔑 Quick Login as Ipsita (HR)
+            </button>
+
+            <button
+              onClick={adminLogin}
+              className="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+            >
+              👑 Login as Admin
             </button>
             
             <button
@@ -74,6 +100,14 @@ export default function QuickTestPage() {
               disabled={!user || user.role !== 'hr'}
             >
               🎯 Test HR Dashboard Access
+            </button>
+
+            <button
+              onClick={() => router.push('/admin/employees')}
+              className="w-full bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600"
+              disabled={!user || user.role !== 'admin'}
+            >
+              👥 View Admin Employees
             </button>
             
             <button
