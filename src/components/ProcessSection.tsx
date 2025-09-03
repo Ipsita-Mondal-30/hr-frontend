@@ -2,20 +2,20 @@ export function ProcessSection() {
     const steps = [
       {
         number: "01",
-        title: "Define",
-        description: "We start by understanding your business goals, target audience, and project requirements. Through detailed research and stakeholder interviews, we establish a clear roadmap for success.",
-        color: "from-purple-500 to-indigo-500"
+        title: "Discover",
+        description: "We begin by understanding candidate aspirations and employer needs. Through data-driven insights and AI-powered matching, we identify the best-fit opportunities.",
+         color: "from-cyan-500 to-blue-500"
       },
       {
         number: "02", 
-        title: "Design",
-        description: "Our design team crafts beautiful, user-centered experiences that align with your brand. We focus on creating interfaces that are both visually stunning and highly functional.",
-        color: "from-pink-500 to-purple-500"
+        title: "Connect",
+        description: "We create meaningful connections between talent and organizations. With tools for HRs, admins, and employees, the hiring process becomes transparent, collaborative, and efficient.",
+         color: "from-cyan-500 to-blue-500"
       },
       {
         number: "03",
-        title: "Launch",
-        description: "With rigorous testing and quality assurance, we ensure your product launches flawlessly. We provide ongoing support and optimization to guarantee continued success.",
+        title: "Grow",
+        description: "From application to onboarding and beyond, we support continuous career growth and employee engagement, ensuring long-term success for both individuals and businesses.",
         color: "from-cyan-500 to-blue-500"
       }
     ];
@@ -82,16 +82,7 @@ export function ProcessSection() {
             </div>
   
             {/* Bottom CTA */}
-            <div className="text-center mt-16">
-              <div className="inline-flex items-center text-purple-600 font-medium">
-                <span className="mr-2">Ready to be delivered</span>
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </div>
-              </div>
-            </div>
+            
           </div>
         </div>
       </section>
