@@ -13,6 +13,7 @@ import {
   MobileNavToggle,
   NavbarButton
 } from '../components/resizable-navabar';
+import Image from "next/image";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -111,21 +112,26 @@ export default function Navbar() {
         <NavBody className="relative z-10 max-w-full mx-auto px-4 sm:px-6 lg:px-8 w-full">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3 group flex-shrink-0">
-            <div className="relative">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 via-purple-700 to-cyan-600 rounded-2xl flex items-center justify-center shadow-xl group-hover:shadow-2xl transition-all duration-300 group-hover:scale-105 group-hover:-rotate-3">
-                <span className="text-white font-bold text-lg">T</span>
-              </div>
-              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-2xl blur opacity-40 group-hover:opacity-70 transition duration-300 -z-10" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2xl font-bold bg-gradient-to-r from-purple-700 via-purple-600 to-cyan-600 bg-clip-text text-transparent dark:from-purple-400 dark:via-purple-300 dark:to-cyan-400">
-                Talora
-              </span>
-              <span className="text-xs text-gray-600 dark:text-gray-400 -mt-1 font-medium">
-                Career Platform
-              </span>
-            </div>
-          </Link>
+  <div className="relative">
+    <Image 
+      src="/talora.png" 
+      alt="Talora Logo" 
+      width={40} 
+      height={40} 
+      className="rounded-xl"
+      priority // ensures it's loaded immediately (optional)
+    />
+    <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-2xl blur opacity-40 group-hover:opacity-70 transition duration-300 -z-10" />
+  </div>
+  <div className="flex flex-col">
+    <span className="text-2xl font-bold bg-gradient-to-r from-purple-700 via-purple-600 to-cyan-600 bg-clip-text text-transparent dark:from-purple-400 dark:via-purple-300 dark:to-cyan-400">
+      Talora
+    </span>
+    <span className="text-xs text-gray-600 dark:text-gray-400 -mt-1 font-medium">
+      Career Platform
+    </span>
+  </div>
+</Link>
 
           {/* Navigation Items */}
           {user && navigationItems.length > 0 && (

@@ -57,14 +57,14 @@ export default function EmployeePayrollPage() {
   const fetchPayrollRecords = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch real payroll data from API
       const response = await api.get('/employees/me/payroll');
       const records = response.data.map((record: any) => ({
         ...record,
         month: getMonthName(record.month)
       }));
-      
+
       setPayrollRecords(records.filter((r: any) => r.year === selectedYear));
     } catch (error) {
       console.error('Error fetching payroll records:', error);
@@ -75,23 +75,9 @@ export default function EmployeePayrollPage() {
           month: 'August',
           year: 2024,
           baseSalary: 75000,
-          allowances: {
-            housing: 15000,
-            transport: 5000,
-            medical: 3000,
-            other: 2000
-          },
-          deductions: {
-            tax: 12000,
-            insurance: 2000,
-            providentFund: 3750,
-            other: 500
-          },
-          overtime: {
-            hours: 10,
-            rate: 50,
-            amount: 500
-          },
+          allowances: { housing: 15000, transport: 5000, medical: 3000, other: 2000 },
+          deductions: { tax: 12000, insurance: 2000, providentFund: 3750, other: 500 },
+          overtime: { hours: 10, rate: 50, amount: 500 },
           bonus: 5000,
           grossSalary: 105500,
           netSalary: 87250,
@@ -103,23 +89,9 @@ export default function EmployeePayrollPage() {
           month: 'July',
           year: 2024,
           baseSalary: 75000,
-          allowances: {
-            housing: 15000,
-            transport: 5000,
-            medical: 3000,
-            other: 2000
-          },
-          deductions: {
-            tax: 11500,
-            insurance: 2000,
-            providentFund: 3750,
-            other: 500
-          },
-          overtime: {
-            hours: 8,
-            rate: 50,
-            amount: 400
-          },
+          allowances: { housing: 15000, transport: 5000, medical: 3000, other: 2000 },
+          deductions: { tax: 11500, insurance: 2000, providentFund: 3750, other: 500 },
+          overtime: { hours: 8, rate: 50, amount: 400 },
           bonus: 0,
           grossSalary: 100400,
           netSalary: 82650,
@@ -131,23 +103,9 @@ export default function EmployeePayrollPage() {
           month: 'September',
           year: 2024,
           baseSalary: 75000,
-          allowances: {
-            housing: 15000,
-            transport: 5000,
-            medical: 3000,
-            other: 2000
-          },
-          deductions: {
-            tax: 12500,
-            insurance: 2000,
-            providentFund: 3750,
-            other: 500
-          },
-          overtime: {
-            hours: 0,
-            rate: 50,
-            amount: 0
-          },
+          allowances: { housing: 15000, transport: 5000, medical: 3000, other: 2000 },
+          deductions: { tax: 12500, insurance: 2000, providentFund: 3750, other: 500 },
+          overtime: { hours: 0, rate: 50, amount: 0 },
           bonus: 0,
           grossSalary: 100000,
           netSalary: 81250,
@@ -158,13 +116,11 @@ export default function EmployeePayrollPage() {
 
       const filteredRecords = mockRecords.filter(record => record.year === selectedYear);
       setPayrollRecords(filteredRecords);
-      
-    } catch (error) {
-      console.error('Error fetching payroll records:', error);
     } finally {
       setLoading(false);
     }
   };
+
 
   const getStatusColor = (status: string) => {
     switch (status) {

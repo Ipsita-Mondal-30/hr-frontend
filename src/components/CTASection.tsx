@@ -26,22 +26,22 @@ export function CTASection() {
           {/* Refined Badge */}
           <div className="inline-flex items-center px-5 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white font-medium text-sm">
             <span className="w-2 h-2 bg-green-400 rounded-full mr-3 animate-pulse"></span>
-            Ready to get started?
+            Talora
           </div>
 
           {/* Streamlined Headline */}
           <h2 className="text-4xl lg:text-6xl font-bold text-white leading-tight">
-            Transform Your
+           Ready
             <br />
             <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Hiring Experience
+        to get started?
             </span>
           </h2>
 
           {/* Concise Description */}
           <p className="text-lg text-gray-300 leading-relaxed max-w-2xl mx-auto">
-            Join thousands of companies using Talora to streamline recruitment 
-            and make smarter hiring decisions. Start your free trial today.
+          Transform the way you hire, manage, and grow talent with our all-in-one recruitment platform.
+          From smart job matching to effortless candidate management—we make hiring simpler, faster, and more human.
           </p>
 
           {/* Streamlined CTA Buttons */}

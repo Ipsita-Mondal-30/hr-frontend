@@ -16,11 +16,7 @@ import {
 export default function LoginPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navItems = [
-    { name: 'Home', link: '/' },
-    { name: 'About', link: '/about' },
-    { name: 'Contact', link: '/contact' },
-  ];
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -28,7 +24,7 @@ export default function LoginPage() {
       <Navbar className="fixed top-0">
         <NavBody>
           <NavbarLogo />
-          <NavItems items={navItems} />
+
           <NavbarButton href="/login" variant="primary">
             Login
           </NavbarButton>
@@ -45,16 +41,6 @@ export default function LoginPage() {
             isOpen={mobileMenuOpen}
             onClose={() => setMobileMenuOpen(false)}
           >
-            {navItems.map((item, idx) => (
-              <a
-                key={idx}
-                href={item.link}
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {item.name}
-              </a>
-            ))}
             <NavbarButton href="/login" variant="primary" className="mt-4">
               Login
             </NavbarButton>
