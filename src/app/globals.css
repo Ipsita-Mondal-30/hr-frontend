@@ -120,3 +120,53 @@
     @apply bg-background text-foreground;
   }
 }
+.mask-radial-from-20\% {
+  mask-image: radial-gradient(circle, transparent 20%, black 70%);
+}
+
+.mask-radial-at-top {
+  mask-position: top;
+}
+
+/* Ripple animation */
+@keyframes cell-ripple {
+  0% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+    background-color: rgba(59, 130, 246, 0.5); /* Blue ripple color */
+  }
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+}
+
+.animate-cell-ripple {
+  animation: cell-ripple var(--duration) ease-out var(--delay) 1;
+}
+
+/* CSS custom properties for colors */
+:root {
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-300: #d4d4d8;
+  --color-neutral-500: #71717a;
+  --color-neutral-700: #3f3f46;
+  --color-neutral-800: #27272a;
+  --color-neutral-900: #18181b;
+}
+
+/* Dark mode colors */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-neutral-100: #18181b;
+    --color-neutral-300: #3f3f46;
+    --color-neutral-500: #71717a;
+    --color-neutral-700: #a1a1aa;
+    --color-neutral-800: #d4d4d8;
+    --color-neutral-900: #f4f4f5;
+  }
+}

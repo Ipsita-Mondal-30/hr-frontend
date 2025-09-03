@@ -86,7 +86,7 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
         boxShadow: visible
           ? "0 0 24px rgba(34, 42, 53, 0.06), 0 1px 1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(34, 42, 53, 0.04), 0 0 4px rgba(34, 42, 53, 0.08), 0 16px 68px rgba(47, 48, 55, 0.05), 0 1px 0 rgba(255, 255, 255, 0.1) inset"
           : "none",
-        width: visible ? "90%" : "100%",
+        width: visible ? "95%" : "100%",
         borderRadius: visible ? "12px" : "0px",
         y: visible ? 10 : 0,
       }}
@@ -96,8 +96,7 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
         damping: 50,
       }}
       className={cn(
-        "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between self-start bg-white/90 backdrop-blur-sm px-4 py-2 lg:flex border-b border-gray-200/50",
-        visible && "bg-white/95 shadow-lg",
+        "relative z-[60] mx-auto hidden w-full max-w-none flex-row items-center justify-between self-start bg-transparent px-4 py-4 lg:flex",
         className,
       )}
     >
@@ -156,8 +155,7 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
         damping: 50,
       }}
       className={cn(
-        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-1rem)] flex-col items-center justify-between bg-white/90 backdrop-blur-sm px-4 py-2 lg:hidden border-b border-gray-200/50",
-        visible && "bg-white/95 shadow-lg",
+        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-1rem)] flex-col items-center justify-between bg-transparent px-4 py-2 lg:hidden",
         className,
       )}
     >
