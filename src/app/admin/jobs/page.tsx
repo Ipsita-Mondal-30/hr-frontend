@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
-
 
 interface Job {
   _id: string;
@@ -30,11 +29,7 @@ export default function AdminJobs() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
 
-  useEffect(() => {
-    fetchJobs();
-  }, [filter]);
-
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     try {
       const endpoint = filter === 'all' ? '/admin/jobs' : `/admin/jobs?status=${filter}`;
       const res = await api.get(endpoint);
@@ -44,13 +39,17 @@ export default function AdminJobs() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
 
-  const updateJobStatus = async (jobId: string, status: string, reason?: string) => {
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
+
+  const updateJobStatus = async (jobId: string, status: Job['status'], reason?: string) => {
     try {
       await api.put(`/admin/jobs/${jobId}/status`, { status, reason });
-      setJobs(jobs.map(job => 
-        job._id === jobId ? { ...job, status: status as any, rejectionReason: reason } : job
+      setJobs(jobs.map(job =>
+        job._id === jobId ? { ...job, status, rejectionReason: reason } : job
       ));
       alert(`Job ${status} successfully`);
     } catch (err) {
@@ -61,7 +60,7 @@ export default function AdminJobs() {
 
   const deleteJob = async (jobId: string) => {
     if (!confirm('Are you sure you want to delete this job? This action cannot be undone.')) return;
-    
+
     try {
       await api.delete(`/admin/jobs/${jobId}`);
       setJobs(jobs.filter(job => job._id !== jobId));
@@ -92,18 +91,18 @@ export default function AdminJobs() {
         action,
         reason
       });
-      
+
       if (action === 'delete') {
         setJobs(jobs.filter(job => !selectedJobs.includes(job._id)));
       } else {
-        const status = action === 'approve' ? 'active' : 'rejected';
-        setJobs(jobs.map(job => 
-          selectedJobs.includes(job._id) 
-            ? { ...job, status: status as any, rejectionReason: reason } 
+        const status: Job['status'] = action === 'approve' ? 'active' : 'rejected';
+        setJobs(jobs.map(job =>
+          selectedJobs.includes(job._id)
+            ? { ...job, status, rejectionReason: reason }
             : job
         ));
       }
-      
+
       setSelectedJobs([]);
       alert(`Successfully ${action}d ${selectedJobs.length} jobs`);
     } catch (err) {
@@ -118,7 +117,7 @@ export default function AdminJobs() {
     job.department.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: Job['status']) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
@@ -175,14 +174,16 @@ export default function AdminJobs() {
           <div className="flex space-x-4">
             <select
               value={filter}
-              onChange={(e) => setFilter(e.target.value as any)}
+              onChange={(e) => setFilter(e.target.value as 'all' | 'active' | 'pending' | 'rejected')}
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Jobs</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
+              <option value="pending">Pending</option>
+              <option value="rejected">Rejected</option>
             </select>
-            
+
             <input
               type="text"
               placeholder="Search jobs..."
@@ -319,7 +320,7 @@ export default function AdminJobs() {
                           Deactivate
                         </button>
                       )}
-                      
+
                       {job.status === 'inactive' && (
                         <button
                           onClick={() => updateJobStatus(job._id, 'active')}
@@ -328,7 +329,7 @@ export default function AdminJobs() {
                           Activate
                         </button>
                       )}
-                      
+
                       <button
                         onClick={() => deleteJob(job._id)}
                         className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
@@ -342,7 +343,7 @@ export default function AdminJobs() {
             </tbody>
           </table>
         </div>
-        
+
         {filteredJobs.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-400 text-6xl mb-4">💼</div>

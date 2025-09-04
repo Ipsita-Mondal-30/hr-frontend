@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 
@@ -53,19 +53,14 @@ interface PayrollRecord {
 }
 
 export default function PayrollDetailPage() {
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const router = useRouter();
   const [payroll, setPayroll] = useState<PayrollRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
-  useEffect(() => {
-    if (params.id) {
-      fetchPayrollDetails();
-    }
-  }, [params.id]);
-
-  const fetchPayrollDetails = async () => {
+  const fetchPayrollDetails = useCallback(async () => {
+    if (!params?.id) return;
     try {
       setLoading(true);
       const response = await api.get(`/admin/payroll/${params.id}`);
@@ -76,11 +71,15 @@ export default function PayrollDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params?.id]);
+
+  useEffect(() => {
+    fetchPayrollDetails();
+  }, [fetchPayrollDetails]);
 
   const handleApprove = async () => {
     if (!payroll) return;
-    
+
     setUpdating(true);
     try {
       await api.put(`/admin/payroll/${payroll._id}/approve`);
@@ -96,7 +95,7 @@ export default function PayrollDetailPage() {
 
   const handleMarkAsPaid = async () => {
     if (!payroll) return;
-    
+
     setUpdating(true);
     try {
       await api.put(`/admin/payroll/${payroll._id}/mark-paid`);
@@ -112,24 +111,38 @@ export default function PayrollDetailPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'paid': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'approved':
+        return 'bg-green-100 text-green-800';
+      case 'paid':
+        return 'bg-blue-100 text-blue-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'USD',
     }).format(amount);
   };
 
   const getMonthName = (month: number) => {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return months[month - 1];
   };
@@ -170,7 +183,11 @@ export default function PayrollDetailPage() {
             </p>
           </div>
           <div className="flex items-center space-x-3">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(payroll.status)}`}>
+            <span
+              className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                payroll.status
+              )}`}
+            >
               {payroll.status.charAt(0).toUpperCase() + payroll.status.slice(1)}
             </span>
             <button
@@ -218,14 +235,18 @@ export default function PayrollDetailPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Base Salary</label>
-                  <p className="text-lg font-semibold text-gray-900">{formatCurrency(payroll.baseSalary)}</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {formatCurrency(payroll.baseSalary)}
+                  </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Bonus</label>
-                  <p className="text-lg font-semibold text-gray-900">{formatCurrency(payroll.bonus)}</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {formatCurrency(payroll.bonus)}
+                  </p>
                 </div>
               </div>
-              
+
               <h3 className="text-md font-medium mt-4 mb-2">Allowances</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -277,11 +298,15 @@ export default function PayrollDetailPage() {
                 </div>
                 <div>
                   <label className="text-sm text-gray-500">Insurance</label>
-                  <p className="font-medium text-red-600">{formatCurrency(payroll.deductions.insurance)}</p>
+                  <p className="font-medium text-red-600">
+                    {formatCurrency(payroll.deductions.insurance)}
+                  </p>
                 </div>
                 <div>
                   <label className="text-sm text-gray-500">Provident Fund</label>
-                  <p className="font-medium text-red-600">{formatCurrency(payroll.deductions.providentFund)}</p>
+                  <p className="font-medium text-red-600">
+                    {formatCurrency(payroll.deductions.providentFund)}
+                  </p>
                 </div>
                 <div>
                   <label className="text-sm text-gray-500">Other</label>
@@ -301,13 +326,18 @@ export default function PayrollDetailPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Total Deductions</span>
                   <span className="font-semibold text-red-600">
-                    -{formatCurrency(Object.values(payroll.deductions).reduce((sum, val) => sum + val, 0))}
+                    -
+                    {formatCurrency(
+                      Object.values(payroll.deductions).reduce((sum, val) => sum + val, 0)
+                    )}
                   </span>
                 </div>
                 <hr />
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold">Net Salary</span>
-                  <span className="text-lg font-bold text-green-600">{formatCurrency(payroll.netSalary)}</span>
+                  <span className="text-lg font-bold text-green-600">
+                    {formatCurrency(payroll.netSalary)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -320,8 +350,19 @@ export default function PayrollDetailPage() {
                   onClick={() => window.open(`/api/admin/payroll/${params.id}/download`, '_blank')}
                   className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
                   </svg>
                   Download Payslip
                 </button>

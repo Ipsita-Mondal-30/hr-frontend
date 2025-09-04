@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 
@@ -43,16 +43,12 @@ export default function AdminProjectsPage() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  useEffect(() => {
-    fetchProjects();
-  }, [filter]);
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
       if (filter !== 'all') params.append('status', filter);
-      
+
       const response = await api.get(`/projects?${params.toString()}`);
       setProjects(response.data?.projects || []);
     } catch (error) {
@@ -60,7 +56,11 @@ export default function AdminProjectsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -98,7 +98,7 @@ export default function AdminProjectsPage() {
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
           <div className="space-y-3">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="h-24 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -143,19 +143,22 @@ export default function AdminProjectsPage() {
         </div>
         <div className="bg-green-50 p-4 rounded-lg border border-green-200">
           <div className="text-2xl font-bold text-green-600">
-            {projects.filter(p => p.status === 'active').length}
+            {projects.filter((p) => p.status === 'active').length}
           </div>
           <div className="text-sm text-green-700">Active Projects</div>
         </div>
         <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
           <div className="text-2xl font-bold text-purple-600">
-            {projects.filter(p => p.status === 'completed').length}
+            {projects.filter((p) => p.status === 'completed').length}
           </div>
           <div className="text-sm text-purple-700">Completed</div>
         </div>
         <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
           <div className="text-2xl font-bold text-orange-600">
-            {Math.round(projects.reduce((sum, p) => sum + p.completionPercentage, 0) / projects.length || 0)}%
+            {Math.round(
+              (projects.reduce((sum, p) => sum + p.completionPercentage, 0) / projects.length) || 0
+            )}
+            %
           </div>
           <div className="text-sm text-orange-700">Avg Progress</div>
         </div>
@@ -166,7 +169,7 @@ export default function AdminProjectsPage() {
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold">Projects ({projects.length})</h2>
         </div>
-        
+
         {projects.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <div className="text-4xl mb-2">📊</div>
@@ -186,14 +189,21 @@ export default function AdminProjectsPage() {
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="text-lg font-medium text-gray-900">{project.name}</h3>
-                      <div className={`w-3 h-3 rounded-full ${getPriorityColor(project.priority)}`} title={`${project.priority} priority`}></div>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(project.status)}`}>
+                      <div
+                        className={`w-3 h-3 rounded-full ${getPriorityColor(project.priority)}`}
+                        title={`${project.priority} priority`}
+                      ></div>
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
+                          project.status
+                        )}`}
+                      >
                         {project.status}
                       </span>
                     </div>
-                    
+
                     <p className="text-gray-600 mb-3">{project.description}</p>
-                    
+
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                       <div>
                         <span className="text-gray-500">Project Manager:</span>
@@ -209,10 +219,12 @@ export default function AdminProjectsPage() {
                       </div>
                       <div>
                         <span className="text-gray-500">Start Date:</span>
-                        <div className="font-medium">{new Date(project.startDate).toLocaleDateString()}</div>
+                        <div className="font-medium">
+                          {new Date(project.startDate).toLocaleDateString()}
+                        </div>
                       </div>
                     </div>
-                    
+
                     {/* Progress Bar */}
                     <div className="mb-3">
                       <div className="flex justify-between text-sm text-gray-600 mb-1">
@@ -220,8 +232,8 @@ export default function AdminProjectsPage() {
                         <span>{project.completionPercentage}%</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${project.completionPercentage}%` }}
                         ></div>
                       </div>
@@ -248,7 +260,7 @@ export default function AdminProjectsPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="ml-4 flex flex-col space-y-2">
                     <button
                       onClick={() => setSelectedProject(project)}
@@ -280,7 +292,11 @@ export default function AdminProjectsPage() {
                   <h2 className="text-xl font-semibold">{selectedProject.name}</h2>
                   <p className="text-gray-600 mt-1">{selectedProject.description}</p>
                   <div className="flex items-center space-x-4 mt-2">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(selectedProject.status)}`}>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
+                        selectedProject.status
+                      )}`}
+                    >
                       {selectedProject.status}
                     </span>
                     <span className="text-sm text-gray-500">
@@ -288,28 +304,31 @@ export default function AdminProjectsPage() {
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedProject(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
+                <button onClick={() => setSelectedProject(null)} className="text-gray-400 hover:text-gray-600">
                   ✕
                 </button>
               </div>
             </div>
-            
+
             <div className="p-6 space-y-6">
               {/* Project Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="text-lg font-semibold text-blue-600">{selectedProject.completionPercentage}%</div>
+                  <div className="text-lg font-semibold text-blue-600">
+                    {selectedProject.completionPercentage}%
+                  </div>
                   <div className="text-sm text-blue-700">Completion</div>
                 </div>
                 <div className="bg-green-50 p-4 rounded-lg">
-                  <div className="text-lg font-semibold text-green-600">${selectedProject.budget.toLocaleString()}</div>
+                  <div className="text-lg font-semibold text-green-600">
+                    ${selectedProject.budget.toLocaleString()}
+                  </div>
                   <div className="text-sm text-green-700">Budget</div>
                 </div>
                 <div className="bg-purple-50 p-4 rounded-lg">
-                  <div className="text-lg font-semibold text-purple-600">{selectedProject.teamMembers.length}</div>
+                  <div className="text-lg font-semibold text-purple-600">
+                    {selectedProject.teamMembers.length}
+                  </div>
                   <div className="text-sm text-purple-700">Team Members</div>
                 </div>
               </div>
@@ -351,15 +370,12 @@ export default function AdminProjectsPage() {
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Create New Project</h2>
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
+                <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600">
                   ✕
                 </button>
               </div>
             </div>
-            
+
             <div className="p-6">
               <div className="space-y-4">
                 <div>
@@ -370,7 +386,7 @@ export default function AdminProjectsPage() {
                     placeholder="Enter project name"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                   <textarea
@@ -379,7 +395,7 @@ export default function AdminProjectsPage() {
                     placeholder="Project description"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
@@ -390,7 +406,7 @@ export default function AdminProjectsPage() {
                       <option value="critical">Critical</option>
                     </select>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Budget</label>
                     <input
@@ -400,7 +416,7 @@ export default function AdminProjectsPage() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="flex space-x-3 pt-4">
                   <button
                     onClick={() => setShowCreateModal(false)}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
 
@@ -42,7 +42,7 @@ export default function AdminPayrollManagement() {
     status: 'all'
   });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       console.log('🔍 Fetching payroll data...');
       const params = new URLSearchParams();
@@ -65,18 +65,18 @@ export default function AdminPayrollManagement() {
 
       setPayrolls(payrollResponse.data);
       setStats(statsResponse.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error fetching payroll data:', error);
       console.error('❌ Error details:', error.response?.data);
       console.error('❌ Error status:', error.response?.status);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
 
   useEffect(() => {
     fetchData();
-  }, [filter]);
+  }, [fetchData]);
 
   const handleApprove = async (payrollId: string) => {
     try {

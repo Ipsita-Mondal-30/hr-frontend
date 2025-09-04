@@ -63,14 +63,10 @@ export default function AdminEmployeesPage() {
   const [filters, setFilters] = useState({
     department: '',
     status: 'active',
-    search: ''
+    search: '',
   });
 
-  useEffect(() => {
-    fetchEmployees();
-  }, [filters]);
-
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -82,10 +78,11 @@ export default function AdminEmployeesPage() {
 
       // Filter by search term
       if (filters.search) {
+        const q = filters.search.toLowerCase();
         employeeList = employeeList.filter((emp: Employee) =>
-          emp.user?.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
-          emp.user?.email?.toLowerCase().includes(filters.search.toLowerCase()) ||
-          emp.position?.toLowerCase().includes(filters.search.toLowerCase())
+          emp.user?.name?.toLowerCase().includes(q) ||
+          emp.user?.email?.toLowerCase().includes(q) ||
+          emp.position?.toLowerCase().includes(q)
         );
       }
 
@@ -95,7 +92,11 @@ export default function AdminEmployeesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters.department, filters.status, filters.search]);
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
 
   const fetchEmployeeProjects = async (employeeId: string) => {
     try {
@@ -142,7 +143,7 @@ export default function AdminEmployeesPage() {
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
           <div className="grid grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(i => (
+            {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-20 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -182,19 +183,26 @@ export default function AdminEmployeesPage() {
         </div>
         <div className="bg-green-50 p-4 rounded-lg border border-green-200">
           <div className="text-2xl font-bold text-green-600">
-            {employees.filter(e => e.performanceScore >= 85).length}
+            {employees.filter((e) => e.performanceScore >= 85).length}
           </div>
           <div className="text-sm text-green-700">High Performers</div>
         </div>
         <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
           <div className="text-2xl font-bold text-purple-600">
-            {Math.round(employees.reduce((sum, e) => sum + e.performanceScore, 0) / employees.length || 0)}%
+            {Math.round(
+              (employees.reduce((sum, e) => sum + e.performanceScore, 0) / employees.length) || 0
+            )}
+            %
           </div>
           <div className="text-sm text-purple-700">Avg Performance</div>
         </div>
         <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
           <div className="text-2xl font-bold text-orange-600">
-            {employees.filter(e => e.aiInsights?.attritionRisk?.score && e.aiInsights.attritionRisk.score > 60).length}
+            {
+              employees.filter(
+                (e) => e.aiInsights?.attritionRisk?.score && e.aiInsights.attritionRisk.score > 60
+              ).length
+            }
           </div>
           <div className="text-sm text-orange-700">At Risk</div>
         </div>
@@ -208,7 +216,7 @@ export default function AdminEmployeesPage() {
             <input
               type="text"
               value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
               placeholder="Name, email, or position..."
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -217,7 +225,7 @@ export default function AdminEmployeesPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
             <select
               value={filters.department}
-              onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
+              onChange={(e) => setFilters((prev) => ({ ...prev, department: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Departments</option>
@@ -232,7 +240,7 @@ export default function AdminEmployeesPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select
               value={filters.status}
-              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+              onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Status</option>
@@ -286,7 +294,11 @@ export default function AdminEmployeesPage() {
                   <div className="flex items-center space-x-6">
                     {/* Performance Score */}
                     <div className="text-center">
-                      <div className={`px-3 py-1 rounded-full text-sm font-medium ${getPerformanceColor(employee.performanceScore)}`}>
+                      <div
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${getPerformanceColor(
+                          employee.performanceScore
+                        )}`}
+                      >
                         {employee.performanceScore}%
                       </div>
                       <div className="text-xs text-gray-500 mt-1">Performance</div>
@@ -294,9 +306,7 @@ export default function AdminEmployeesPage() {
 
                     {/* Project Contribution */}
                     <div className="text-center">
-                      <div className="text-sm font-medium text-gray-900">
-                        {employee.projectContribution}%
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{employee.projectContribution}%</div>
                       <div className="text-xs text-gray-500">Contribution</div>
                     </div>
 
@@ -313,7 +323,11 @@ export default function AdminEmployeesPage() {
                     {/* AI Risk Assessment */}
                     {employee.aiInsights?.attritionRisk && (
                       <div className="text-center">
-                        <div className={`px-2 py-1 rounded-full text-xs font-medium ${getRiskColor(employee.aiInsights.attritionRisk.score)}`}>
+                        <div
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${getRiskColor(
+                            employee.aiInsights.attritionRisk.score
+                          )}`}
+                        >
                           {employee.aiInsights.attritionRisk.score}%
                         </div>
                         <div className="text-xs text-gray-500 mt-1">Risk</div>
@@ -351,13 +365,12 @@ export default function AdminEmployeesPage() {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-xl font-semibold">{selectedEmployee.user?.name || 'No Name'}</h2>
-                  <p className="text-gray-600">{selectedEmployee.position || 'No Position'} • {selectedEmployee.department?.name || 'No Department'}</p>
+                  <p className="text-gray-600">
+                    {selectedEmployee.position || 'No Position'} • {selectedEmployee.department?.name || 'No Department'}
+                  </p>
                   <p className="text-sm text-gray-500">Employee ID: {selectedEmployee.employeeId || 'N/A'}</p>
                 </div>
-                <button
-                  onClick={() => setSelectedEmployee(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
+                <button onClick={() => setSelectedEmployee(null)} className="text-gray-400 hover:text-gray-600">
                   ✕
                 </button>
               </div>
@@ -365,7 +378,7 @@ export default function AdminEmployeesPage() {
 
             <div className="p-6 space-y-6">
               {/* Employee Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md-grid-cols-4 md:grid-cols-4 gap-4">
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <div className="text-2xl font-bold text-blue-600">{selectedEmployee.performanceScore}%</div>
                   <div className="text-sm text-blue-700">Performance Score</div>
@@ -382,7 +395,13 @@ export default function AdminEmployeesPage() {
                 </div>
                 <div className="bg-orange-50 p-4 rounded-lg">
                   <div className="text-2xl font-bold text-orange-600">
-                    {Math.floor((new Date().getTime() - new Date(selectedEmployee.hireDate).getTime()) / (1000 * 60 * 60 * 24 * 365))}y
+                    {
+                      Math.floor(
+                        (new Date().getTime() - new Date(selectedEmployee.hireDate).getTime()) /
+                          (1000 * 60 * 60 * 24 * 365)
+                      )
+                    }
+                    y
                   </div>
                   <div className="text-sm text-orange-700">Years at Company</div>
                 </div>
@@ -395,10 +414,7 @@ export default function AdminEmployeesPage() {
                   <div className="text-center py-8 text-gray-500">
                     <div className="text-4xl mb-2">📊</div>
                     <p>No projects assigned</p>
-                    <Link
-                      href="/admin/projects/create"
-                      className="text-blue-600 hover:text-blue-800 text-sm"
-                    >
+                    <Link href="/admin/projects/create" className="text-blue-600 hover:text-blue-800 text-sm">
                       Assign to a project →
                     </Link>
                   </div>
@@ -408,10 +424,15 @@ export default function AdminEmployeesPage() {
                       <div key={project._id} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex justify-between items-start mb-2">
                           <h4 className="font-medium text-gray-900">{project.name}</h4>
-                          <span className={`px-2 py-1 text-xs rounded-full ${project.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            project.status === 'active' ? 'bg-blue-100 text-blue-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              project.status === 'completed'
+                                ? 'bg-green-100 text-green-800'
+                                : project.status === 'active'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}
+                          >
                             {project.status}
                           </span>
                         </div>
