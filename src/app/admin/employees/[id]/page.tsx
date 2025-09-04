@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 
@@ -47,22 +47,18 @@ interface Project {
 export default function EmployeeDetailPage() {
   const params = useParams();
   const router = useRouter();
+
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'performance'>('overview');
 
-  useEffect(() => {
-    if (params.id) {
-      fetchEmployeeDetails();
-      fetchEmployeeProjects();
-    }
-  }, [params.id]);
-
-  const fetchEmployeeDetails = async () => {
+  // Fetch Employee Details
+  const fetchEmployeeDetails = useCallback(async () => {
+    if (!params.id) return;
     try {
       setLoading(true);
-      const response = await api.get(`/admin/employees/${params.id}`);
+      const response = await api.get<Employee>(`/admin/employees/${params.id}`);
       setEmployee(response.data);
     } catch (error) {
       console.error('Error fetching employee details:', error);
@@ -70,16 +66,26 @@ export default function EmployeeDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
 
-  const fetchEmployeeProjects = async () => {
+  // Fetch Employee Projects
+  const fetchEmployeeProjects = useCallback(async () => {
+    if (!params.id) return;
     try {
-      const response = await api.get(`/admin/employees/${params.id}/projects`);
+      const response = await api.get<Project[]>(`/admin/employees/${params.id}/projects`);
       setProjects(response.data);
     } catch (error) {
       console.error('Error fetching employee projects:', error);
     }
-  };
+  }, [params.id]);
+
+  // Load data on mount / params.id change
+  useEffect(() => {
+    if (params.id) {
+      fetchEmployeeDetails();
+      fetchEmployeeProjects();
+    }
+  }, [params.id, fetchEmployeeDetails, fetchEmployeeProjects]);
 
   const getSkillLevelColor = (level: string) => {
     switch (level.toLowerCase()) {
@@ -161,7 +167,8 @@ export default function EmployeeDetailPage() {
             ].map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key as any)}
+                onClick={() => setActiveTab(tab.key as 'overview' | 'projects' | 'performance')}
+
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.key
                     ? 'border-blue-500 text-blue-600'
@@ -177,7 +184,7 @@ export default function EmployeeDetailPage() {
         {/* Tab Content */}
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Basic Information */}
+            {/* Basic Info */}
             <div className="bg-white p-6 rounded-lg shadow">
               <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
               <div className="space-y-3">
@@ -218,10 +225,7 @@ export default function EmployeeDetailPage() {
                     <span className="text-sm font-semibold text-blue-600">{employee.performanceScore}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full" 
-                      style={{ width: `${employee.performanceScore}%` }}
-                    ></div>
+                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${employee.performanceScore}%` }}></div>
                   </div>
                 </div>
                 <div>
@@ -230,10 +234,7 @@ export default function EmployeeDetailPage() {
                     <span className="text-sm font-semibold text-green-600">{employee.projectContribution}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-green-600 h-2 rounded-full" 
-                      style={{ width: `${employee.projectContribution}%` }}
-                    ></div>
+                    <div className="bg-green-600 h-2 rounded-full" style={{ width: `${employee.projectContribution}%` }}></div>
                   </div>
                 </div>
               </div>
@@ -295,21 +296,11 @@ export default function EmployeeDetailPage() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Project Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Role
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Contribution
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Hours Worked
-                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contribution</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hours Worked</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">

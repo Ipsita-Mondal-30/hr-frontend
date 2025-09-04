@@ -25,6 +25,8 @@ interface Stats {
     newJobs: number;
     newApplications: number;
   };
+  employeeCount?: number; // added
+  projectCount?: number;  // added
 }
 
 interface RecentActivity {
@@ -57,7 +59,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchData();
 
-    // Refresh data every 30 seconds to keep counts updated
+    // Refresh data every 30 seconds
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -104,21 +106,21 @@ export default function AdminDashboard() {
         <StatCard
           label="Total Employees"
           value={stats?.employeeCount || 0}
-          icon="�‍💼"
+          icon="👨‍💼"
           trend="+3 new hires this month"
           color="bg-blue-500"
         />
         <StatCard
           label="Active Projects"
           value={stats?.projectCount || 0}
-          icon="�"
+          icon="📊"
           trend="+2 projects started"
           color="bg-green-500"
         />
         <StatCard
           label="HR Staff"
           value={stats?.hrCount}
-          icon="�‍💼"
+          icon="👩‍💼"
           trend="Managing operations"
           color="bg-purple-500"
         />
@@ -236,7 +238,7 @@ export default function AdminDashboard() {
       {/* Recent Activity Summary */}
       {stats?.recentActivity && (
         <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">This Week's Activity</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">This Week&apos;s Activity</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">{stats.recentActivity.newCandidates}</div>
