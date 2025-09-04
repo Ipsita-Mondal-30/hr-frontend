@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
 
@@ -37,31 +38,31 @@ export default function CandidateProfilePage() {
     linkedIn: '',
     github: '',
     profilePicture: '',
-    profileCompleteness: 0
+    profileCompleteness: 0,
   });
-  
+
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newSkill, setNewSkill] = useState('');
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const res = await api.get('/candidate/profile');
-      setProfile({ ...profile, ...res.data });
+      setProfile((prev) => ({ ...prev, ...(res.data as Partial<CandidateProfile>) }));
     } catch (err) {
       console.error('Error fetching profile:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
       const res = await api.put('/candidate/profile', profile);
-      setProfile({ ...profile, ...res.data }); // Update with response that includes new completeness
+      setProfile((prev) => ({ ...prev, ...(res.data as Partial<CandidateProfile>) })); // Update with response that includes new completeness
       setEditing(false);
       alert('Profile updated successfully!');
     } catch (err) {
@@ -73,23 +74,23 @@ export default function CandidateProfilePage() {
   };
 
   const handleInputChange = (key: keyof CandidateProfile, value: string) => {
-    setProfile(prev => ({ ...prev, [key]: value }));
+    setProfile((prev) => ({ ...prev, [key]: value }));
   };
 
   const addSkill = () => {
     if (newSkill.trim() && !profile.skills.includes(newSkill.trim())) {
-      setProfile(prev => ({
+      setProfile((prev) => ({
         ...prev,
-        skills: [...prev.skills, newSkill.trim()]
+        skills: [...prev.skills, newSkill.trim()],
       }));
       setNewSkill('');
     }
   };
 
   const removeSkill = (skillToRemove: string) => {
-    setProfile(prev => ({
+    setProfile((prev) => ({
       ...prev,
-      skills: prev.skills.filter(skill => skill !== skillToRemove)
+      skills: prev.skills.filter((skill) => skill !== skillToRemove),
     }));
   };
 
@@ -139,8 +140,8 @@ export default function CandidateProfilePage() {
             <span className="text-sm font-bold text-blue-900">{completeness}%</span>
           </div>
           <div className="w-full bg-blue-200 rounded-full h-2">
-            <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${completeness}%` }}
             ></div>
           </div>
@@ -157,12 +158,14 @@ export default function CandidateProfilePage() {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <div className="text-center mb-6">
-              <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden">
                 {profile.profilePicture ? (
-                  <img 
-                    src={profile.profilePicture} 
-                    alt="Profile" 
-                    className="w-24 h-24 rounded-full object-cover"
+                  <Image
+                    src={profile.profilePicture}
+                    alt="Profile"
+                    className="rounded-full object-cover"
+                    width={96}
+                    height={96}
                   />
                 ) : (
                   <span className="text-blue-600 font-semibold text-2xl">
@@ -171,17 +174,13 @@ export default function CandidateProfilePage() {
                 )}
               </div>
               {editing && (
-                <button className="text-sm text-blue-600 hover:text-blue-800">
-                  Change Photo
-                </button>
+                <button className="text-sm text-blue-600 hover:text-blue-800">Change Photo</button>
               )}
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                 {editing ? (
                   <input
                     type="text"
@@ -195,17 +194,13 @@ export default function CandidateProfilePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <p className="text-gray-900">{profile.email}</p>
                 <p className="text-xs text-gray-500">Email cannot be changed</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                 {editing ? (
                   <input
                     type="tel"
@@ -219,9 +214,7 @@ export default function CandidateProfilePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
                 {editing ? (
                   <input
                     type="text"
@@ -243,12 +236,10 @@ export default function CandidateProfilePage() {
           {/* Professional Information */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Professional Information</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Years of Experience
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience</label>
                 {editing ? (
                   <select
                     value={profile.experience}
@@ -268,9 +259,7 @@ export default function CandidateProfilePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Expected Salary (Annual)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Expected Salary (Annual)</label>
                 {editing ? (
                   <input
                     type="text"
@@ -286,9 +275,7 @@ export default function CandidateProfilePage() {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Bio / Summary
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Bio / Summary</label>
               {editing ? (
                 <textarea
                   value={profile.bio}
@@ -304,9 +291,7 @@ export default function CandidateProfilePage() {
 
             {/* Skills */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Skills
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Skills</label>
               <div className="flex flex-wrap gap-2 mb-3">
                 {profile.skills.map((skill, index) => (
                   <span
@@ -315,10 +300,7 @@ export default function CandidateProfilePage() {
                   >
                     {skill}
                     {editing && (
-                      <button
-                        onClick={() => removeSkill(skill)}
-                        className="ml-2 text-blue-600 hover:text-blue-800"
-                      >
+                      <button onClick={() => removeSkill(skill)} className="ml-2 text-blue-600 hover:text-blue-800">
                         ×
                       </button>
                     )}
@@ -335,10 +317,7 @@ export default function CandidateProfilePage() {
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     onKeyDown={(e) => e.key === 'Enter' && addSkill()}
                   />
-                  <button
-                    onClick={addSkill}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
+                  <button onClick={addSkill} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
                     Add
                   </button>
                 </div>
@@ -349,12 +328,10 @@ export default function CandidateProfilePage() {
           {/* Documents & Links */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Documents & Links</h3>
-            
+
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Resume URL
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Resume URL</label>
                 {editing ? (
                   <input
                     type="url"
@@ -382,9 +359,7 @@ export default function CandidateProfilePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Portfolio URL
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Portfolio URL</label>
                 {editing ? (
                   <input
                     type="url"
@@ -412,9 +387,7 @@ export default function CandidateProfilePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  LinkedIn Profile
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn Profile</label>
                 {editing ? (
                   <input
                     type="url"
@@ -442,9 +415,7 @@ export default function CandidateProfilePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  GitHub Profile
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">GitHub Profile</label>
                 {editing ? (
                   <input
                     type="url"
@@ -476,7 +447,7 @@ export default function CandidateProfilePage() {
           {/* Account Settings */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Settings</h3>
-            
+
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div>

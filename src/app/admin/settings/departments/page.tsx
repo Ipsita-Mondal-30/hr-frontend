@@ -10,6 +10,16 @@ interface Department {
   createdAt: string;
 }
 
+interface ApiError {
+  response?: {
+    data?: {
+      error?: string;
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
 export default function DepartmentManagement() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,9 +36,10 @@ export default function DepartmentManagement() {
     try {
       const res = await api.get('/admin/departments');
       setDepartments(res.data);
-    } catch (err) {
-      console.error('Failed to fetch departments:', err);
-      alert('Failed to fetch departments');
+    } catch (err: unknown) {
+      const e = err as ApiError;
+      console.error('Failed to fetch departments:', e);
+      alert(e.response?.data?.error || e.response?.data?.message || 'Failed to fetch departments');
     } finally {
       setLoading(false);
     }
@@ -46,9 +57,7 @@ export default function DepartmentManagement() {
       if (editingDept) {
         // Update existing department
         const res = await api.put(`/admin/departments/${editingDept._id}`, formData);
-        setDepartments(departments.map(dept => 
-          dept._id === editingDept._id ? res.data : dept
-        ));
+        setDepartments(departments.map((dept) => (dept._id === editingDept._id ? res.data : dept)));
         alert('Department updated successfully');
       } else {
         // Create new department
@@ -56,13 +65,14 @@ export default function DepartmentManagement() {
         setDepartments([res.data, ...departments]);
         alert('Department created successfully');
       }
-      
+
       setShowModal(false);
       setEditingDept(null);
       setFormData({ name: '', description: '' });
-    } catch (err: any) {
-      console.error('Failed to save department:', err);
-      alert(err.response?.data?.error || 'Failed to save department');
+    } catch (err: unknown) {
+      const e = err as ApiError;
+      console.error('Failed to save department:', e);
+      alert(e.response?.data?.error || e.response?.data?.message || 'Failed to save department');
     } finally {
       setSaving(false);
     }
@@ -79,11 +89,12 @@ export default function DepartmentManagement() {
 
     try {
       await api.delete(`/admin/departments/${dept._id}`);
-      setDepartments(departments.filter(d => d._id !== dept._id));
+      setDepartments(departments.filter((d) => d._id !== dept._id));
       alert('Department deleted successfully');
-    } catch (err: any) {
-      console.error('Failed to delete department:', err);
-      alert(err.response?.data?.error || 'Failed to delete department');
+    } catch (err: unknown) {
+      const e = err as ApiError;
+      console.error('Failed to delete department:', e);
+      alert(e.response?.data?.error || e.response?.data?.message || 'Failed to delete department');
     }
   };
 
@@ -196,7 +207,7 @@ export default function DepartmentManagement() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
               {editingDept ? 'Edit Department' : 'Add Department'}
             </h2>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -211,11 +222,9 @@ export default function DepartmentManagement() {
                   required
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -224,7 +233,7 @@ export default function DepartmentManagement() {
                   placeholder="Brief description of the department"
                 />
               </div>
-              
+
               <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"
@@ -238,7 +247,7 @@ export default function DepartmentManagement() {
                   disabled={saving}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
                 >
-                  {saving ? 'Saving...' : (editingDept ? 'Update' : 'Create')}
+                  {saving ? 'Saving...' : editingDept ? 'Update' : 'Create'}
                 </button>
               </div>
             </form>

@@ -5,6 +5,23 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
 
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: string;
+}
+
+interface CandidateSidebarProps {
+  navigation: NavigationItem[];
+  pathname: string;
+  user: {
+    name: string;
+    email: string;
+    profileCompleteness?: number;
+  } | null;
+  logout: () => void;
+}
+
 export default function CandidateLayout({
   children,
 }: {
@@ -14,7 +31,7 @@ export default function CandidateLayout({
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const navigation = [
+  const navigation: NavigationItem[] = [
     { name: 'Back to Home', href: '/', icon: '🏠' },
     { name: 'Dashboard', href: '/candidate/dashboard', icon: '📊' },
     { name: 'Browse Jobs', href: '/candidate/jobs', icon: '🔍' },
@@ -63,7 +80,7 @@ export default function CandidateLayout({
   );
 }
 
-function CandidateSidebar({ navigation, pathname, user, logout }: any) {
+function CandidateSidebar({ navigation, pathname, user, logout }: CandidateSidebarProps) {
   return (
     <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 pb-4">
       <div className="flex h-16 shrink-0 items-center">
@@ -104,7 +121,7 @@ function CandidateSidebar({ navigation, pathname, user, logout }: any) {
         <ul role="list" className="flex flex-1 flex-col gap-y-7">
           <li>
             <ul role="list" className="-mx-2 space-y-1">
-              {navigation.map((item: any) => (
+              {navigation.map((item: NavigationItem) => (
                 <li key={item.name}>
                   <Link
                     href={item.href}

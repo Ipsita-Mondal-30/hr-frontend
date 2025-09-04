@@ -5,52 +5,98 @@ import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
 import { getAuthToken } from '@/lib/cookies';
 
+type ApiError = {
+  response?: { data?: unknown };
+  message?: string;
+};
+
+type MeSuccess = {
+  success?: boolean;
+  user?: {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+  [key: string]: unknown;
+};
+
+type MeFailure = {
+  success?: false;
+  error?: unknown;
+  message?: string;
+  [key: string]: unknown;
+};
+
+type ServerTestResponse =
+  | { success: true; [key: string]: unknown }
+  | { success: false; error?: string; [key: string]: unknown };
+
+type TestResults = {
+  tokenInCookies: 'Present' | 'Missing';
+  tokenValue: string;
+  tokenInLocalStorage: 'Present' | 'Missing';
+  apiMeCall:
+    | { success: true; data: MeSuccess }
+    | { success: false; error: unknown };
+  serverConnectivity:
+    | { success: true; data: unknown }
+    | { success: false; error: unknown };
+};
+
 export default function AuthDebugPage() {
   const { user, loading } = useAuth();
-  const [debugInfo, setDebugInfo] = useState<any>(null);
-  const [testResults, setTestResults] = useState<any>({});
+  const [testResults, setTestResults] = useState<TestResults | null>(null);
 
   const runTests = async () => {
-    const results: any = {};
-    
+    const results: TestResults = {
+      tokenInCookies: 'Missing',
+      tokenValue: 'None',
+      tokenInLocalStorage: 'Missing',
+      apiMeCall: { success: false, error: 'Not run' },
+      serverConnectivity: { success: false, error: 'Not run' },
+    };
+
     // Test 1: Check token in cookies
     const token = getAuthToken();
     results.tokenInCookies = token ? 'Present' : 'Missing';
     results.tokenValue = token ? token.substring(0, 20) + '...' : 'None';
-    
+
     // Test 2: Check localStorage
     const localToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
     results.tokenInLocalStorage = localToken ? 'Present' : 'Missing';
-    
+
     // Test 3: Test API call to /auth/me
     try {
       const response = await api.get('/auth/me');
       results.apiMeCall = {
         success: true,
-        data: response.data
+        data: response.data as MeSuccess,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const e = error as ApiError;
       results.apiMeCall = {
         success: false,
-        error: error.response?.data || error.message
+        error: (e && (e.response?.data ?? e.message)) ?? 'Unknown error',
       };
     }
-    
+
     // Test 4: Check server connectivity
     try {
       const response = await fetch('http://localhost:8080/api/test');
-      const data = await response.json();
+      const data: unknown = await response.json();
       results.serverConnectivity = {
         success: true,
-        data
+        data: data as ServerTestResponse,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const e = error as { message?: string };
       results.serverConnectivity = {
         success: false,
-        error: error.message
+        error: e?.message ?? 'Unknown error',
       };
     }
-    
+
     setTestResults(results);
   };
 
@@ -58,14 +104,16 @@ export default function AuthDebugPage() {
     try {
       const response = await api.post('/auth/login', {
         email: 'ipsitaamondal@gmail.com',
-        password: 'any'
+        password: 'any',
       });
-      
-      if (response.data.success) {
-        localStorage.setItem('auth_token', response.data.token);
+
+      const data = response.data as { success?: boolean; token?: string };
+      if (data?.success && data.token) {
+        localStorage.setItem('auth_token', data.token);
         window.location.reload();
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      // Keep console logging for debugging visibility
       console.error('Manual login failed:', error);
     }
   };
@@ -85,20 +133,32 @@ export default function AuthDebugPage() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Authentication Debug</h1>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Auth Context Info */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">Auth Context Status</h2>
             <div className="space-y-2">
-              <p><strong>Loading:</strong> {loading ? 'Yes' : 'No'}</p>
-              <p><strong>User:</strong> {user ? 'Authenticated' : 'Not authenticated'}</p>
+              <p>
+                <strong>Loading:</strong> {loading ? 'Yes' : 'No'}
+              </p>
+              <p>
+                <strong>User:</strong> {user ? 'Authenticated' : 'Not authenticated'}
+              </p>
               {user && (
                 <div className="bg-gray-100 p-3 rounded">
-                  <p><strong>Name:</strong> {user.name}</p>
-                  <p><strong>Email:</strong> {user.email}</p>
-                  <p><strong>Role:</strong> {user.role}</p>
-                  <p><strong>ID:</strong> {user._id}</p>
+                  <p>
+                    <strong>Name:</strong> {user.name}
+                  </p>
+                  <p>
+                    <strong>Email:</strong> {user.email}
+                  </p>
+                  <p>
+                    <strong>Role:</strong> {user.role}
+                  </p>
+                  <p>
+                    <strong>ID:</strong> {user._id}
+                  </p>
                 </div>
               )}
             </div>
@@ -168,10 +228,14 @@ export default function AuthDebugPage() {
               <div>
                 <h3 className="font-semibold mb-2">LocalStorage</h3>
                 <pre className="text-xs bg-gray-100 p-3 rounded">
-                  {JSON.stringify({
-                    auth_token: localStorage.getItem('auth_token'),
-                    token: localStorage.getItem('token')
-                  }, null, 2)}
+                  {JSON.stringify(
+                    {
+                      auth_token: localStorage.getItem('auth_token'),
+                      token: localStorage.getItem('token'),
+                    },
+                    null,
+                    2
+                  )}
                 </pre>
               </div>
             </div>

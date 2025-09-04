@@ -17,7 +17,7 @@ export default function AppliedJobsPage() {
     try {
       const res = await api.get('/candidate/applications');
       setApplications(res.data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error fetching applications:', err);
     } finally {
       setLoading(false);
@@ -28,28 +28,6 @@ export default function AppliedJobsPage() {
     if (filter === 'all') return true;
     return app.status === filter;
   });
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'reviewed':
-        return 'bg-blue-100 text-blue-800';
-      case 'shortlisted':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getMatchScoreColor = (score?: number) => {
-    if (!score) return 'bg-gray-100 text-gray-800';
-    if (score >= 80) return 'bg-green-100 text-green-800';
-    if (score >= 60) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-red-100 text-red-800';
-  };
 
   if (loading) {
     return <div className="p-6">Loading your applications...</div>;

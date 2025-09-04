@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
 
 interface PlatformAnalytics {
@@ -24,16 +24,14 @@ interface PlatformAnalytics {
   userActivity: Array<{ date: string; newUsers: number; newJobs: number; newApplications: number }>;
 }
 
+type TimeRange = '7d' | '30d' | '90d' | '1y';
+
 export default function AdminReports() {
   const [analytics, setAnalytics] = useState<PlatformAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
+  const [timeRange, setTimeRange] = useState<TimeRange>('30d');
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [timeRange]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       const res = await api.get(`/admin/analytics?range=${timeRange}`);
       setAnalytics(res.data);
@@ -42,14 +40,18 @@ export default function AdminReports() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [timeRange]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   const exportReport = async (format: 'csv' | 'pdf') => {
     try {
       const res = await api.get(`/admin/reports/export?format=${format}&range=${timeRange}`, {
         responseType: 'blob'
       });
-      
+
       const blob = new Blob([res.data]);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -89,7 +91,7 @@ export default function AdminReports() {
         <div className="flex space-x-3">
           <select
             value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value as any)}
+            onChange={(e) => setTimeRange(e.target.value as TimeRange)}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="7d">Last 7 days</option>

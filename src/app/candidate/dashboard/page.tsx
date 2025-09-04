@@ -59,9 +59,19 @@ interface ProfileAnalysis {
   generatedAt: string;
 }
 
+type RecentJob = {
+  _id: string;
+  title?: string;
+  companyName?: string;
+  location?: string;
+  department?: { name?: string };
+};
+
+type NarrowedApplication = Application & { matchScore?: number };
+
 export default function CandidateDashboard() {
   const { user, updateUser } = useAuth();
-  const [applications, setApplications] = useState<Application[]>([]);
+  const [applications, setApplications] = useState<NarrowedApplication[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     totalApplications: 0,
     pendingApplications: 0,
@@ -69,10 +79,10 @@ export default function CandidateDashboard() {
     rejectedApplications: 0,
     savedJobs: 0,
     profileCompleteness: 75,
-    scheduledInterviews: 0
+    scheduledInterviews: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [recentJobs, setRecentJobs] = useState<any[]>([]);
+  const [recentJobs, setRecentJobs] = useState<RecentJob[]>([]);
   const [upcomingInterviews, setUpcomingInterviews] = useState<Interview[]>([]);
   const [interviewPrep, setInterviewPrep] = useState<InterviewPrep | null>(null);
   const [profileAnalysis, setProfileAnalysis] = useState<ProfileAnalysis | null>(null);
@@ -94,7 +104,7 @@ export default function CandidateDashboard() {
         rejectedApplications: dashboardStats.rejectedApplications ?? 0,
         savedJobs: dashboardStats.savedJobs ?? 0,
         profileCompleteness: dashboardStats.profileCompleteness ?? 0,
-        scheduledInterviews: dashboardStats.scheduledInterviews ?? 0
+        scheduledInterviews: dashboardStats.scheduledInterviews ?? 0,
       });
 
       // Update user's profile completeness in auth context
@@ -104,17 +114,17 @@ export default function CandidateDashboard() {
 
       // Fetch applications
       const appsRes = await api.get<Application[]>('/candidate/applications');
-      const apps = appsRes.data || [];
+      const apps = (appsRes.data || []) as NarrowedApplication[];
       console.log(`📋 Found ${apps.length} applications`);
       setApplications(apps.slice(0, 5)); // Show only recent 5
 
       // Fetch recent jobs for recommendations
       try {
-        const jobsRes = await api.get<any[]>('/jobs?limit=10&status=active');
+        const jobsRes = await api.get<RecentJob[]>('/jobs?limit=10&status=active');
         const jobs = jobsRes.data || [];
         console.log(`🔍 Found ${jobs.length} recent active jobs`);
         setRecentJobs(jobs.slice(0, 5));
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Error fetching jobs:', err);
         setRecentJobs([]);
       }
@@ -134,11 +144,11 @@ export default function CandidateDashboard() {
         );
         setUpcomingInterviews(upcoming.slice(0, 3));
         console.log(`📅 Upcoming interviews: ${upcoming.length}`);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Error fetching interviews:', err);
         setUpcomingInterviews([]);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error fetching dashboard data:', err);
     } finally {
       setLoading(false);
@@ -153,44 +163,33 @@ export default function CandidateDashboard() {
       console.log('🤖 Interview prep response:', response.data);
       setInterviewPrep(response.data);
       console.log('✅ AI interview prep loaded successfully');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Error fetching interview prep:', err);
-      console.error('❌ Error details:', err.response?.data);
-      
-      // Set a fallback response so the UI doesn't stay loading
-      setInterviewPrep({
+      const fallback: InterviewPrep = {
         questions: [
           'Tell me about your background and experience',
           'What interests you about this role?',
           'Describe a challenging project you worked on',
           'How do you handle difficult situations?',
-          'Where do you see yourself in 5 years?'
+          'Where do you see yourself in 5 years?',
         ],
         skillGaps: {
           missing: ['System design', 'Advanced algorithms'],
-          recommended: ['Practice coding problems', 'Study system design']
+          recommended: ['Practice coding problems', 'Study system design'],
         },
-        strengths: [
-          'Technical foundation',
-          'Problem-solving skills',
-          'Learning mindset'
-        ],
+        strengths: ['Technical foundation', 'Problem-solving skills', 'Learning mindset'],
         preparationTips: [
-          'Review your technical skills',
+          'Review technical skills',
           'Practice coding problems',
           'Research the company',
-          'Prepare behavioral examples'
+          'Prepare behavioral examples',
         ],
-        technicalTopics: [
-          'Programming fundamentals',
-          'Problem-solving',
-          'Best practices',
-          'Testing'
-        ],
+        technicalTopics: ['Programming fundamentals', 'Problem-solving', 'Best practices', 'Testing'],
         profileScore: stats.profileCompleteness,
         targetRole: 'Software Developer',
-        generatedAt: new Date().toISOString()
-      });
+        generatedAt: new Date().toISOString(),
+      };
+      setInterviewPrep(fallback);
     } finally {
       setLoadingAI(false);
     }
@@ -203,61 +202,41 @@ export default function CandidateDashboard() {
       console.log('🔍 Profile analysis response:', response.data);
       setProfileAnalysis(response.data);
       console.log('✅ AI profile analysis loaded successfully');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Error fetching profile analysis:', err);
-      console.error('❌ Error details:', err.response?.data);
-      
-      // Set a fallback response
-      setProfileAnalysis({
+      // Fallback response
+      const fallback: ProfileAnalysis = {
         overallScore: stats.profileCompleteness,
-        strengths: [
-          'Professional background',
-          'Technical skills',
-          'Career focus'
-        ],
-        improvements: [
-          'Complete profile information',
-          'Add portfolio projects',
-          'Enhance skill descriptions'
-        ],
-        marketability: stats.profileCompleteness > 70 ? 'Strong potential' : 'Good foundation with room for growth',
-        recommendations: [
-          'Complete your profile',
-          'Add work samples',
-          'Update your resume',
-          'Connect social profiles'
-        ],
+        strengths: ['Professional background', 'Technical skills', 'Career focus'],
+        improvements: ['Complete profile information', 'Add portfolio projects', 'Enhance skill descriptions'],
+        marketability:
+          stats.profileCompleteness > 70 ? 'Strong potential' : 'Good foundation with room for growth',
+        recommendations: ['Complete your profile', 'Add work samples', 'Update your resume', 'Connect social profiles'],
         roleAlignment: 'Developing alignment with target roles',
         profileCompleteness: stats.profileCompleteness,
         lastUpdated: new Date().toISOString(),
-        generatedAt: new Date().toISOString()
-      });
+        generatedAt: new Date().toISOString(),
+      };
+      setProfileAnalysis(fallback);
     }
   }, [stats.profileCompleteness]);
 
   useEffect(() => {
     fetchDashboardData();
     // Fetch AI data after a short delay to prioritize main dashboard data
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       fetchAIInterviewPrep();
       fetchProfileAnalysis();
     }, 1000);
 
     const interval = setInterval(fetchDashboardData, 30000);
-    return () => clearInterval(interval);
-  }, [fetchDashboardData]);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
+  }, [fetchDashboardData, fetchAIInterviewPrep, fetchProfileAnalysis]);
 
   const refreshDashboard = () => {
-    fetchDashboardData();
-  };
-
-  const handleApplicationSuccess = () => {
-    console.log('🔄 Application submitted successfully, refreshing dashboard...');
-    fetchDashboardData();
-  };
-
-  const handleJobSaved = () => {
-    console.log('🔄 Job saved/unsaved, refreshing dashboard...');
     fetchDashboardData();
   };
 
@@ -391,8 +370,8 @@ export default function CandidateDashboard() {
                   <span className={`px-2 py-1 text-xs rounded ${getStatusColor(app.status as string)}`}>
                     {app.status}
                   </span>
-                  {typeof (app as any).matchScore === 'number' && (
-                    <p className="text-xs text-gray-500 mt-1">{(app as any).matchScore}% match</p>
+                  {typeof app.matchScore === 'number' && (
+                    <p className="text-xs text-gray-500 mt-1">{app.matchScore}% match</p>
                   )}
                 </div>
               </div>
@@ -446,7 +425,7 @@ export default function CandidateDashboard() {
             🔄 Refresh
           </button>
         </div>
-        
+
         {interviewPrep ? (
           <div className="space-y-4">
             {/* Target Role & Score */}
@@ -487,7 +466,7 @@ export default function CandidateDashboard() {
                   ))}
                 </ul>
               </div>
-              
+
               <div className="bg-white rounded-lg p-4 border">
                 <h3 className="font-medium text-orange-700 mb-2">📈 Areas to Improve</h3>
                 <ul className="space-y-1">
@@ -531,7 +510,9 @@ export default function CandidateDashboard() {
                   </svg>
                   Generating...
                 </span>
-              ) : 'Generate AI Prep'}
+              ) : (
+                'Generate AI Prep'
+              )}
             </button>
           </div>
         )}
@@ -544,14 +525,11 @@ export default function CandidateDashboard() {
             <span className="text-2xl">📊</span>
             <h2 className="text-lg font-semibold text-gray-900">AI Profile Analysis</h2>
           </div>
-          <button
-            onClick={fetchProfileAnalysis}
-            className="text-sm text-green-600 hover:text-green-800"
-          >
+          <button onClick={fetchProfileAnalysis} className="text-sm text-green-600 hover:text-green-800">
             🔄 Refresh
           </button>
         </div>
-        
+
         {profileAnalysis ? (
           <div className="space-y-4">
             {/* Overall Score */}
@@ -581,7 +559,7 @@ export default function CandidateDashboard() {
                   ))}
                 </ul>
               </div>
-              
+
               <div className="bg-white rounded-lg p-4 border">
                 <h3 className="font-medium text-blue-700 mb-2">🎯 Recommendations</h3>
                 <ul className="space-y-1">
@@ -608,10 +586,7 @@ export default function CandidateDashboard() {
           <div className="text-center py-8">
             <div className="text-gray-400 text-4xl mb-2">📊</div>
             <p className="text-gray-500 mb-3">AI Profile Analysis</p>
-            <button
-              onClick={fetchProfileAnalysis}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
-            >
+            <button onClick={fetchProfileAnalysis} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
               Analyze Profile
             </button>
           </div>
@@ -650,7 +625,6 @@ export default function CandidateDashboard() {
                 <div className="flex space-x-2">
                   <Link
                     href={`/candidate/jobs`}
-                    // If you have a detail page, consider: href={`/candidate/jobs/${job._id}`}
                     className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                   >
                     Apply
@@ -692,9 +666,22 @@ function StatCard({ title, value, icon, color }: { title: string; value: number;
   );
 }
 
-function QuickActionCard({ title, description, icon, href }: { title: string; description: string; icon: string; href: string }) {
+function QuickActionCard({
+  title,
+  description,
+  icon,
+  href,
+}: {
+  title: string;
+  description: string;
+  icon: string;
+  href: string;
+}) {
   return (
-    <Link href={href} className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
+    <Link
+      href={href}
+      className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
+    >
       <div className="text-center">
         <div className="text-2xl mb-2">{icon}</div>
         <h3 className="font-medium text-gray-900 mb-1">{title}</h3>

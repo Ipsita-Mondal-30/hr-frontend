@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
 
@@ -27,21 +27,21 @@ export default function UsersManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [filter]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const endpoint = filter === 'all' ? '/admin/users' : `/admin/users?role=${filter}`;
       const res = await api.get(endpoint);
       setUsers(res.data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch users:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
@@ -49,7 +49,7 @@ export default function UsersManagement() {
       setUsers(users.map(user => 
         user._id === userId ? { ...user, isActive: !currentStatus } : user
       ));
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to update user status:', err);
       alert('Failed to update user status');
     }
@@ -61,7 +61,7 @@ export default function UsersManagement() {
     try {
       await api.post(`/admin/users/${userId}/reset-password`);
       alert('Password reset email sent successfully');
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to reset password:', err);
       alert('Failed to reset password');
     }
@@ -74,7 +74,7 @@ export default function UsersManagement() {
         user._id === userId ? { ...user, isVerified: true } : user
       ));
       alert('HR account verified successfully');
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to verify HR:', err);
       alert('Failed to verify HR account');
     }
@@ -105,7 +105,7 @@ export default function UsersManagement() {
       
       setSelectedUsers([]);
       alert(`Successfully ${action}d ${selectedUsers.length} users`);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(`Failed to ${action} users:`, err);
       alert(`Failed to ${action} users`);
     }
@@ -166,7 +166,7 @@ export default function UsersManagement() {
           <div className="flex space-x-4">
             <select
               value={filter}
-              onChange={(e) => setFilter(e.target.value as any)}
+              onChange={(e) => setFilter(e.target.value as 'all' | 'candidate' | 'hr' | 'admin')}
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Users</option>

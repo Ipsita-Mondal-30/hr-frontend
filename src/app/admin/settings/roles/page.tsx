@@ -44,7 +44,7 @@ export default function RoleManagement() {
       ]);
       setRoles(rolesRes.data);
       setDepartments(deptsRes.data);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch data:', err);
       alert('Failed to fetch data');
     } finally {
@@ -83,9 +83,16 @@ export default function RoleManagement() {
       setShowModal(false);
       setEditingRole(null);
       setFormData({ title: '', description: '', departmentId: '' });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to save role:', err);
-      alert(err.response?.data?.error || 'Failed to save role');
+      if (typeof err === 'object' && err !== null && 'response' in err) {
+        const error = err as { response?: { data?: { error?: string } } };
+        alert(error.response?.data?.error || 'Failed to save role');
+      } else if (err instanceof Error) {
+        alert(err.message);
+      } else {
+        alert('Failed to save role');
+      }
     } finally {
       setSaving(false);
     }
@@ -108,9 +115,16 @@ export default function RoleManagement() {
       await api.delete(`/admin/roles/${role._id}`);
       setRoles(roles.filter(r => r._id !== role._id));
       alert('Role deleted successfully');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to delete role:', err);
-      alert(err.response?.data?.error || 'Failed to delete role');
+      if (typeof err === 'object' && err !== null && 'response' in err) {
+        const error = err as { response?: { data?: { error?: string } } };
+        alert(error.response?.data?.error || 'Failed to delete role');
+      } else if (err instanceof Error) {
+        alert(err.message);
+      } else {
+        alert('Failed to delete role');
+      }
     }
   };
 

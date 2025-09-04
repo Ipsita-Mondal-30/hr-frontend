@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
 import JobApplicationModal from '@/components/JobApplicationModal';
 
@@ -27,7 +27,7 @@ export default function JobsPage() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set());
-  
+
   // Filters
   const [filters, setFilters] = useState({
     search: '',
@@ -35,7 +35,7 @@ export default function JobsPage() {
     employmentType: '',
     remote: '',
     minSalary: '',
-    skills: ''
+    skills: '',
   });
 
   useEffect(() => {
@@ -43,61 +43,8 @@ export default function JobsPage() {
     fetchSavedJobs();
   }, []);
 
-  useEffect(() => {
-    applyFilters();
-  }, [jobs, filters]);
-
-  const fetchJobs = async () => {
-    try {
-      console.log('🔍 Fetching jobs for candidates...');
-      const res = await api.get('/jobs');
-      const jobsData = res.data || [];
-      console.log(`📊 Found ${jobsData.length} jobs`);
-      setJobs(jobsData);
-    } catch (err) {
-      console.error('Error fetching jobs:', err);
-      setJobs([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchSavedJobs = async () => {
-    try {
-      const res = await api.get('/candidate/saved-jobs');
-      const savedJobs = res.data || [];
-      const savedIds = new Set(savedJobs.map((job: any) => job._id));
-      setSavedJobIds(savedIds);
-      console.log(`💾 Found ${savedJobs.length} saved jobs`);
-    } catch (err) {
-      console.error('Error fetching saved jobs:', err);
-    }
-  };
-
-  const handleSaveJob = async (jobId: string) => {
-    try {
-      if (savedJobIds.has(jobId)) {
-        // Remove from saved
-        await api.delete(`/candidate/saved-jobs/${jobId}`);
-        setSavedJobIds(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(jobId);
-          return newSet;
-        });
-        console.log('💾 Job removed from saved');
-      } else {
-        // Add to saved
-        await api.post('/candidate/save-job', { jobId });
-        setSavedJobIds(prev => new Set([...prev, jobId]));
-        console.log('💾 Job saved successfully');
-      }
-    } catch (err) {
-      console.error('Error saving/unsaving job:', err);
-    }
-  };
-
-  const applyFilters = () => {
-    let filtered = jobs.filter(job => {
+  const applyFilters = useCallback(() => {
+    const filtered = jobs.filter((job) => {
       // Search filter
       if (filters.search) {
         const searchTerm = filters.search.toLowerCase();
@@ -128,11 +75,9 @@ export default function JobsPage() {
 
       // Skills filter
       if (filters.skills) {
-        const requiredSkills = filters.skills.toLowerCase().split(',').map(s => s.trim());
-        const jobSkills = job.skills.map(s => s.toLowerCase());
-        const hasSkills = requiredSkills.some(skill => 
-          jobSkills.some(jobSkill => jobSkill.includes(skill))
-        );
+        const requiredSkills = filters.skills.toLowerCase().split(',').map((s) => s.trim());
+        const jobSkills = job.skills.map((s) => s.toLowerCase());
+        const hasSkills = requiredSkills.some((skill) => jobSkills.some((jobSkill) => jobSkill.includes(skill)));
         if (!hasSkills) return false;
       }
 
@@ -140,6 +85,59 @@ export default function JobsPage() {
     });
 
     setFilteredJobs(filtered);
+  }, [jobs, filters]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [jobs, filters, applyFilters]);
+
+  const fetchJobs = async () => {
+    try {
+      console.log('🔍 Fetching jobs for candidates...');
+      const res = await api.get<Job[]>('/jobs');
+      const jobsData = res.data || [];
+      console.log(`📊 Found ${jobsData.length} jobs`);
+      setJobs(jobsData);
+    } catch (err) {
+      console.error('Error fetching jobs:', err);
+      setJobs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSavedJobs = async () => {
+    try {
+      const res = await api.get<Job[]>('/candidate/saved-jobs');
+      const savedJobs = res.data || [];
+      const savedIds = new Set(savedJobs.map((job) => job._id));
+      setSavedJobIds(savedIds);
+      console.log(`💾 Found ${savedJobs.length} saved jobs`);
+    } catch (err) {
+      console.error('Error fetching saved jobs:', err);
+    }
+  };
+
+  const handleSaveJob = async (jobId: string) => {
+    try {
+      if (savedJobIds.has(jobId)) {
+        // Remove from saved
+        await api.delete(`/candidate/saved-jobs/${jobId}`);
+        setSavedJobIds((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(jobId);
+          return newSet;
+        });
+        console.log('💾 Job removed from saved');
+      } else {
+        // Add to saved
+        await api.post('/candidate/save-job', { jobId });
+        setSavedJobIds((prev) => new Set([...prev, jobId]));
+        console.log('💾 Job saved successfully');
+      }
+    } catch (err) {
+      console.error('Error saving/unsaving job:', err);
+    }
   };
 
   const handleApply = (job: Job) => {
@@ -161,7 +159,7 @@ export default function JobsPage() {
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
           <div className="space-y-4">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="h-32 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -185,21 +183,21 @@ export default function JobsPage() {
             type="text"
             placeholder="Search jobs..."
             value={filters.search}
-            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          
+
           <input
             type="text"
             placeholder="Location"
             value={filters.location}
-            onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, location: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
           <select
             value={filters.employmentType}
-            onChange={(e) => setFilters(prev => ({ ...prev, employmentType: e.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, employmentType: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Types</option>
@@ -210,7 +208,7 @@ export default function JobsPage() {
 
           <select
             value={filters.remote}
-            onChange={(e) => setFilters(prev => ({ ...prev, remote: e.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, remote: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Remote/Onsite</option>
@@ -222,7 +220,7 @@ export default function JobsPage() {
             type="number"
             placeholder="Min Salary"
             value={filters.minSalary}
-            onChange={(e) => setFilters(prev => ({ ...prev, minSalary: e.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, minSalary: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
@@ -230,26 +228,28 @@ export default function JobsPage() {
             type="text"
             placeholder="Skills (comma separated)"
             value={filters.skills}
-            onChange={(e) => setFilters(prev => ({ ...prev, skills: e.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, skills: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div className="mt-4 flex justify-between items-center">
           <button
-            onClick={() => setFilters({
-              search: '',
-              location: '',
-              employmentType: '',
-              remote: '',
-              minSalary: '',
-              skills: ''
-            })}
+            onClick={() =>
+              setFilters({
+                search: '',
+                location: '',
+                employmentType: '',
+                remote: '',
+                minSalary: '',
+                skills: '',
+              })
+            }
             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
           >
             Clear Filters
           </button>
-          
+
           <span className="text-sm text-gray-600">
             Showing {filteredJobs.length} of {jobs.length} jobs
           </span>
@@ -261,12 +261,20 @@ export default function JobsPage() {
         <div className="text-center py-12">
           <div className="text-gray-400 text-6xl mb-4">🔍</div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No jobs found</h3>
-          <p className="text-gray-500">Try adjusting your search criteria or check back later for new opportunities.</p>
+          <p className="text-gray-500">
+            Try adjusting your search criteria or check back later for new opportunities.
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
           {filteredJobs.map((job) => (
-            <JobCard key={job._id} job={job} onApply={handleApply} onSave={handleSaveJob} isSaved={savedJobIds.has(job._id)} />
+            <JobCard
+              key={job._id}
+              job={job}
+              onApply={handleApply}
+              onSave={handleSaveJob}
+              isSaved={savedJobIds.has(job._id)}
+            />
           ))}
         </div>
       )}
@@ -287,7 +295,17 @@ export default function JobsPage() {
   );
 }
 
-function JobCard({ job, onApply, onSave, isSaved }: { job: Job; onApply: (job: Job) => void; onSave: (jobId: string) => void; isSaved: boolean }) {
+function JobCard({
+  job,
+  onApply,
+  onSave,
+  isSaved,
+}: {
+  job: Job;
+  onApply: (job: Job) => void;
+  onSave: (jobId: string) => void;
+  isSaved: boolean;
+}) {
   const formatSalary = (min?: number, max?: number) => {
     if (!min && !max) return null;
     if (min && max) return `$${min.toLocaleString()} - $${max.toLocaleString()}`;
@@ -311,20 +329,16 @@ function JobCard({ job, onApply, onSave, isSaved }: { job: Job; onApply: (job: J
               {job.employmentType.replace('-', ' ')}
             </span>
           </div>
-          
+
           <p className="text-gray-600 mb-2">{job.companyName}</p>
           <p className="text-gray-500 text-sm mb-3">📍 {job.location}</p>
-          
+
           {formatSalary(job.minSalary, job.maxSalary) && (
-            <p className="text-green-600 font-medium text-sm mb-3">
-              💰 {formatSalary(job.minSalary, job.maxSalary)}
-            </p>
+            <p className="text-green-600 font-medium text-sm mb-3">💰 {formatSalary(job.minSalary, job.maxSalary)}</p>
           )}
-          
-          <p className="text-gray-700 text-sm mb-4 line-clamp-2">
-            {job.description}
-          </p>
-          
+
+          <p className="text-gray-700 text-sm mb-4 line-clamp-2">{job.description}</p>
+
           {job.skills && job.skills.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {job.skills.slice(0, 5).map((skill, index) => (
@@ -347,11 +361,13 @@ function JobCard({ job, onApply, onSave, isSaved }: { job: Job; onApply: (job: J
             <span className="ml-3">• {job.experienceRequired}+ years experience</span>
           )}
         </div>
-        
+
         <div className="flex space-x-2">
-          <button 
+          <button
             onClick={() => onSave(job._id)}
-            className={`px-3 py-1 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 ${isSaved ? 'bg-gray-200 text-gray-600' : ''}`}
+            className={`px-3 py-1 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 ${
+              isSaved ? 'bg-gray-200 text-gray-600' : ''
+            }`}
           >
             {isSaved ? '💾 Saved' : '💾 Save'}
           </button>
