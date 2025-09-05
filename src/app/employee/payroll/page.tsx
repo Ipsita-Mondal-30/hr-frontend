@@ -1,12 +1,11 @@
 'use client';
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
 
 interface PayrollRecord {
   _id: string;
-  month: string;
+  month: string; // after mapping to month name
   year: number;
   baseSalary: number;
   allowances: {
@@ -33,6 +32,8 @@ interface PayrollRecord {
   status: 'pending' | 'paid' | 'processing';
 }
 
+type ApiPayrollRecord = Omit<PayrollRecord, 'month'> & { month: number };
+
 export default function EmployeePayrollPage() {
   const { user } = useAuth();
   const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
@@ -42,30 +43,32 @@ export default function EmployeePayrollPage() {
 
   const getMonthName = (month: number) => {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return months[month - 1];
   };
 
-  useEffect(() => {
-    if (user) {
-      fetchPayrollRecords();
-    }
-  }, [user, selectedYear]);
-
-  const fetchPayrollRecords = async () => {
+  const fetchPayrollRecords = useCallback(async () => {
     try {
       setLoading(true);
-
       // Fetch real payroll data from API
-      const response = await api.get('/employees/me/payroll');
-      const records = response.data.map((record: any) => ({
+      const response = await api.get<ApiPayrollRecord[]>('/employees/me/payroll');
+      const records: PayrollRecord[] = (response.data || []).map((record) => ({
         ...record,
-        month: getMonthName(record.month)
+        month: getMonthName(record.month),
       }));
-
-      setPayrollRecords(records.filter((r: any) => r.year === selectedYear));
+      setPayrollRecords(records.filter((r) => r.year === selectedYear));
     } catch (error) {
       console.error('Error fetching payroll records:', error);
       // Fallback to mock data if API fails
@@ -82,7 +85,7 @@ export default function EmployeePayrollPage() {
           grossSalary: 105500,
           netSalary: 87250,
           payDate: '2024-08-31',
-          status: 'paid'
+          status: 'paid',
         },
         {
           _id: '2',
@@ -96,7 +99,7 @@ export default function EmployeePayrollPage() {
           grossSalary: 100400,
           netSalary: 82650,
           payDate: '2024-07-31',
-          status: 'paid'
+          status: 'paid',
         },
         {
           _id: '3',
@@ -110,17 +113,21 @@ export default function EmployeePayrollPage() {
           grossSalary: 100000,
           netSalary: 81250,
           payDate: '2024-09-30',
-          status: 'processing'
-        }
+          status: 'processing',
+        },
       ];
-
-      const filteredRecords = mockRecords.filter(record => record.year === selectedYear);
+      const filteredRecords = mockRecords.filter((record) => record.year === selectedYear);
       setPayrollRecords(filteredRecords);
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedYear]);
 
+  useEffect(() => {
+    if (user) {
+      fetchPayrollRecords();
+    }
+  }, [user, selectedYear, fetchPayrollRecords]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -138,7 +145,7 @@ export default function EmployeePayrollPage() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'USD',
     }).format(amount);
   };
 
@@ -153,7 +160,7 @@ export default function EmployeePayrollPage() {
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
           <div className="grid grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="h-32 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -175,8 +182,10 @@ export default function EmployeePayrollPage() {
             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {[2024, 2023, 2022].map(year => (
-              <option key={year} value={year}>{year}</option>
+            {[2024, 2023, 2022].map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
             ))}
           </select>
         </div>
@@ -189,14 +198,14 @@ export default function EmployeePayrollPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <div className="text-2xl font-bold text-blue-600">
-                {formatCurrency(payrollRecords[0]?.baseSalary || 0)}
+                {formatCurrency(payrollRecords?.baseSalary || 0)}
               </div>
               <div className="text-sm text-blue-700">Base Salary</div>
             </div>
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
               <div className="text-2xl font-bold text-green-600">
                 {formatCurrency(
-                  payrollRecords.reduce((sum, record) => sum + record.netSalary, 0) / payrollRecords.length || 0
+                  (payrollRecords.reduce((sum, record) => sum + record.netSalary, 0) / payrollRecords.length) || 0
                 )}
               </div>
               <div className="text-sm text-green-700">Avg Net Salary</div>
@@ -222,7 +231,7 @@ export default function EmployeePayrollPage() {
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold">Payroll History</h2>
         </div>
-        
+
         {payrollRecords.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <div className="text-4xl mb-2">💰</div>
@@ -231,6 +240,7 @@ export default function EmployeePayrollPage() {
         ) : (
           <div className="divide-y divide-gray-200">
             {payrollRecords
+              .slice()
               .sort((a, b) => new Date(b.payDate).getTime() - new Date(a.payDate).getTime())
               .map((record) => (
                 <div key={record._id} className="p-6 hover:bg-gray-50">
@@ -240,11 +250,15 @@ export default function EmployeePayrollPage() {
                         <h3 className="text-lg font-medium text-gray-900">
                           {record.month} {record.year}
                         </h3>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(record.status)}`}>
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
+                            record.status
+                          )}`}
+                        >
                           {record.status}
                         </span>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
                           <span className="text-gray-500">Gross Salary:</span>
@@ -264,10 +278,10 @@ export default function EmployeePayrollPage() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="ml-4 flex space-x-2">
                       <button
-                        onClick={() => window.location.href = `/employee/payroll/${record._id}`}
+                        onClick={() => (window.location.href = `/employee/payroll/${record._id}`)}
                         className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                       >
                         View Details
@@ -302,17 +316,16 @@ export default function EmployeePayrollPage() {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-xl font-semibold">Payslip Details</h2>
-                  <p className="text-gray-600">{selectedRecord.month} {selectedRecord.year}</p>
+                  <p className="text-gray-600">
+                    {selectedRecord.month} {selectedRecord.year}
+                  </p>
                 </div>
-                <button
-                  onClick={() => setSelectedRecord(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
+                <button onClick={() => setSelectedRecord(null)} className="text-gray-400 hover:text-gray-600">
                   ✕
                 </button>
               </div>
             </div>
-            
+
             <div className="p-6 space-y-6">
               {/* Employee Info */}
               <div className="bg-gray-50 rounded-lg p-4">
@@ -324,7 +337,9 @@ export default function EmployeePayrollPage() {
                   </div>
                   <div>
                     <span className="text-gray-500">Pay Period:</span>
-                    <div className="font-medium">{selectedRecord.month} {selectedRecord.year}</div>
+                    <div className="font-medium">
+                      {selectedRecord.month} {selectedRecord.year}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -354,7 +369,9 @@ export default function EmployeePayrollPage() {
                     <span className="font-medium">{formatCurrency(selectedRecord.allowances.other)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Overtime ({selectedRecord.overtime.hours}h @ {formatCurrency(selectedRecord.overtime.rate)}/h)</span>
+                    <span>
+                      Overtime ({selectedRecord.overtime.hours}h @ {formatCurrency(selectedRecord.overtime.rate)}/h)
+                    </span>
                     <span className="font-medium">{formatCurrency(selectedRecord.overtime.amount)}</span>
                   </div>
                   <div className="flex justify-between">
@@ -391,11 +408,12 @@ export default function EmployeePayrollPage() {
                   <div className="border-t pt-2 flex justify-between font-semibold">
                     <span>Total Deductions</span>
                     <span className="text-red-600">
-                      -{formatCurrency(
-                        selectedRecord.deductions.tax + 
-                        selectedRecord.deductions.insurance + 
-                        selectedRecord.deductions.providentFund + 
-                        selectedRecord.deductions.other
+                      -
+                      {formatCurrency(
+                        selectedRecord.deductions.tax +
+                          selectedRecord.deductions.insurance +
+                          selectedRecord.deductions.providentFund +
+                          selectedRecord.deductions.other
                       )}
                     </span>
                   </div>
@@ -419,8 +437,19 @@ export default function EmployeePayrollPage() {
                     onClick={() => downloadPayslip(selectedRecord)}
                     className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
                     </svg>
                     Download Payslip
                   </button>

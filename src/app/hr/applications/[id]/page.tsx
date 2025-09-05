@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 
@@ -49,39 +49,43 @@ interface ApplicationDetail {
 }
 
 export default function ApplicationDetailPage() {
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const router = useRouter();
   const [application, setApplication] = useState<ApplicationDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
 
-  useEffect(() => {
-    if (params.id) {
-      fetchApplication(params.id as string);
-    }
-  }, [params.id]);
+  const fetchApplication = useCallback(
+    async (id: string) => {
+      try {
+        setLoading(true);
+        const res = await api.get(`/applications/${id}`);
+        setApplication(res.data as ApplicationDetail);
+        setNotes((res.data as any).hrNotes || ''); // keep compatibility if hrNotes exists
+      } catch (err) {
+        console.error('Failed to fetch application:', err);
+        alert('Failed to load application details');
+        router.push('/hr/applications');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [router]
+  );
 
-  const fetchApplication = async (id: string) => {
-    try {
-      const res = await api.get(`/applications/${id}`);
-      setApplication(res.data);
-      setNotes(res.data.hrNotes || '');
-    } catch (err) {
-      console.error('Failed to fetch application:', err);
-      alert('Failed to load application details');
-      router.push('/hr/applications');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (params?.id) {
+      fetchApplication(params.id);
     }
-  };
+  }, [params?.id, fetchApplication]);
 
   const updateStatus = async (newStatus: string) => {
     if (!application) return;
 
     try {
       await api.put(`/applications/${application._id}/status`, { status: newStatus });
-      setApplication(prev => prev ? { ...prev, status: newStatus } : null);
+      setApplication((prev) => (prev ? { ...prev, status: newStatus } : null));
       alert(`Status updated to ${newStatus}`);
     } catch (err) {
       console.error('Status update failed:', err);
@@ -121,11 +125,16 @@ export default function ApplicationDetailPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'reviewed': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'shortlisted': return 'bg-green-100 text-green-800 border-green-200';
-      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'reviewed':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'shortlisted':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -189,11 +198,15 @@ export default function ApplicationDetailPage() {
         </div>
 
         <div className="flex items-center space-x-3">
-          <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(application.status)}`}>
+          <span
+            className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(application.status)}`}
+          >
             {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
           </span>
           {application.matchScore && (
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(application.matchScore)}`}>
+            <span
+              className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(application.matchScore)}`}
+            >
               {application.matchScore}% Match
             </span>
           )}
@@ -211,20 +224,38 @@ export default function ApplicationDetailPage() {
               <div>
                 <h3 className="font-medium text-gray-900 mb-3">Contact Details</h3>
                 <div className="space-y-2 text-sm">
-                  <div><strong>Name:</strong> {application.name}</div>
-                  <div><strong>Email:</strong> {application.email}</div>
-                  <div><strong>Phone:</strong> {application.phone || 'Not provided'}</div>
-                  <div><strong>Location:</strong> {application.candidate?.location || 'Not provided'}</div>
+                  <div>
+                    <strong>Name:</strong> {application.name}
+                  </div>
+                  <div>
+                    <strong>Email:</strong> {application.email}
+                  </div>
+                  <div>
+                    <strong>Phone:</strong> {application.phone || 'Not provided'}
+                  </div>
+                  <div>
+                    <strong>Location:</strong> {application.candidate?.location || 'Not provided'}
+                  </div>
                 </div>
               </div>
 
               <div>
                 <h3 className="font-medium text-gray-900 mb-3">Professional Details</h3>
                 <div className="space-y-2 text-sm">
-                  <div><strong>Experience:</strong> {application.candidate?.experience || 'Not specified'}</div>
-                  <div><strong>Expected Salary:</strong> {application.candidate?.expectedSalary || application.applicationData?.expectedSalary || 'Not specified'}</div>
+                  <div>
+                    <strong>Experience:</strong> {application.candidate?.experience || 'Not specified'}
+                  </div>
+                  <div>
+                    <strong>Expected Salary:</strong>{' '}
+                    {application.candidate?.expectedSalary ||
+                      application.applicationData?.expectedSalary ||
+                      'Not specified'}
+                  </div>
                   {application.applicationData?.availableStartDate && (
-                    <div><strong>Available From:</strong> {new Date(application.applicationData.availableStartDate).toLocaleDateString()}</div>
+                    <div>
+                      <strong>Available From:</strong>{' '}
+                      {new Date(application.applicationData.availableStartDate).toLocaleDateString()}
+                    </div>
                   )}
                 </div>
               </div>
@@ -261,7 +292,9 @@ export default function ApplicationDetailPage() {
             {application.applicationData?.whyInterested && (
               <div className="mb-6">
                 <h3 className="font-medium text-gray-900 mb-2">Why interested in this position?</h3>
-                <p className="text-gray-700 text-sm bg-gray-50 p-3 rounded">{application.applicationData.whyInterested}</p>
+                <p className="text-gray-700 text-sm bg-gray-50 p-3 rounded">
+                  {application.applicationData.whyInterested}
+                </p>
               </div>
             )}
 
@@ -322,31 +355,33 @@ export default function ApplicationDetailPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {application.matchInsights.matchingSkills && application.matchInsights.matchingSkills.length > 0 && (
-                  <div>
-                    <h3 className="font-medium text-green-700 mb-2">✅ Matching Skills</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {application.matchInsights.matchingSkills.map((skill, index) => (
-                        <span key={index} className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">
-                          {skill}
-                        </span>
-                      ))}
+                {application.matchInsights.matchingSkills &&
+                  application.matchInsights.matchingSkills.length > 0 && (
+                    <div>
+                      <h3 className="font-medium text-green-700 mb-2">✅ Matching Skills</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {application.matchInsights.matchingSkills.map((skill, index) => (
+                          <span key={index} className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {application.matchInsights.missingSkills && application.matchInsights.missingSkills.length > 0 && (
-                  <div>
-                    <h3 className="font-medium text-red-700 mb-2">❌ Missing Skills</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {application.matchInsights.missingSkills.map((skill, index) => (
-                        <span key={index} className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm">
-                          {skill}
-                        </span>
-                      ))}
+                {application.matchInsights.missingSkills &&
+                  application.matchInsights.missingSkills.length > 0 && (
+                    <div>
+                      <h3 className="font-medium text-red-700 mb-2">❌ Missing Skills</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {application.matchInsights.missingSkills.map((skill, index) => (
+                          <span key={index} className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
 
               {application.matchInsights.tags && application.matchInsights.tags.length > 0 && (
@@ -401,14 +436,13 @@ export default function ApplicationDetailPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Status Management</h2>
 
             <div className="space-y-2">
-              {['pending', 'reviewed', 'shortlisted', 'rejected'].map(status => (
+              {['pending', 'reviewed', 'shortlisted', 'rejected'].map((status) => (
                 <button
                   key={status}
                   onClick={() => updateStatus(status)}
-                  className={`w-full px-4 py-2 rounded-md text-sm font-medium ${application.status === status
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                  className={`w-full px-4 py-2 rounded-md text-sm font-medium ${
+                    application.status === status ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
                 >
                   {status.charAt(0).toUpperCase() + status.slice(1)}
                 </button>
@@ -421,10 +455,18 @@ export default function ApplicationDetailPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Job Information</h2>
 
             <div className="space-y-3 text-sm">
-              <div><strong>Position:</strong> {application.job.title}</div>
-              <div><strong>Company:</strong> {application.job.companyName}</div>
-              <div><strong>Department:</strong> {application.job.department?.name}</div>
-              <div><strong>Applied:</strong> {new Date(application.createdAt).toLocaleDateString()}</div>
+              <div>
+                <strong>Position:</strong> {application.job.title}
+              </div>
+              <div>
+                <strong>Company:</strong> {application.job.companyName}
+              </div>
+              <div>
+                <strong>Department:</strong> {application.job.department?.name}
+              </div>
+              <div>
+                <strong>Applied:</strong> {new Date(application.createdAt).toLocaleDateString()}
+              </div>
             </div>
 
             {application.job.skills && application.job.skills.length > 0 && (
@@ -449,7 +491,7 @@ export default function ApplicationDetailPage() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={4}
-              placeholder="Add your notes about this candidate..."
+              placeholder="Add notes about this candidate..."
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             />
 

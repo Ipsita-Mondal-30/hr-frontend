@@ -11,6 +11,9 @@ interface EmployeeData {
   projectCount: number;
 }
 
+type NavItem = { name: string; href: string; icon: string };
+type QuickActionItem = { name: string; href: string; icon: string };
+
 export default function EmployeeLayout({
   children,
 }: {
@@ -19,7 +22,10 @@ export default function EmployeeLayout({
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [employeeData, setEmployeeData] = useState<EmployeeData>({ performanceScore: 0, projectCount: 0 });
+  const [employeeData, setEmployeeData] = useState<EmployeeData>({
+    performanceScore: 0,
+    projectCount: 0,
+  });
 
   useEffect(() => {
     if (user) {
@@ -31,19 +37,19 @@ export default function EmployeeLayout({
     try {
       const [profileResponse, projectsResponse] = await Promise.all([
         api.get('/employees/me'),
-        api.get('/employees/me/projects')
+        api.get('/employees/me/projects'),
       ]);
-      
+
       setEmployeeData({
         performanceScore: profileResponse.data.performanceScore || 0,
-        projectCount: projectsResponse.data.projects?.length || 0
+        projectCount: projectsResponse.data.projects?.length || 0,
       });
     } catch (error) {
       console.error('Error fetching employee data:', error);
     }
   };
 
-  const navigation = [
+  const navigation: NavItem[] = [
     { name: 'Dashboard', href: '/employee/dashboard', icon: '📊' },
     { name: 'My Projects', href: '/employee/projects', icon: '📋' },
     { name: 'Performance & OKRs', href: '/employee/performance', icon: '🎯' },
@@ -52,10 +58,9 @@ export default function EmployeeLayout({
     { name: 'My Profile', href: '/employee/profile', icon: '👤' },
     { name: 'Achievements', href: '/employee/achievements', icon: '🏆' },
     { name: 'Payroll', href: '/employee/payroll', icon: '💰' },
-
   ];
 
-  const quickActions = [
+  const quickActions: QuickActionItem[] = [
     { name: 'Request Feedback', href: '/employee/feedback/request', icon: '💬' },
     { name: 'View Payslip', href: '/employee/payroll', icon: '💰' },
   ];
@@ -64,13 +69,16 @@ export default function EmployeeLayout({
     <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+        <div
+          className="fixed inset-0 bg-gray-600 bg-opacity-75"
+          onClick={() => setSidebarOpen(false)}
+        />
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white">
-          <EmployeeSidebar 
-            navigation={navigation} 
+          <EmployeeSidebar
+            navigation={navigation}
             quickActions={quickActions}
-            pathname={pathname} 
-            user={user} 
+            pathname={pathname}
+            user={user}
             logout={logout}
             employeeData={employeeData}
           />
@@ -79,11 +87,11 @@ export default function EmployeeLayout({
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <EmployeeSidebar 
-          navigation={navigation} 
+        <EmployeeSidebar
+          navigation={navigation}
           quickActions={quickActions}
-          pathname={pathname} 
-          user={user} 
+          pathname={pathname}
+          user={user}
           logout={logout}
           employeeData={employeeData}
         />
@@ -101,9 +109,7 @@ export default function EmployeeLayout({
             <span className="sr-only">Open sidebar</span>
             ☰
           </button>
-          <div className="flex-1 text-sm font-semibold leading-6 text-gray-900">
-            Employee Portal
-          </div>
+          <div className="flex-1 text-sm font-semibold leading-6 text-gray-900">Employee Portal</div>
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
               {user?.name?.charAt(0).toUpperCase()}
@@ -111,15 +117,29 @@ export default function EmployeeLayout({
           </div>
         </div>
 
-        <main>
-          {children}
-        </main>
+        <main>{children}</main>
       </div>
     </div>
   );
 }
 
-function EmployeeSidebar({ navigation, quickActions, pathname, user, logout, employeeData }: any) {
+interface EmployeeSidebarProps {
+  navigation: NavItem[];
+  quickActions: QuickActionItem[];
+  pathname: string | null;
+  user: { name?: string; email?: string } | null;
+  logout: () => void;
+  employeeData: EmployeeData;
+}
+
+function EmployeeSidebar({
+  navigation,
+  quickActions,
+  pathname,
+  user,
+  logout,
+  employeeData,
+}: EmployeeSidebarProps) {
   return (
     <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 pb-4">
       <div className="flex h-16 shrink-0 items-center">
@@ -139,7 +159,7 @@ function EmployeeSidebar({ navigation, quickActions, pathname, user, logout, emp
               <p className="text-xs text-blue-600 font-medium">Employee</p>
             </div>
           </div>
-          
+
           {/* Quick Status */}
           <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
             <div className="bg-white rounded p-2 text-center">
@@ -162,7 +182,7 @@ function EmployeeSidebar({ navigation, quickActions, pathname, user, logout, emp
               Main Navigation
             </div>
             <ul role="list" className="-mx-2 mt-2 space-y-1">
-              {navigation.map((item: any) => (
+              {navigation.map((item) => (
                 <li key={item.name}>
                   <Link
                     href={item.href}
@@ -186,7 +206,7 @@ function EmployeeSidebar({ navigation, quickActions, pathname, user, logout, emp
               Quick Actions
             </div>
             <ul role="list" className="-mx-2 mt-2 space-y-1">
-              {quickActions.map((item: any) => (
+              {quickActions.map((item) => (
                 <li key={item.name}>
                   <Link
                     href={item.href}

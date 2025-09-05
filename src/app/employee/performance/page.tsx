@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
 
@@ -52,46 +52,43 @@ export default function EmployeePerformancePage() {
   const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedOKR, setSelectedOKR] = useState<OKRData | null>(null);
   const [updatingProgress, setUpdatingProgress] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user) {
-      fetchPerformanceData();
-    }
-  }, [user, selectedYear]);
-
-  const fetchPerformanceData = async () => {
+  const fetchPerformanceData = useCallback(async () => {
+    if (!user) return;
     try {
       setLoading(true);
-      
+
       // Get employee profile first
       const profileRes = await api.get('/employees/me');
-      const employeeId = profileRes.data._id;
-      
+      const employeeId = profileRes.data._id as string;
+
       // Get OKRs for selected year
       const okrsRes = await api.get(`/okrs/employee/${employeeId}?year=${selectedYear}`);
       setOKRs(okrsRes.data?.okrs || []);
-      
+
       // Get performance metrics
       const metricsRes = await api.get(`/employees/${employeeId}/performance`);
       setMetrics(metricsRes.data?.metrics || null);
-      
     } catch (error) {
       console.error('Error fetching performance data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, selectedYear]);
+
+  useEffect(() => {
+    fetchPerformanceData();
+  }, [fetchPerformanceData]);
 
   const updateKeyResultProgress = async (okrId: string, krIndex: number, newValue: number) => {
     try {
       setUpdatingProgress(`${okrId}-${krIndex}`);
-      
+
       await api.put(`/okrs/${okrId}/key-results/${krIndex}`, {
-        currentValue: newValue
+        currentValue: newValue,
       });
-      
+
       // Refresh OKRs
       await fetchPerformanceData();
     } catch (error) {
@@ -138,7 +135,7 @@ export default function EmployeePerformancePage() {
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
           <div className="grid grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(i => (
+            {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-20 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -152,7 +149,7 @@ export default function EmployeePerformancePage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Performance & OKRs</h1>
-          <p className="text-gray-600">Track your objectives, key results, and performance metrics</p>
+          <p className="text-gray-600">Track objectives, key results, and performance metrics</p>
         </div>
         <div className="flex items-center space-x-4">
           <select
@@ -160,8 +157,10 @@ export default function EmployeePerformancePage() {
             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {[2024, 2023, 2022].map(year => (
-              <option key={year} value={year}>{year}</option>
+            {[2024, 2023, 2022].map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
             ))}
           </select>
         </div>
@@ -185,34 +184,58 @@ export default function EmployeePerformancePage() {
               <div className="text-sm text-purple-700">Milestones Achieved</div>
             </div>
             <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-              <div className="text-2xl font-bold text-orange-600">{metrics.averageFeedbackRating.toFixed(1)}</div>
+              <div className="text-2xl font-bold text-orange-600">
+                {metrics.averageFeedbackRating.toFixed(1)}
+              </div>
               <div className="text-sm text-orange-700">Avg Feedback Rating</div>
             </div>
           </div>
-          
+
           {/* Success Rates */}
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <div className="flex justify-between text-sm text-gray-600 mb-2">
                 <span>Project Success Rate</span>
-                <span>{metrics.projectsCompleted > 0 ? Math.round((metrics.projectsOnTime / metrics.projectsCompleted) * 100) : 0}%</span>
+                <span>
+                  {metrics.projectsCompleted > 0
+                    ? Math.round((metrics.projectsOnTime / metrics.projectsCompleted) * 100)
+                    : 0}
+                  %
+                </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-green-600 h-2 rounded-full" 
-                  style={{ width: `${metrics.projectsCompleted > 0 ? (metrics.projectsOnTime / metrics.projectsCompleted) * 100 : 0}%` }}
+                <div
+                  className="bg-green-600 h-2 rounded-full"
+                  style={{
+                    width: `${
+                      metrics.projectsCompleted > 0
+                        ? (metrics.projectsOnTime / metrics.projectsCompleted) * 100
+                        : 0
+                    }%`,
+                  }}
                 ></div>
               </div>
             </div>
             <div>
               <div className="flex justify-between text-sm text-gray-600 mb-2">
                 <span>Milestone Success Rate</span>
-                <span>{metrics.milestonesCompleted > 0 ? Math.round((metrics.milestonesOnTime / metrics.milestonesCompleted) * 100) : 0}%</span>
+                <span>
+                  {metrics.milestonesCompleted > 0
+                    ? Math.round((metrics.milestonesOnTime / metrics.milestonesCompleted) * 100)
+                    : 0}
+                  %
+                </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full" 
-                  style={{ width: `${metrics.milestonesCompleted > 0 ? (metrics.milestonesOnTime / metrics.milestonesCompleted) * 100 : 0}%` }}
+                <div
+                  className="bg-blue-600 h-2 rounded-full"
+                  style={{
+                    width: `${
+                      metrics.milestonesCompleted > 0
+                        ? (metrics.milestonesOnTime / metrics.milestonesCompleted) * 100
+                        : 0
+                    }%`,
+                  }}
                 ></div>
               </div>
             </div>
@@ -226,16 +249,16 @@ export default function EmployeePerformancePage() {
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">My OKRs - {selectedYear}</h2>
             <div className="text-sm text-gray-600">
-              OKRs are set by HR/Admin • Contact your manager to discuss new goals
+              OKRs are set by HR/Admin • Contact a manager to discuss new goals
             </div>
           </div>
         </div>
-        
+
         {okrs.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <div className="text-4xl mb-2">🎯</div>
             <p className="mb-4">No OKRs set for {selectedYear}</p>
-            <p className="text-sm">Contact your manager or HR to discuss setting up your objectives and key results.</p>
+            <p className="text-sm">Contact a manager or HR to discuss setting up objectives and key results.</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
@@ -245,17 +268,21 @@ export default function EmployeePerformancePage() {
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="text-lg font-medium text-gray-900">{okr.objective}</h3>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(okr.status)}`}>
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
+                          okr.status
+                        )}`}
+                      >
                         {okr.status}
                       </span>
-                      <span className="text-sm text-gray-500">{okr.period} {okr.year}</span>
+                      <span className="text-sm text-gray-500">
+                        {okr.period} {okr.year}
+                      </span>
                     </div>
-                    {okr.description && (
-                      <p className="text-gray-600 mb-3">{okr.description}</p>
-                    )}
+                    {okr.description && <p className="text-gray-600 mb-3">{okr.description}</p>}
                   </div>
                   <div className="ml-4 text-right">
-                    <div className={`text-2xl font-bold ${getProgressColor(okr.overallProgress).split(' ')[0]}`}>
+                    <div className={`text-2xl font-bold ${getProgressColor(okr.overallProgress).split(' ')}`}>
                       {Math.round(okr.overallProgress)}%
                     </div>
                     <div className="text-sm text-gray-500">Overall Progress</div>
@@ -272,43 +299,44 @@ export default function EmployeePerformancePage() {
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
                             <h5 className="font-medium text-gray-900">{kr.title}</h5>
-                            {kr.description && (
-                              <p className="text-sm text-gray-600 mt-1">{kr.description}</p>
-                            )}
+                            {kr.description && <p className="text-sm text-gray-600 mt-1">{kr.description}</p>}
                           </div>
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${getProgressColor(progress)}`}>
                             {kr.status}
                           </span>
                         </div>
-                        
+
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center space-x-4">
                             <div className="flex items-center space-x-2">
                               <input
                                 type="number"
                                 value={kr.currentValue}
-                                onChange={(e) => updateKeyResultProgress(okr._id, index, parseFloat(e.target.value) || 0)}
+                                onChange={(e) =>
+                                  updateKeyResultProgress(okr._id, index, parseFloat(e.target.value) || 0)
+                                }
                                 disabled={updatingProgress === `${okr._id}-${index}`}
                                 className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                               />
-                              <span className="text-sm text-gray-600">/ {kr.targetValue} {kr.unit}</span>
+                              <span className="text-sm text-gray-600">
+                                / {kr.targetValue} {kr.unit}
+                              </span>
                             </div>
-                            <div className="text-sm text-gray-500">
-                              Weight: {kr.weight}x
-                            </div>
+                            <div className="text-sm text-gray-500">Weight: {kr.weight}x</div>
                           </div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {Math.round(progress)}%
-                          </div>
+                          <div className="text-sm font-medium text-gray-900">{Math.round(progress)}%</div>
                         </div>
-                        
+
                         <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
+                          <div
                             className={`h-2 rounded-full transition-all duration-300 ${
-                              progress >= 100 ? 'bg-green-500' :
-                              progress >= 75 ? 'bg-blue-500' :
-                              progress >= 50 ? 'bg-yellow-500' :
-                              'bg-red-500'
+                              progress >= 100
+                                ? 'bg-green-500'
+                                : progress >= 75
+                                ? 'bg-blue-500'
+                                : progress >= 50
+                                ? 'bg-yellow-500'
+                                : 'bg-red-500'
                             }`}
                             style={{ width: `${Math.min(progress, 100)}%` }}
                           ></div>
@@ -345,7 +373,7 @@ export default function EmployeePerformancePage() {
                         Achievability: {okr.aiInsights.achievabilityScore}%
                       </span>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
                         <h6 className="font-medium text-purple-800 mb-1">Risk Factors:</h6>
@@ -369,12 +397,6 @@ export default function EmployeePerformancePage() {
 
                 {/* Actions */}
                 <div className="mt-4 flex space-x-3">
-                  <button
-                    onClick={() => setSelectedOKR(okr)}
-                    className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                  >
-                    View Details
-                  </button>
                   <button
                     onClick={() => generateAIInsights(okr._id)}
                     className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200"

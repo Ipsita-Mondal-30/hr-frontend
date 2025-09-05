@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 
@@ -53,50 +53,63 @@ interface PayrollRecord {
 }
 
 export default function EmployeePayrollDetailPage() {
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const router = useRouter();
   const [payroll, setPayroll] = useState<PayrollRecord | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (params.id) {
-      fetchPayrollDetails();
-    }
-  }, [params.id]);
-
-  const fetchPayrollDetails = async () => {
+  const fetchPayrollDetails = useCallback(async () => {
+    if (!params?.id) return;
     try {
       setLoading(true);
       const response = await api.get(`/employees/me/payroll/${params.id}`);
-      setPayroll(response.data);
+      setPayroll(response.data as PayrollRecord);
     } catch (error) {
       console.error('Error fetching payroll details:', error);
       alert('Error loading payroll details');
     } finally {
       setLoading(false);
     }
-  };
+  }, [params?.id]);
+
+  useEffect(() => {
+    fetchPayrollDetails();
+  }, [fetchPayrollDetails]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'paid': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'approved':
+        return 'bg-green-100 text-green-800';
+      case 'paid':
+        return 'bg-blue-100 text-blue-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'USD',
     }).format(amount);
   };
 
   const getMonthName = (month: number) => {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return months[month - 1];
   };
@@ -188,7 +201,7 @@ export default function EmployeePayrollDetailPage() {
                   <p className="text-lg font-semibold text-gray-900">{formatCurrency(payroll.bonus)}</p>
                 </div>
               </div>
-              
+
               <h3 className="text-md font-medium mt-4 mb-2">Allowances</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -285,16 +298,12 @@ export default function EmployeePayrollDetailPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Generated On</label>
-                  <p className="text-gray-900">
-                    {new Date(payroll.createdAt).toLocaleDateString()}
-                  </p>
+                  <p className="text-gray-900">{new Date(payroll.createdAt).toLocaleDateString()}</p>
                 </div>
                 {payroll.paymentDate && (
                   <div>
                     <label className="text-sm font-medium text-gray-500">Payment Date</label>
-                    <p className="text-gray-900">
-                      {new Date(payroll.paymentDate).toLocaleDateString()}
-                    </p>
+                    <p className="text-gray-900">{new Date(payroll.paymentDate).toLocaleDateString()}</p>
                   </div>
                 )}
                 {payroll.approvedBy && (
@@ -310,10 +319,7 @@ export default function EmployeePayrollDetailPage() {
 
         {/* Download/Print Actions */}
         <div className="mt-6 flex justify-center space-x-4">
-          <button
-            onClick={() => window.print()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
+          <button onClick={() => window.print()} className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
             Print Payslip
           </button>
           <button

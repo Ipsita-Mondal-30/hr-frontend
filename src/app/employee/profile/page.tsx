@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
@@ -62,7 +61,7 @@ export default function EmployeeProfilePage() {
 
   const handleSave = async () => {
     if (!profile) return;
-    
+
     try {
       setSaving(true);
       await api.put(`/employees/${profile._id}`, profile);
@@ -78,36 +77,44 @@ export default function EmployeeProfilePage() {
 
   const addSkill = () => {
     if (!profile || !newSkill.name.trim()) return;
-    
-    const skillExists = profile.skills.some(skill => 
-      skill.name.toLowerCase() === newSkill.name.toLowerCase()
+
+    const skillExists = profile.skills.some(
+      (skill) => skill.name.toLowerCase() === newSkill.name.toLowerCase()
     );
-    
+
     if (skillExists) {
       alert('Skill already exists');
       return;
     }
-    
-    setProfile(prev => prev ? {
-      ...prev,
-      skills: [...prev.skills, { ...newSkill, verified: false }]
-    } : null);
-    
+
+    setProfile((prev) =>
+      prev
+        ? {
+            ...prev,
+            skills: [...prev.skills, { ...newSkill, verified: false }],
+          }
+        : null
+    );
+
     setNewSkill({ name: '', level: 'intermediate' });
   };
 
   const removeSkill = (skillName: string) => {
     if (!profile) return;
-    
-    setProfile(prev => prev ? {
-      ...prev,
-      skills: prev.skills.filter(skill => skill.name !== skillName)
-    } : null);
+
+    setProfile((prev) =>
+      prev
+        ? {
+            ...prev,
+            skills: prev.skills.filter((skill) => skill.name !== skillName),
+          }
+        : null
+    );
   };
 
   const calculateProfileCompleteness = () => {
     if (!profile) return 0;
-    
+
     const fields = [
       profile.user.name,
       profile.user.email,
@@ -115,10 +122,10 @@ export default function EmployeeProfilePage() {
       profile.department?.name,
       profile.skills.length > 0 ? 'skills' : '',
       profile.hireDate,
-      profile.employmentType
+      profile.employmentType,
     ];
-    
-    const completedFields = fields.filter(field => field && field.toString().trim()).length;
+
+    const completedFields = fields.filter((field) => field && field.toString().trim()).length;
     return Math.round((completedFields / fields.length) * 100);
   };
 
@@ -128,7 +135,7 @@ export default function EmployeeProfilePage() {
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
           <div className="space-y-3">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="h-20 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -154,7 +161,7 @@ export default function EmployeeProfilePage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-          <p className="text-gray-600">Manage your employee information and skills</p>
+          <p className="text-gray-600">Manage employee information and skills</p>
         </div>
         <div className="flex space-x-2">
           {editing ? (
@@ -191,14 +198,14 @@ export default function EmployeeProfilePage() {
           <span className="text-sm font-bold text-blue-900">{completeness}%</span>
         </div>
         <div className="w-full bg-blue-200 rounded-full h-2">
-          <div 
-            className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+          <div
+            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
             style={{ width: `${completeness}%` }}
           ></div>
         </div>
         {completeness < 100 && (
           <p className="text-xs text-blue-700 mt-2">
-            Complete your profile to improve visibility and opportunities
+            Complete the profile to improve visibility and opportunities
           </p>
         )}
       </div>
@@ -217,46 +224,48 @@ export default function EmployeeProfilePage() {
               <p className="text-gray-600">{profile.position}</p>
               <p className="text-sm text-gray-500">ID: {profile.employeeId}</p>
             </div>
-
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <p className="text-gray-900">{profile.user.email}</p>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
                 <p className="text-gray-900">{profile.department?.name || 'Not assigned'}</p>
                 <p className="text-xs text-gray-500">Managed by HR/Admin</p>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Manager</label>
                 <p className="text-gray-900">
-                  {profile.manager ? `${profile.manager.user.name} (${profile.manager.position})` : 'Not assigned'}
+                  {profile.manager
+                    ? `${profile.manager.user.name} (${profile.manager.position})`
+                    : 'Not assigned'}
                 </p>
                 <p className="text-xs text-gray-500">Assigned by HR/Admin</p>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Employment Type</label>
-                <p className="text-gray-900 capitalize">{profile.employmentType.replace('-', ' ')}</p>
+                <p className="text-gray-900 capitalize">
+                  {profile.employmentType.replace('-', ' ')}
+                </p>
                 <p className="text-xs text-gray-500">Set by HR</p>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Hire Date</label>
                 <p className="text-gray-900">{new Date(profile.hireDate).toLocaleDateString()}</p>
                 <p className="text-xs text-gray-500">Official record</p>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                  profile.status === 'active' ? 'bg-green-100 text-green-800' :
-                  profile.status === 'inactive' ? 'bg-red-100 text-red-800' :
-                  'bg-yellow-100 text-yellow-800'
-                }`}>
+                <span
+                  className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    profile.status === 'active'
+                      ? 'bg-green-100 text-green-800'
+                      : profile.status === 'inactive'
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}
+                >
                   {profile.status}
                 </span>
               </div>
@@ -269,7 +278,7 @@ export default function EmployeeProfilePage() {
           {/* Performance Metrics */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Metrics</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="flex justify-between text-sm text-gray-600 mb-2">
@@ -277,21 +286,21 @@ export default function EmployeeProfilePage() {
                   <span>{profile.performanceScore}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div 
-                    className="bg-blue-600 h-3 rounded-full transition-all duration-300" 
+                  <div
+                    className="bg-blue-600 h-3 rounded-full transition-all duration-300"
                     style={{ width: `${profile.performanceScore}%` }}
                   ></div>
                 </div>
               </div>
-              
+
               <div>
                 <div className="flex justify-between text-sm text-gray-600 mb-2">
                   <span>Project Contribution</span>
                   <span>{profile.projectContribution}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div 
-                    className="bg-green-600 h-3 rounded-full transition-all duration-300" 
+                  <div
+                    className="bg-green-600 h-3 rounded-full transition-all duration-300"
                     style={{ width: `${profile.projectContribution}%` }}
                   ></div>
                 </div>
@@ -302,14 +311,14 @@ export default function EmployeeProfilePage() {
           {/* Skills */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Skills & Competencies</h3>
-            
+
             <div className="flex flex-wrap gap-2 mb-4">
               {profile.skills.map((skill, index) => (
                 <span
                   key={index}
                   className={`px-3 py-1 rounded-full text-sm flex items-center ${
-                    skill.verified 
-                      ? 'bg-green-100 text-green-800 border border-green-200' 
+                    skill.verified
+                      ? 'bg-green-100 text-green-800 border border-green-200'
                       : 'bg-blue-100 text-blue-800 border border-blue-200'
                   }`}
                 >
@@ -326,19 +335,18 @@ export default function EmployeeProfilePage() {
                 </span>
               ))}
             </div>
-
             {editing && (
               <div className="flex space-x-2">
                 <input
                   type="text"
                   value={newSkill.name}
-                  onChange={(e) => setNewSkill(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) => setNewSkill((prev) => ({ ...prev, name: e.target.value }))}
                   placeholder="Skill name"
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <select
                   value={newSkill.level}
-                  onChange={(e) => setNewSkill(prev => ({ ...prev, level: e.target.value }))}
+                  onChange={(e) => setNewSkill((prev) => ({ ...prev, level: e.target.value }))}
                   className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="beginner">Beginner</option>
@@ -359,24 +367,31 @@ export default function EmployeeProfilePage() {
           {/* Career Information */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Career Information</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Years of Experience
                 </label>
                 <p className="text-gray-900">
-                  {Math.floor((new Date().getTime() - new Date(profile.hireDate).getTime()) / (1000 * 60 * 60 * 24 * 365))} years
+                  {Math.floor(
+                    (new Date().getTime() - new Date(profile.hireDate).getTime()) /
+                      (1000 * 60 * 60 * 24 * 365)
+                  )}{' '}
+                  years
                 </p>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Career Level
                 </label>
                 <p className="text-gray-900">
-                  {profile.performanceScore >= 90 ? 'Senior' :
-                   profile.performanceScore >= 70 ? 'Mid-level' : 'Junior'}
+                  {profile.performanceScore >= 90
+                    ? 'Senior'
+                    : profile.performanceScore >= 70
+                    ? 'Mid-level'
+                    : 'Junior'}
                 </p>
               </div>
             </div>
@@ -385,30 +400,30 @@ export default function EmployeeProfilePage() {
           {/* Quick Actions */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-            
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <button 
+              <button
                 onClick={() => setShowResumeModal(true)}
                 className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all text-center"
               >
                 <div className="text-2xl mb-2">📄</div>
                 <div className="text-sm font-medium">Update Resume</div>
               </button>
-              <button 
-                onClick={() => window.location.href = '/employee/performance'}
+              <button
+                onClick={() => (window.location.href = '/employee/performance')}
                 className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all text-center"
               >
                 <div className="text-2xl mb-2">🎯</div>
                 <div className="text-sm font-medium">Set Goals</div>
               </button>
-              <button 
-                onClick={() => window.location.href = '/employee/learning'}
+              <button
+                onClick={() => (window.location.href = '/employee/learning')}
                 className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all text-center"
               >
                 <div className="text-2xl mb-2">📚</div>
                 <div className="text-sm font-medium">Request Training</div>
               </button>
-              <button 
+              <button
                 onClick={() => setShowFeedbackModal(true)}
                 className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all text-center"
               >
@@ -427,9 +442,7 @@ export default function EmployeeProfilePage() {
             <h3 className="text-lg font-semibold mb-4">Update Resume</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Resume File
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Resume File</label>
                 <input
                   type="file"
                   accept=".pdf,.doc,.docx"
@@ -465,9 +478,7 @@ export default function EmployeeProfilePage() {
             <h3 className="text-lg font-semibold mb-4">Request Feedback</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Feedback Type
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Feedback Type</label>
                 <select className="w-full px-3 py-2 border border-gray-300 rounded-md">
                   <option>Performance Review</option>
                   <option>Project Feedback</option>
@@ -476,9 +487,7 @@ export default function EmployeeProfilePage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Message (Optional)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Message (Optional)</label>
                 <textarea
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -497,11 +506,12 @@ export default function EmployeeProfilePage() {
                     try {
                       await api.post('/employees/me/request-feedback', {
                         requestType: 'general',
-                        message: 'Feedback requested from employee profile'
+                        message: 'Feedback requested from employee profile',
                       });
                       alert('Feedback request submitted successfully!');
                       setShowFeedbackModal(false);
-                    } catch (error) {
+                    } catch {
+                      // No variable used to avoid unused-var lint; optionally log a generic message
                       alert('Failed to submit feedback request');
                     }
                   }}

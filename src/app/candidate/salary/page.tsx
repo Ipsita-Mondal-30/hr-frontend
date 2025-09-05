@@ -79,7 +79,6 @@ export default function SalarySearchPage() {
     setSearched(true);
     
     try {
-      // Build query parameters
       const queryParams = new URLSearchParams();
       if (searchParams.role) queryParams.append('role', searchParams.role);
       if (searchParams.location) queryParams.append('location', searchParams.location);
@@ -88,16 +87,12 @@ export default function SalarySearchPage() {
       
       console.log('🔍 Searching salary data with params:', searchParams);
       
-      // Try to get real salary data from jobs
       const response = await api.get(`/jobs/salary-data?${queryParams.toString()}`);
       const realData = response.data || [];
       
       if (realData.length > 0) {
-        console.log(`📊 Found ${realData.length} salary data points`);
         setSalaryData(realData);
       } else {
-        console.log('📊 No real data found, using mock data');
-        // Fallback to mock data with better filtering
         let filtered = mockSalaryData;
         
         if (searchParams.role) {
@@ -135,7 +130,6 @@ export default function SalarySearchPage() {
       }
     } catch (error) {
       console.error('Error fetching salary data:', error);
-      // Fallback to mock data
       let filtered = mockSalaryData;
       
       if (searchParams.role) {
@@ -303,7 +297,7 @@ export default function SalarySearchPage() {
           </div>
           <div>
             <h4 className="font-medium mb-2">Be Flexible</h4>
-            <p>Consider non-salary benefits if the base salary isn't negotiable.</p>
+            <p>Consider non-salary benefits if the base salary isn&apos;t negotiable.</p>
           </div>
         </div>
       </div>

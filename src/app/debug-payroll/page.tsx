@@ -3,8 +3,28 @@
 import { useState } from 'react';
 import api from '@/lib/api';
 
+type ApiSuccess = {
+  success: true;
+  data: unknown;
+  endpoint: string;
+};
+
+type ApiFailure = {
+  success: false;
+  error: unknown;
+  status?: number;
+  endpoint: string;
+};
+
+type ApiResult = ApiSuccess | ApiFailure;
+
+type ApiError = {
+  response?: { data?: unknown; status?: number };
+  message?: string;
+};
+
 export default function DebugPayrollPage() {
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<ApiResult | null>(null);
   const [loading, setLoading] = useState(false);
 
   const testAPI = async (endpoint: string) => {
@@ -14,13 +34,14 @@ export default function DebugPayrollPage() {
       const response = await api.get(endpoint);
       console.log('Response:', response.data);
       setResults({ success: true, data: response.data, endpoint });
-    } catch (error: any) {
-      console.error('Error:', error);
-      setResults({ 
-        success: false, 
-        error: error.response?.data || error.message, 
-        status: error.response?.status,
-        endpoint 
+    } catch (error: unknown) {
+      const e = error as ApiError;
+      console.error('Error:', e);
+      setResults({
+        success: false,
+        error: e.response?.data ?? e.message ?? 'Unknown error',
+        status: e.response?.status,
+        endpoint,
       });
     } finally {
       setLoading(false);
@@ -30,7 +51,7 @@ export default function DebugPayrollPage() {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Debug Payroll API</h1>
-      
+
       <div className="space-y-4 mb-6">
         <button
           onClick={() => testAPI('/admin/payroll')}
@@ -39,7 +60,7 @@ export default function DebugPayrollPage() {
         >
           Test /admin/payroll
         </button>
-        
+
         <button
           onClick={() => testAPI('/admin/payroll/stats')}
           className="px-4 py-2 bg-green-600 text-white rounded mr-2"
@@ -47,7 +68,7 @@ export default function DebugPayrollPage() {
         >
           Test /admin/payroll/stats
         </button>
-        
+
         <button
           onClick={() => testAPI('/hr/employees')}
           className="px-4 py-2 bg-purple-600 text-white rounded mr-2"
@@ -57,24 +78,20 @@ export default function DebugPayrollPage() {
         </button>
       </div>
 
-      {loading && (
-        <div className="text-blue-600">Loading...</div>
-      )}
+      {loading && <div className="text-blue-600">Loading...</div>}
 
       {results && (
         <div className="mt-6">
           <h2 className="text-lg font-semibold mb-2">Results for {results.endpoint}:</h2>
           <div className={`p-4 rounded ${results.success ? 'bg-green-100' : 'bg-red-100'}`}>
             {results.success ? (
-              <pre className="text-sm overflow-auto">
-                {JSON.stringify(results.data, null, 2)}
-              </pre>
+              <pre className="text-sm overflow-auto">{JSON.stringify(results.data, null, 2)}</pre>
             ) : (
               <div>
-                <div className="font-semibold text-red-700">Error (Status: {results.status})</div>
-                <pre className="text-sm mt-2">
-                  {JSON.stringify(results.error, null, 2)}
-                </pre>
+                <div className="font-semibold text-red-700">
+                  Error {results.status ? `(Status: ${results.status})` : ''}
+                </div>
+                <pre className="text-sm mt-2">{JSON.stringify(results.error, null, 2)}</pre>
               </div>
             )}
           </div>
@@ -84,8 +101,14 @@ export default function DebugPayrollPage() {
       <div className="mt-8">
         <h2 className="text-lg font-semibold mb-2">Auth Debug Info:</h2>
         <div className="bg-gray-100 p-4 rounded">
-          <div>Token in localStorage: {typeof window !== 'undefined' && localStorage.getItem('token') ? 'Yes' : 'No'}</div>
-          <div>Auth token in localStorage: {typeof window !== 'undefined' && localStorage.getItem('auth_token') ? 'Yes' : 'No'}</div>
+          <div>
+            Token in localStorage:{' '}
+            {typeof window !== 'undefined' && localStorage.getItem('token') ? 'Yes' : 'No'}
+          </div>
+          <div>
+            Auth token in localStorage:{' '}
+            {typeof window !== 'undefined' && localStorage.getItem('auth_token') ? 'Yes' : 'No'}
+          </div>
           <div>Cookies: {typeof window !== 'undefined' ? document.cookie || 'None' : 'Server-side'}</div>
         </div>
       </div>

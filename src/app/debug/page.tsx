@@ -3,10 +3,30 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 
+interface ApiTestResponse {
+  message?: string;
+  [key: string]: any;
+}
+
+interface AuthTokens {
+  localStorage_token: string | null;
+  localStorage_auth_token: string | null;
+  cookie_token: string | undefined;
+  cookie_auth_token: string | undefined;
+}
+
+interface CandidatesTestResult {
+  success: boolean;
+  count?: number;
+  data?: unknown[];
+  error?: string;
+  status?: number;
+}
+
 export default function DebugPage() {
-  const [apiTest, setApiTest] = useState<any>(null);
-  const [authTest, setAuthTest] = useState<any>(null);
-  const [candidatesTest, setCandidatesTest] = useState<any>(null);
+  const [apiTest, setApiTest] = useState<ApiTestResponse | null>(null);
+  const [authTest, setAuthTest] = useState<AuthTokens | null>(null);
+  const [candidatesTest, setCandidatesTest] = useState<CandidatesTestResult | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,12 +37,12 @@ export default function DebugPage() {
     try {
       // Test basic API
       console.log('🧪 Testing basic API...');
-      const basicResponse = await api.get('/test');
+      const basicResponse = await api.get<ApiTestResponse>('/test');
       setApiTest(basicResponse.data);
 
       // Check auth tokens
       console.log('🔐 Checking auth tokens...');
-      const tokens = {
+      const tokens: AuthTokens = {
         localStorage_token: localStorage.getItem('token'),
         localStorage_auth_token: localStorage.getItem('auth_token'),
         cookie_token: document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1],
@@ -33,14 +53,16 @@ export default function DebugPage() {
       // Test admin candidates endpoint
       console.log('👥 Testing admin candidates endpoint...');
       try {
-        const candidatesResponse = await api.get('/admin/candidates');
+        const candidatesResponse = await api.get<unknown[]>('/admin/candidates');
         setCandidatesTest({ success: true, count: candidatesResponse.data.length, data: candidatesResponse.data });
-      } catch (error: any) {
-        setCandidatesTest({ success: false, error: error.message, status: error.response?.status });
+      } catch (error: unknown) {
+        const err = error as { message: string; response?: { status: number } };
+        setCandidatesTest({ success: false, error: err.message, status: err.response?.status });
       }
 
-    } catch (error: any) {
-      setApiTest({ error: error.message });
+    } catch (error: unknown) {
+      const err = error as { message: string };
+      setApiTest({ error: err.message });
     } finally {
       setLoading(false);
     }
@@ -115,7 +137,7 @@ export default function DebugPage() {
       <div className="bg-yellow-100 p-4 rounded">
         <h3 className="font-bold">🔧 Quick Fix Instructions:</h3>
         <ol className="list-decimal list-inside mt-2 space-y-1 text-sm">
-          <li>Click "Set Test Token" to authenticate as admin</li>
+          <li>Click &quot;Set Test Token&quot; to authenticate as admin</li>
           <li>Go to <a href="/admin/users/candidates" className="text-blue-600 underline">/admin/users/candidates</a></li>
           <li>You should see 3 candidates from the database</li>
           <li>Use the 🗑️ button to delete users and see real-time updates</li>

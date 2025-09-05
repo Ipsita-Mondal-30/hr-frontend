@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
 
@@ -64,49 +64,46 @@ export default function EmployeeFeedbackPage() {
   const [responseText, setResponseText] = useState('');
   const [submittingResponse, setSubmittingResponse] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      fetchFeedback();
-    }
-  }, [user, filter]);
-
-  const fetchFeedback = async () => {
+  const fetchFeedback = useCallback(async () => {
+    if (!user) return;
     try {
       setLoading(true);
-      
+
       // Get employee profile first
       const profileRes = await api.get('/employees/me');
-      const employeeId = profileRes.data._id;
-      
+      const employeeId = profileRes.data._id as string;
+
       // Get feedback with analytics
       const params = new URLSearchParams();
       if (filter !== 'all') params.append('type', filter);
-      
+
       const feedbackRes = await api.get(`/feedback/employee/${employeeId}?${params.toString()}`);
       setFeedback(feedbackRes.data?.feedback || []);
       setAnalytics(feedbackRes.data?.analytics || null);
-      
     } catch (error) {
       console.error('Error fetching feedback:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, filter]);
+
+  useEffect(() => {
+    fetchFeedback();
+  }, [fetchFeedback]);
 
   const submitResponse = async (feedbackId: string) => {
     if (!responseText.trim()) return;
-    
+
     try {
       setSubmittingResponse(true);
-      
+
       await api.post(`/feedback/${feedbackId}/respond`, {
-        content: responseText
+        content: responseText,
       });
-      
+
       setResponseText('');
       setSelectedFeedback(null);
       await fetchFeedback();
-      
     } catch (error) {
       console.error('Error submitting response:', error);
       alert('Failed to submit response');
@@ -140,7 +137,7 @@ export default function EmployeeFeedbackPage() {
       teamwork: '🤝',
       leadership: '👑',
       problemSolving: '🧩',
-      timeManagement: '⏰'
+      timeManagement: '⏰',
     };
     return icons[category] || '📊';
   };
@@ -151,7 +148,7 @@ export default function EmployeeFeedbackPage() {
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
           <div className="grid grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="h-20 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -186,7 +183,7 @@ export default function EmployeeFeedbackPage() {
       {analytics && (
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold mb-4">Feedback Analytics</h2>
-          
+
           {/* Summary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
@@ -217,7 +214,9 @@ export default function EmployeeFeedbackPage() {
                 <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-2">
                     <span className="text-lg">{getCategoryIcon(category)}</span>
-                    <span className="text-sm font-medium capitalize">{category.replace(/([A-Z])/g, ' $1')}</span>
+                    <span className="text-sm font-medium capitalize">
+                      {category.replace(/([A-Z])/g, ' $1')}
+                    </span>
                   </div>
                   <div className={`text-lg font-bold ${getRatingColor(rating)}`}>
                     {rating > 0 ? rating.toFixed(1) : 'N/A'}
@@ -253,7 +252,7 @@ export default function EmployeeFeedbackPage() {
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold">Recent Feedback ({feedback.length})</h2>
         </div>
-        
+
         {feedback.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <div className="text-4xl mb-2">💬</div>
@@ -267,25 +266,25 @@ export default function EmployeeFeedbackPage() {
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="font-medium text-gray-900">{fb.title}</h3>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getSentimentColor(fb.aiSentiment)}`}>
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${getSentimentColor(
+                          fb.aiSentiment
+                        )}`}
+                      >
                         {fb.aiSentiment}
                       </span>
-                      <span className="text-sm text-gray-500 capitalize">
-                        {fb.type.replace('-', ' ')}
-                      </span>
+                      <span className="text-sm text-gray-500 capitalize">{fb.type.replace('-', ' ')}</span>
                     </div>
-                    
+
                     <div className="flex items-center space-x-4 mb-3 text-sm text-gray-600">
                       <span>by {fb.reviewer.name}</span>
                       <span>{new Date(fb.createdAt).toLocaleDateString()}</span>
                       {fb.project && <span>Project: {fb.project.name}</span>}
                       {fb.milestone && <span>Milestone: {fb.milestone.title}</span>}
                     </div>
-                    
-                    {fb.aiSummary && (
-                      <p className="text-gray-700 mb-3">{fb.aiSummary}</p>
-                    )}
-                    
+
+                    {fb.aiSummary && <p className="text-gray-700 mb-3">{fb.aiSummary}</p>}
+
                     {/* Keywords */}
                     {fb.aiKeywords && fb.aiKeywords.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-3">
@@ -296,7 +295,7 @@ export default function EmployeeFeedbackPage() {
                         ))}
                       </div>
                     )}
-                    
+
                     {/* Response Status */}
                     {fb.employeeResponse ? (
                       <div className="bg-green-50 border border-green-200 rounded-lg p-3">
@@ -312,7 +311,7 @@ export default function EmployeeFeedbackPage() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="ml-4 text-right">
                     <div className="flex items-center space-x-1 mb-2">
                       <span className="text-yellow-500">★</span>
@@ -343,26 +342,25 @@ export default function EmployeeFeedbackPage() {
                   <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
                     <span>by {selectedFeedback.reviewer.name}</span>
                     <span>{new Date(selectedFeedback.createdAt).toLocaleDateString()}</span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getSentimentColor(selectedFeedback.aiSentiment)}`}>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${getSentimentColor(
+                        selectedFeedback.aiSentiment
+                      )}`}
+                    >
                       {selectedFeedback.aiSentiment}
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedFeedback(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
+                <button onClick={() => setSelectedFeedback(null)} className="text-gray-400 hover:text-gray-600">
                   ✕
                 </button>
               </div>
             </div>
-            
+
             <div className="p-6 space-y-6">
               {/* Overall Rating */}
               <div className="text-center">
-                <div className="text-4xl font-bold text-blue-600 mb-2">
-                  {selectedFeedback.overallRating}/5
-                </div>
+                <div className="text-4xl font-bold text-blue-600 mb-2">{selectedFeedback.overallRating}/5</div>
                 <div className="text-gray-600">Overall Rating</div>
               </div>
 
@@ -375,13 +373,9 @@ export default function EmployeeFeedbackPage() {
                       <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center space-x-2">
                           <span className="text-lg">{getCategoryIcon(category)}</span>
-                          <span className="text-sm font-medium capitalize">
-                            {category.replace(/([A-Z])/g, ' $1')}
-                          </span>
+                          <span className="text-sm font-medium capitalize">{category.replace(/([A-Z])/g, ' $1')}</span>
                         </div>
-                        <div className={`text-lg font-bold ${getRatingColor(rating)}`}>
-                          {rating}/5
-                        </div>
+                        <div className={`text-lg font-bold ${getRatingColor(rating)}`}>{rating}/5</div>
                       </div>
                     )
                   ))}

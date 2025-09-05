@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
-import api from '@/lib/api';
+
 
 interface Achievement {
   id: string;

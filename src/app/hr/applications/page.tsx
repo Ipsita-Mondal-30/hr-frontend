@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
 
@@ -42,19 +42,27 @@ interface Application {
   createdAt: string;
 }
 
+interface JobLite {
+  _id: string;
+  title: string;
+}
+
+type SortKey = 'createdAt' | 'matchScore' | 'name' | 'status';
+type SortOrder = 'asc' | 'desc';
+
 export default function ApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
-  const [jobs, setJobs] = useState<{ _id: string; title: string }[]>([]);
+  const [jobs, setJobs] = useState<JobLite[]>([]);
   const [filteredApplications, setFilteredApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedApplications, setSelectedApplications] = useState<string[]>([]);
   const [messageModal, setMessageModal] = useState<{ isOpen: boolean; applicationId: string | null }>({
     isOpen: false,
-    applicationId: null
+    applicationId: null,
   });
   const [notesModal, setNotesModal] = useState<{ isOpen: boolean; applicationId: string | null }>({
     isOpen: false,
-    applicationId: null
+    applicationId: null,
   });
 
   // Filters
@@ -64,43 +72,19 @@ export default function ApplicationsPage() {
     minScore: '',
     skills: '',
     experience: '',
-    search: ''
+    search: '',
   });
 
-  const [sortBy, setSortBy] = useState('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortBy, setSortBy] = useState<SortKey>('createdAt');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
   useEffect(() => {
     fetchApplications();
     fetchJobs();
   }, []);
 
-  useEffect(() => {
-    applyFiltersAndSort();
-  }, [applications, filters, sortBy, sortOrder]);
-
-  const fetchApplications = async () => {
-    try {
-      const res = await api.get('/applications');
-      setApplications(res.data);
-    } catch (err) {
-      console.error('Failed to fetch applications', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchJobs = async () => {
-    try {
-      const res = await api.get('/jobs');
-      setJobs(res.data);
-    } catch (err) {
-      console.error('Failed to fetch jobs');
-    }
-  };
-
-  const applyFiltersAndSort = () => {
-    let filtered = applications.filter(app => {
+  const applyFiltersAndSort = useCallback(() => {
+    const filtered = applications.filter((app) => {
       // Job filter
       if (filters.job && app.job._id !== filters.job) return false;
 
@@ -112,11 +96,9 @@ export default function ApplicationsPage() {
 
       // Skills filter
       if (filters.skills) {
-        const skillsToFind = filters.skills.toLowerCase().split(',').map(s => s.trim());
-        const candidateSkills = app.candidate?.skills?.map(s => s.toLowerCase()) || [];
-        const hasSkills = skillsToFind.some(skill =>
-          candidateSkills.some(candidateSkill => candidateSkill.includes(skill))
-        );
+        const skillsToFind = filters.skills.toLowerCase().split(',').map((s) => s.trim());
+        const candidateSkills = app.candidate?.skills?.map((s) => s.toLowerCase()) || [];
+        const hasSkills = skillsToFind.some((skill) => candidateSkills.some((candidateSkill) => candidateSkill.includes(skill)));
         if (!hasSkills) return false;
       }
 
@@ -135,7 +117,8 @@ export default function ApplicationsPage() {
 
     // Sort applications
     filtered.sort((a, b) => {
-      let aValue, bValue;
+      let aValue: string | number = 0;
+      let bValue: string | number = 0;
 
       switch (sortBy) {
         case 'matchScore':
@@ -165,6 +148,30 @@ export default function ApplicationsPage() {
     });
 
     setFilteredApplications(filtered);
+  }, [applications, filters.job, filters.status, filters.minScore, filters.skills, filters.experience, filters.search, sortBy, sortOrder]);
+
+  useEffect(() => {
+    applyFiltersAndSort();
+  }, [applications, filters, sortBy, sortOrder, applyFiltersAndSort]);
+
+  const fetchApplications = async () => {
+    try {
+      const res = await api.get<Application[]>('/applications');
+      setApplications(res.data);
+    } catch (err) {
+      console.error('Failed to fetch applications', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchJobs = async () => {
+    try {
+      const res = await api.get<JobLite[]>('/jobs');
+      setJobs(res.data);
+    } catch (err) {
+      console.error('Failed to fetch jobs', err);
+    }
   };
 
   const updateStatus = async (id: string, newStatus: string) => {
@@ -174,15 +181,11 @@ export default function ApplicationsPage() {
       console.log('✅ Status updated successfully:', response.data);
 
       // Update local state immediately
-      setApplications(prev =>
-        prev.map(app =>
-          app._id === id ? { ...app, status: newStatus } : app
-        )
-      );
+      setApplications((prev) => prev.map((app) => (app._id === id ? { ...app, status: newStatus } : app)));
 
       // Show success message
       alert(`Status updated to ${newStatus} successfully`);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Status update failed', err);
       alert('Failed to update status: ' + (err.response?.data?.error || err.message));
       // Refresh on error to ensure consistency
@@ -197,15 +200,11 @@ export default function ApplicationsPage() {
       console.log('✅ Notes saved successfully:', response.data);
 
       // Update local state immediately
-      setApplications(prev =>
-        prev.map(app =>
-          app._id === id ? { ...app, hrNotes: notes } : app
-        )
-      );
+      setApplications((prev) => prev.map((app) => (app._id === id ? { ...app, hrNotes: notes } : app)));
 
       setNotesModal({ isOpen: false, applicationId: null });
       alert('Notes saved successfully');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save notes', err);
       alert('Failed to save notes: ' + (err.response?.data?.error || err.message));
     }
@@ -221,23 +220,17 @@ export default function ApplicationsPage() {
       console.log(`🔄 Bulk updating ${selectedApplications.length} applications to ${status}`);
 
       // Update each application individually for better reliability
-      const updatePromises = selectedApplications.map(appId =>
-        api.put(`/applications/${appId}/status`, { status })
-      );
+      const updatePromises = selectedApplications.map((appId) => api.put(`/applications/${appId}/status`, { status }));
 
       await Promise.all(updatePromises);
       console.log('✅ Bulk update completed successfully');
 
       // Update local state immediately
-      setApplications(prev =>
-        prev.map(app =>
-          selectedApplications.includes(app._id) ? { ...app, status } : app
-        )
-      );
+      setApplications((prev) => prev.map((app) => (selectedApplications.includes(app._id) ? { ...app, status } : app)));
 
       setSelectedApplications([]);
       alert(`${selectedApplications.length} applications updated to ${status} successfully`);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Bulk update failed', err);
       alert('Failed to update applications: ' + (err.response?.data?.error || err.message));
       // Refresh on error to ensure consistency
@@ -263,14 +256,9 @@ export default function ApplicationsPage() {
   const exportApplications = () => {
     const csvContent = [
       ['Name', 'Email', 'Job', 'Status', 'Match Score', 'Applied Date'].join(','),
-      ...filteredApplications.map(app => [
-        app.name,
-        app.email,
-        app.job.title,
-        app.status,
-        app.matchScore || 'N/A',
-        new Date(app.createdAt).toLocaleDateString()
-      ].join(','))
+      ...filteredApplications.map((app) =>
+        [app.name, app.email, app.job.title, app.status, app.matchScore || 'N/A', new Date(app.createdAt).toLocaleDateString()].join(',')
+      ),
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -286,11 +274,16 @@ export default function ApplicationsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'reviewed': return 'bg-blue-100 text-blue-800';
-      case 'shortlisted': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'reviewed':
+        return 'bg-blue-100 text-blue-800';
+      case 'shortlisted':
+        return 'bg-green-100 text-green-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -307,7 +300,7 @@ export default function ApplicationsPage() {
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
           <div className="space-y-4">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="h-24 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -325,10 +318,7 @@ export default function ApplicationsPage() {
           <p className="text-gray-600">Manage job applications and candidates</p>
         </div>
         <div className="flex space-x-2">
-          <button
-            onClick={exportApplications}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-          >
+          <button onClick={exportApplications} className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
             📊 Export CSV
           </button>
         </div>
@@ -341,21 +331,15 @@ export default function ApplicationsPage() {
           <div className="text-sm text-gray-600">Total Applications</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <div className="text-2xl font-bold text-yellow-600">
-            {applications.filter(a => a.status === 'pending').length}
-          </div>
+          <div className="text-2xl font-bold text-yellow-600">{applications.filter((a) => a.status === 'pending').length}</div>
           <div className="text-sm text-gray-600">Pending Review</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <div className="text-2xl font-bold text-green-600">
-            {applications.filter(a => a.status === 'shortlisted').length}
-          </div>
+          <div className="text-2xl font-bold text-green-600">{applications.filter((a) => a.status === 'shortlisted').length}</div>
           <div className="text-sm text-gray-600">Shortlisted</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <div className="text-2xl font-bold text-gray-600">
-            {applications.filter(a => a.matchScore && a.matchScore >= 80).length}
-          </div>
+          <div className="text-2xl font-bold text-gray-600">{applications.filter((a) => a.matchScore && a.matchScore >= 80).length}</div>
           <div className="text-sm text-gray-600">High Match (80%+)</div>
         </div>
       </div>
@@ -367,24 +351,26 @@ export default function ApplicationsPage() {
             type="text"
             placeholder="Search candidates..."
             value={filters.search}
-            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
           <select
             value={filters.job}
-            onChange={(e) => setFilters(prev => ({ ...prev, job: e.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, job: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Jobs</option>
-            {jobs.map(job => (
-              <option key={job._id} value={job._id}>{job.title}</option>
+            {jobs.map((job) => (
+              <option key={job._id} value={job._id}>
+                {job.title}
+              </option>
             ))}
           </select>
 
           <select
             value={filters.status}
-            onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Statuses</option>
@@ -398,7 +384,7 @@ export default function ApplicationsPage() {
             type="number"
             placeholder="Min Score"
             value={filters.minScore}
-            onChange={(e) => setFilters(prev => ({ ...prev, minScore: e.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, minScore: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
@@ -406,13 +392,13 @@ export default function ApplicationsPage() {
             type="text"
             placeholder="Skills (comma separated)"
             value={filters.skills}
-            onChange={(e) => setFilters(prev => ({ ...prev, skills: e.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, skills: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
           <select
             value={filters.experience}
-            onChange={(e) => setFilters(prev => ({ ...prev, experience: e.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, experience: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Experience</option>
@@ -430,7 +416,7 @@ export default function ApplicationsPage() {
               <label className="text-sm font-medium text-gray-700">Sort by:</label>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+                onChange={(e) => setSortBy(e.target.value as SortKey)}
                 className="px-2 py-1 border border-gray-300 rounded text-sm"
               >
                 <option value="createdAt">Date Applied</option>
@@ -439,7 +425,7 @@ export default function ApplicationsPage() {
                 <option value="status">Status</option>
               </select>
               <button
-                onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
                 className="px-2 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50"
               >
                 {sortOrder === 'asc' ? '↑' : '↓'}
@@ -457,9 +443,7 @@ export default function ApplicationsPage() {
       {selectedApplications.length > 0 && (
         <div className="bg-blue-50 p-4 rounded-lg mb-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-blue-900">
-              {selectedApplications.length} applications selected
-            </span>
+            <span className="text-sm font-medium text-blue-900">{selectedApplications.length} applications selected</span>
             <div className="flex space-x-2">
               <button
                 onClick={() => bulkUpdateStatus('reviewed')}
@@ -479,10 +463,7 @@ export default function ApplicationsPage() {
               >
                 Reject
               </button>
-              <button
-                onClick={() => setSelectedApplications([])}
-                className="px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm hover:bg-gray-400"
-              >
+              <button onClick={() => setSelectedApplications([])} className="px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm hover:bg-gray-400">
                 Clear Selection
               </button>
             </div>
@@ -495,7 +476,7 @@ export default function ApplicationsPage() {
         <div className="text-center py-12">
           <div className="text-gray-400 text-6xl mb-4">📋</div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No applications found</h3>
-          <p className="text-gray-500">Try adjusting your filters or check back later for new applications.</p>
+          <p className="text-gray-500">Try adjusting filters or check back later for new applications.</p>
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
@@ -509,7 +490,7 @@ export default function ApplicationsPage() {
                       checked={selectedApplications.length === filteredApplications.length}
                       onChange={(e) => {
                         if (e.target.checked) {
-                          setSelectedApplications(filteredApplications.map(app => app._id));
+                          setSelectedApplications(filteredApplications.map((app) => app._id));
                         } else {
                           setSelectedApplications([]);
                         }
@@ -517,24 +498,12 @@ export default function ApplicationsPage() {
                       className="rounded"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Candidate
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Job
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Match Score
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Applied
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Candidate</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Match Score</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applied</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -545,9 +514,9 @@ export default function ApplicationsPage() {
                     isSelected={selectedApplications.includes(app._id)}
                     onSelect={(selected) => {
                       if (selected) {
-                        setSelectedApplications(prev => [...prev, app._id]);
+                        setSelectedApplications((prev) => [...prev, app._id]);
                       } else {
-                        setSelectedApplications(prev => prev.filter(id => id !== app._id));
+                        setSelectedApplications((prev) => prev.filter((id) => id !== app._id));
                       }
                     }}
                     onStatusUpdate={updateStatus}
@@ -585,6 +554,18 @@ export default function ApplicationsPage() {
 }
 
 // Application Row Component
+interface ApplicationRowProps {
+  application: Application;
+  isSelected: boolean;
+  onSelect: (selected: boolean) => void;
+  onStatusUpdate: (id: string, newStatus: string) => void;
+  onDownloadResume: (resumeUrl: string, candidateName: string) => void;
+  onSendMessage: (applicationId: string) => void;
+  onEditNotes: (applicationId: string) => void;
+  getStatusColor: (status: string) => string;
+  getScoreColor: (score?: number) => string;
+}
+
 function ApplicationRow({
   application,
   isSelected,
@@ -594,31 +575,24 @@ function ApplicationRow({
   onSendMessage,
   onEditNotes,
   getStatusColor,
-  getScoreColor
-}: any) {
+  getScoreColor,
+}: ApplicationRowProps) {
   return (
     <tr className={isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}>
       <td className="px-6 py-4 whitespace-nowrap">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={(e) => onSelect(e.target.checked)}
-          className="rounded"
-        />
+        <input type="checkbox" checked={isSelected} onChange={(e) => onSelect(e.target.checked)} className="rounded" />
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center">
           <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-            <span className="text-blue-600 font-semibold text-sm">
-              {application.name.charAt(0).toUpperCase()}
-            </span>
+            <span className="text-blue-600 font-semibold text-sm">{application.name.charAt(0).toUpperCase()}</span>
           </div>
           <div className="ml-4">
             <div className="text-sm font-medium text-gray-900">{application.name}</div>
             <div className="text-sm text-gray-500">{application.email}</div>
             {application.candidate?.skills && (
               <div className="flex flex-wrap gap-1 mt-1">
-                {application.candidate.skills.slice(0, 3).map((skill: string, index: number) => (
+                {application.candidate.skills.slice(0, 3).map((skill, index) => (
                   <span key={index} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
                     {skill}
                   </span>
@@ -657,33 +631,19 @@ function ApplicationRow({
           <span className="text-gray-400 text-sm">N/A</span>
         )}
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {new Date(application.createdAt).toLocaleDateString()}
-      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(application.createdAt).toLocaleDateString()}</td>
       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
         <div className="flex space-x-2">
-          <Link
-            href={`/hr/applications/${application._id}`}
-            className="text-blue-600 hover:text-blue-900"
-          >
+          <Link href={`/hr/applications/${application._id}`} className="text-blue-600 hover:text-blue-900">
             View
           </Link>
-          <button
-            onClick={() => onDownloadResume(application.resumeUrl, application.name)}
-            className="text-green-600 hover:text-green-900"
-          >
+          <button onClick={() => onDownloadResume(application.resumeUrl, application.name)} className="text-green-600 hover:text-green-900">
             Resume
           </button>
-          <button
-            onClick={() => onSendMessage(application._id)}
-            className="text-purple-600 hover:text-purple-900"
-          >
+          <button onClick={() => onSendMessage(application._id)} className="text-purple-600 hover:text-purple-900">
             Message
           </button>
-          <button
-            onClick={() => onEditNotes(application._id)}
-            className="text-orange-600 hover:text-orange-900"
-          >
+          <button onClick={() => onEditNotes(application._id)} className="text-orange-600 hover:text-orange-900">
             {application.hrNotes ? 'Edit Notes' : 'Add Notes'}
           </button>
         </div>
@@ -693,12 +653,19 @@ function ApplicationRow({
 }
 
 // Message Modal Component
-function MessageModal({ isOpen, applicationId, onClose, applications }: any) {
+interface MessageModalProps {
+  isOpen: boolean;
+  applicationId: string | null;
+  onClose: () => void;
+  applications: Application[];
+}
+
+function MessageModal({ isOpen, applicationId, onClose, applications }: MessageModalProps) {
   const [message, setMessage] = useState('');
   const [subject, setSubject] = useState('');
   const [sending, setSending] = useState(false);
 
-  const application = applications.find((app: any) => app._id === applicationId);
+  const application = applications.find((app) => app._id === applicationId);
 
   const sendMessage = async () => {
     if (!subject.trim() || !message.trim()) {
@@ -712,7 +679,7 @@ function MessageModal({ isOpen, applicationId, onClose, applications }: any) {
         applicationId,
         subject,
         message,
-        recipientEmail: application?.email
+        recipientEmail: application?.email,
       });
 
       alert('Message sent successfully!');
@@ -734,14 +701,22 @@ function MessageModal({ isOpen, applicationId, onClose, applications }: any) {
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Send Message</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            ✕
+          </button>
         </div>
 
         {application && (
           <div className="mb-4 p-3 bg-gray-50 rounded">
-            <p className="text-sm"><strong>To:</strong> {application.name}</p>
-            <p className="text-sm"><strong>Email:</strong> {application.email}</p>
-            <p className="text-sm"><strong>Job:</strong> {application.job.title}</p>
+            <p className="text-sm">
+              <strong>To:</strong> {application.name}
+            </p>
+            <p className="text-sm">
+              <strong>Email:</strong> {application.email}
+            </p>
+            <p className="text-sm">
+              <strong>Job:</strong> {application.job.title}
+            </p>
           </div>
         )}
 
@@ -769,10 +744,7 @@ function MessageModal({ isOpen, applicationId, onClose, applications }: any) {
           </div>
 
           <div className="flex justify-end space-x-3">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-            >
+            <button onClick={onClose} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
               Cancel
             </button>
             <button
@@ -790,11 +762,19 @@ function MessageModal({ isOpen, applicationId, onClose, applications }: any) {
 }
 
 // Notes Modal Component
-function NotesModal({ isOpen, applicationId, onClose, onSave, applications }: any) {
+interface NotesModalProps {
+  isOpen: boolean;
+  applicationId: string | null;
+  onClose: () => void;
+  onSave: (id: string, notes: string) => Promise<void>;
+  applications: Application[];
+}
+
+function NotesModal({ isOpen, applicationId, onClose, onSave, applications }: NotesModalProps) {
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const application = applications.find((app: any) => app._id === applicationId);
+  const application = applications.find((app) => app._id === applicationId);
 
   useEffect(() => {
     if (application?.hrNotes) {
@@ -805,6 +785,7 @@ function NotesModal({ isOpen, applicationId, onClose, onSave, applications }: an
   }, [application]);
 
   const handleSave = async () => {
+    if (!applicationId) return;
     setSaving(true);
     try {
       await onSave(applicationId, notes);
@@ -820,14 +801,22 @@ function NotesModal({ isOpen, applicationId, onClose, onSave, applications }: an
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">HR Notes</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            ✕
+          </button>
         </div>
 
         {application && (
           <div className="mb-4 p-3 bg-gray-50 rounded">
-            <p className="text-sm"><strong>Candidate:</strong> {application.name}</p>
-            <p className="text-sm"><strong>Job:</strong> {application.job.title}</p>
-            <p className="text-sm"><strong>Status:</strong> {application.status}</p>
+            <p className="text-sm">
+              <strong>Candidate:</strong> {application.name}
+            </p>
+            <p className="text-sm">
+              <strong>Job:</strong> {application.job.title}
+            </p>
+            <p className="text-sm">
+              <strong>Status:</strong> {application.status}
+            </p>
           </div>
         )}
 
@@ -838,16 +827,13 @@ function NotesModal({ isOpen, applicationId, onClose, onSave, applications }: an
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={8}
-              placeholder="Add your notes about this candidate, interview feedback, next steps, etc..."
+              placeholder="Add notes about this candidate, interview feedback, next steps, etc..."
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div className="flex justify-end space-x-3">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-            >
+            <button onClick={onClose} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
               Cancel
             </button>
             <button

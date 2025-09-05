@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
 
@@ -29,35 +29,11 @@ export default function EmployeeLearningPage() {
   const [loading, setLoading] = useState(true);
   const [generatingRecommendations, setGeneratingRecommendations] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      fetchLearningData();
-    }
-  }, [user]);
-
-  const fetchLearningData = async () => {
-    try {
-      setLoading(true);
-      
-      // Get employee profile first
-      const profileRes = await api.get('/employees/me');
-      const employee = profileRes.data;
-      
-      // Generate AI-powered learning recommendations
-      await generateLearningRecommendations(employee);
-      
-    } catch (error) {
-      console.error('Error fetching learning data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const generateLearningRecommendations = async (employee: any) => {
+  const generateLearningRecommendations = useCallback(async () => {
     try {
       setGeneratingRecommendations(true);
-      
-      // AI-generated recommendations based on employee resume and interview skills
+
+      // AI-generated recommendations based on employee resume and interview skills (mock data)
       const mockRecommendations: LearningRecommendation[] = [
         {
           title: 'Advanced React Patterns',
@@ -66,7 +42,7 @@ export default function EmployeeLearningPage() {
           priority: 'high',
           estimatedHours: 20,
           provider: 'Frontend Masters',
-          url: '#'
+          url: '#',
         },
         {
           title: 'AWS Solutions Architect Certification',
@@ -75,7 +51,7 @@ export default function EmployeeLearningPage() {
           priority: 'medium',
           estimatedHours: 40,
           provider: 'AWS Training',
-          url: '#'
+          url: '#',
         },
         {
           title: 'Leadership Communication Skills',
@@ -84,7 +60,7 @@ export default function EmployeeLearningPage() {
           priority: 'high',
           estimatedHours: 15,
           provider: 'LinkedIn Learning',
-          url: '#'
+          url: '#',
         },
         {
           title: 'Clean Code: A Handbook of Agile Software Craftsmanship',
@@ -93,44 +69,77 @@ export default function EmployeeLearningPage() {
           priority: 'medium',
           estimatedHours: 12,
           provider: 'Robert C. Martin',
-          url: '#'
-        }
+          url: '#',
+        },
       ];
 
-      // Skill gaps based on resume analysis and interview feedback
+      // Skill gaps based on resume analysis and interview feedback (mock data)
       const mockSkillGaps: SkillGap[] = [
         {
           skill: 'System Design',
           currentLevel: 'Beginner',
           targetLevel: 'Intermediate',
           importance: 'critical',
-          resources: ['System Design Interview Course', 'Designing Data-Intensive Applications', 'Company Architecture Workshop']
+          resources: [
+            'System Design Interview Course',
+            'Designing Data-Intensive Applications',
+            'Company Architecture Workshop',
+          ],
         },
         {
           skill: 'Leadership & Team Management',
           currentLevel: 'Intermediate',
           targetLevel: 'Advanced',
           importance: 'important',
-          resources: ['Leadership Development Program', 'Team Management Best Practices', 'Internal Mentorship Program']
+          resources: [
+            'Leadership Development Program',
+            'Team Management Best Practices',
+            'Internal Mentorship Program',
+          ],
         },
         {
           skill: 'Advanced Analytics',
           currentLevel: 'Basic',
           targetLevel: 'Intermediate',
           importance: 'important',
-          resources: ['Data Analytics Certification', 'Business Intelligence Tools', 'Company Data Workshop']
-        }
+          resources: [
+            'Data Analytics Certification',
+            'Business Intelligence Tools',
+            'Company Data Workshop',
+          ],
+        },
       ];
 
       setRecommendations(mockRecommendations);
       setSkillGaps(mockSkillGaps);
-      
     } catch (error) {
       console.error('Error generating recommendations:', error);
     } finally {
       setGeneratingRecommendations(false);
     }
-  };
+  }, []);
+
+  const fetchLearningData = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      // Get employee profile first (reserved for future personalization, currently unused)
+      await api.get('/employees/me');
+
+      // Generate AI-powered learning recommendations
+      await generateLearningRecommendations();
+    } catch (error) {
+      console.error('Error fetching learning data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [generateLearningRecommendations]);
+
+  useEffect(() => {
+    if (user) {
+      fetchLearningData();
+    }
+  }, [user, fetchLearningData]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -179,7 +188,7 @@ export default function EmployeeLearningPage() {
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
           <div className="grid grid-cols-2 gap-4">
-            {[1, 2, 3, 4].map(i => (
+            {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-32 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -193,10 +202,12 @@ export default function EmployeeLearningPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Learning & Growth</h1>
-          <p className="text-gray-600">AI recommendations based on your resume, interview skills, and company needs</p>
+          <p className="text-gray-600">
+            AI recommendations based on your resume, interview skills, and company needs
+          </p>
         </div>
         <button
-          onClick={() => generateLearningRecommendations({})}
+          onClick={generateLearningRecommendations}
           disabled={generatingRecommendations}
           className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
         >
@@ -222,7 +233,7 @@ export default function EmployeeLearningPage() {
         </div>
         <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
           <div className="text-2xl font-bold text-orange-600">
-            {recommendations.filter(r => r.priority === 'high').length}
+            {recommendations.filter((r) => r.priority === 'high').length}
           </div>
           <div className="text-sm text-orange-700">High Priority Items</div>
         </div>
@@ -247,16 +258,24 @@ export default function EmployeeLearningPage() {
                     <div>
                       <h3 className="font-medium text-gray-900">{gap.skill}</h3>
                       <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600">
-                        <span>Current: <span className="font-medium">{gap.currentLevel}</span></span>
+                        <span>
+                          Current: <span className="font-medium">{gap.currentLevel}</span>
+                        </span>
                         <span>→</span>
-                        <span>Target: <span className="font-medium">{gap.targetLevel}</span></span>
+                        <span>
+                          Target: <span className="font-medium">{gap.targetLevel}</span>
+                        </span>
                       </div>
                     </div>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getImportanceColor(gap.importance)}`}>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${getImportanceColor(
+                        gap.importance
+                      )}`}
+                    >
                       {gap.importance}
                     </span>
                   </div>
-                  
+
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Recommended Resources:</h4>
                     <div className="flex flex-wrap gap-2">
@@ -297,13 +316,17 @@ export default function EmployeeLearningPage() {
                         <p className="text-sm text-gray-600">{rec.provider}</p>
                       </div>
                     </div>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(rec.priority)}`}>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(
+                        rec.priority
+                      )}`}
+                    >
                       {rec.priority}
                     </span>
                   </div>
-                  
+
                   <p className="text-gray-700 mb-3">{rec.description}</p>
-                  
+
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-gray-600">
                       <span className="font-medium">{rec.estimatedHours}h</span> estimated
@@ -327,9 +350,13 @@ export default function EmployeeLearningPage() {
         <div className="p-6">
           <div className="space-y-4">
             {recommendations
+              .slice()
               .sort((a, b) => {
                 const priorityOrder = { high: 3, medium: 2, low: 1 };
-                return priorityOrder[b.priority as keyof typeof priorityOrder] - priorityOrder[a.priority as keyof typeof priorityOrder];
+                return (
+                  priorityOrder[b.priority as keyof typeof priorityOrder] -
+                  priorityOrder[a.priority as keyof typeof priorityOrder]
+                );
               })
               .map((rec, index) => (
                 <div key={index} className="flex items-center space-x-4">
@@ -338,9 +365,15 @@ export default function EmployeeLearningPage() {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-medium text-gray-900">{rec.title}</h4>
-                    <p className="text-sm text-gray-600">{rec.estimatedHours}h • {rec.type}</p>
+                    <p className="text-sm text-gray-600">
+                      {rec.estimatedHours}h • {rec.type}
+                    </p>
                   </div>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(rec.priority)}`}>
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(
+                      rec.priority
+                    )}`}
+                  >
                     {rec.priority}
                   </span>
                 </div>

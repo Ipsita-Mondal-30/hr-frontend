@@ -4,6 +4,11 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Job } from '@/types';
 
+type ApplicationLite = {
+  _id: string;
+  job?: { _id?: string } | null;
+};
+
 export default function SavedJobsPage() {
   const [savedJobs, setSavedJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,7 +21,7 @@ export default function SavedJobsPage() {
 
   const fetchSavedJobs = async () => {
     try {
-      const res = await api.get('/candidate/saved-jobs');
+      const res = await api.get<Job[]>('/candidate/saved-jobs');
       setSavedJobs(res.data);
     } catch (err) {
       console.error('Error fetching saved jobs:', err);
@@ -27,8 +32,8 @@ export default function SavedJobsPage() {
 
   const fetchAppliedJobs = async () => {
     try {
-      const res = await api.get('/candidate/applications');
-      setAppliedJobs(res.data.map((app: any) => app.job?._id).filter(Boolean));
+      const res = await api.get<ApplicationLite[]>('/candidate/applications');
+      setAppliedJobs((res.data || []).map((app) => app.job?._id).filter(Boolean) as string[]);
     } catch (err) {
       console.error('Error fetching applied jobs:', err);
     }
@@ -37,7 +42,7 @@ export default function SavedJobsPage() {
   const handleRemoveFromSaved = async (jobId: string) => {
     try {
       await api.delete(`/candidate/saved-jobs/${jobId}`);
-      setSavedJobs(prev => prev.filter(job => job._id !== jobId));
+      setSavedJobs((prev) => prev.filter((job) => job._id !== jobId));
     } catch (err) {
       console.error('Error removing from saved:', err);
     }
@@ -46,11 +51,12 @@ export default function SavedJobsPage() {
   const handleApplyJob = async (jobId: string) => {
     try {
       await api.post('/candidate/apply', { jobId });
-      setAppliedJobs(prev => [...prev, jobId]);
+      setAppliedJobs((prev) => [...prev, jobId]);
       alert('Application submitted successfully!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error applying to job:', err);
-      const errorMessage = err.response?.data?.error || 'Error submitting application';
+      const e = err as { response?: { data?: { error?: string } } };
+      const errorMessage = e.response?.data?.error || 'Error submitting application';
       alert(errorMessage);
     }
   };
@@ -63,16 +69,14 @@ export default function SavedJobsPage() {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Saved Jobs</h1>
-        <p className="text-gray-600">Jobs you've saved for later consideration</p>
+        <p className="text-gray-600">Jobs that have been saved for later consideration</p>
       </div>
 
       {savedJobs.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-gray-400 text-6xl mb-4">💾</div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No saved jobs yet</h3>
-          <p className="text-gray-500 mb-4">
-            Save interesting job opportunities to review them later
-          </p>
+          <p className="text-gray-500 mb-4">Save interesting job opportunities to review them later</p>
           <a
             href="/candidate/jobs"
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -97,8 +101,13 @@ export default function SavedJobsPage() {
   );
 }
 
-function SavedJobCard({ job, isApplied, onRemove, onApply }: {
-  job: any;
+function SavedJobCard({
+  job,
+  isApplied,
+  onRemove,
+  onApply,
+}: {
+  job: Job;
   isApplied: boolean;
   onRemove: () => void;
   onApply: () => void;
@@ -113,40 +122,33 @@ function SavedJobCard({ job, isApplied, onRemove, onApply }: {
               {job.companyName?.charAt(0) || 'C'}
             </span>
           </div>
-          
+
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
-              <button
-                onClick={onRemove}
-                className="text-red-500 hover:text-red-700 p-1"
-                title="Remove from saved"
-              >
+              <button onClick={onRemove} className="text-red-500 hover:text-red-700 p-1" title="Remove from saved">
                 🗑️
               </button>
             </div>
-            
+
             <p className="text-gray-600 mb-2">{job.companyName}</p>
-            
+
             <div className="flex items-center space-x-4 text-sm text-gray-500 mb-2">
               <span>📍 {job.location || 'Not specified'}</span>
               <span>💼 {job.experienceRequired || 0} years exp</span>
               {job.remote && <span className="bg-green-100 text-green-800 px-2 py-1 rounded">Remote</span>}
             </div>
-            
+
             {job.minSalary && job.maxSalary && (
               <p className="text-sm text-gray-600 mb-2">
                 💰 ${job.minSalary?.toLocaleString()} - ${job.maxSalary?.toLocaleString()}
               </p>
             )}
-            
+
             {job.skills && job.skills.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-3">
-                {job.skills.slice(0, 5).map((skill: string, index: number) => (
-                  <span
-                    key={index}
-                    className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs"
-                  >
+                {job.skills.slice(0, 5).map((skill, index) => (
+                  <span key={index} className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
                     {skill}
                   </span>
                 ))}
@@ -155,21 +157,19 @@ function SavedJobCard({ job, isApplied, onRemove, onApply }: {
                 )}
               </div>
             )}
-            
-            <p className="text-gray-700 text-sm line-clamp-2">
-              {job.description}
-            </p>
+
+            <p className="text-gray-700 text-sm line-clamp-2">{job.description}</p>
           </div>
         </div>
       </div>
-      
+
       <div className="flex justify-between items-center pt-4 border-t border-gray-200">
         <div className="flex items-center space-x-4 text-xs text-gray-500">
           <span>🏢 {job.companySize || 'Size not specified'}</span>
           <span>⭐ 4.2 rating</span>
           <span>📊 Medium difficulty</span>
         </div>
-        
+
         <div className="flex space-x-2">
           <button
             onClick={onRemove}
@@ -177,11 +177,9 @@ function SavedJobCard({ job, isApplied, onRemove, onApply }: {
           >
             Remove
           </button>
-          
+
           {isApplied ? (
-            <span className="px-4 py-2 bg-green-100 text-green-800 rounded-md text-sm font-medium">
-              ✓ Applied
-            </span>
+            <span className="px-4 py-2 bg-green-100 text-green-800 rounded-md text-sm font-medium">✓ Applied</span>
           ) : (
             <button
               onClick={onApply}
