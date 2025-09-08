@@ -4,50 +4,76 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 
+interface DashboardData {
+  totalJobs: number;
+  totalApplications: number;
+  avgMatchScore: number;
+  openJobs: number;
+  closedJobs: number;
+  recentApplications: {
+    _id: string;
+    name: string;
+    email: string;
+    job?: { title: string };
+    matchScore?: number;
+  }[];
+}
+
+interface EmployeeLite {
+  _id: string;
+  user: { name: string };
+  position: string;
+  performanceScore?: number;
+}
+
+interface ProjectLite {
+  _id: string;
+  name: string;
+  status: "active" | "completed" | "on-hold" | string;
+}
+
+interface TopPerformer {
+  employee: {
+    _id: string;
+    user: { name: string };
+    position: string;
+    performanceScore: number;
+  };
+  metrics: {
+    projectsInvolved: number;
+    averageRating: number;
+    feedbackCount: number;
+  };
+}
+
+interface FeedbackLite {
+  _id: string;
+  employee: { user: { name: string }; position: string };
+  reviewer: { name: string };
+  overallRating: number;
+  type: string;
+  createdAt: string;
+}
+
+interface EmployeeData {
+  totalEmployees: number;
+  activeProjects: number;
+  completedProjects: number;
+  averagePerformance: number;
+  topPerformers: TopPerformer[];
+  recentFeedback: FeedbackLite[];
+}
+
+type ApiEmployeesRes = { employees?: EmployeeLite[] } | EmployeeLite[];
+type ApiProjectsRes = { projects?: ProjectLite[] } | ProjectLite[];
+type ApiTopPerformersRes = { topPerformers?: TopPerformer[] } | TopPerformer[];
+type ApiFeedbackRes = { feedback?: FeedbackLite[] } | FeedbackLite[];
+
+function isAxiosError(e: unknown): e is { response?: { data?: any; status?: number } } {
+  return typeof e === "object" && e !== null && "response" in e;
+}
+
 export default function HRDashboardPage() {
-  interface DashboardData {
-    totalJobs: number;
-    totalApplications: number;
-    avgMatchScore: number;
-    openJobs: number;
-    closedJobs: number;
-    recentApplications: {
-      _id: string;
-      name: string;
-      email: string;
-      job?: { title: string };
-      matchScore?: number;
-    }[];
-  }
-
-  interface EmployeeData {
-    totalEmployees: number;
-    activeProjects: number;
-    completedProjects: number;
-    averagePerformance: number;
-    topPerformers: {
-      employee: {
-        _id: string;
-        user: { name: string };
-        position: string;
-        performanceScore: number;
-      };
-      metrics: {
-        projectsInvolved: number;
-        averageRating: number;
-        feedbackCount: number;
-      };
-    }[];
-    recentFeedback: {
-      _id: string;
-      employee: { user: { name: string }; position: string };
-      reviewer: { name: string };
-      overallRating: number;
-      type: string;
-      createdAt: string;
-    }[];
-  }
-
   const [data, setData] = useState<DashboardData | null>(null);
   const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,41 +85,48 @@ export default function HRDashboardPage() {
       try {
         console.log("🔍 Fetching HR dashboard data...");
         console.log("🔍 API base URL:", api.defaults.baseURL);
-        
+
         // First check if we have authentication
         const authRes = await api.get("/auth/me");
         console.log("🔐 Current user: line 35", authRes.data);
-        
+
         // Then fetch dashboard data
-        const res = await api.get("/admin/dashboard");
+        const res = await api.get<DashboardData>("/admin/dashboard");
         console.log("✅ Dashboard data received:", res.data);
         setData(res.data);
 
         // Fetch employee performance data
         try {
           const [employeesRes, projectsRes, topPerformersRes, feedbackRes] = await Promise.all([
-            api.get("/employees?limit=1000"),
-            api.get("/projects?limit=1000"),
-            api.get("/employees/top-performers?limit=5"),
-            api.get("/feedback?limit=10")
+            api.get<ApiEmployeesRes>("/employees?limit=1000"),
+            api.get<ApiProjectsRes>("/projects?limit=1000"),
+            api.get<ApiTopPerformersRes>("/employees/top-performers?limit=5"),
+            api.get<ApiFeedbackRes>("/feedback?limit=10"),
           ]);
 
-          const employees = employeesRes.data?.employees || [];
-          const projects = projectsRes.data?.projects || [];
-          const topPerformers = topPerformersRes.data?.topPerformers || [];
-          const feedback = feedbackRes.data?.feedback || [];
+          const employeesArr =
+            Array.isArray(employeesRes.data) ? employeesRes.data : employeesRes.data?.employees || [];
+          const projectsArr =
+            Array.isArray(projectsRes.data) ? projectsRes.data : projectsRes.data?.projects || [];
+          const topPerformersArr =
+            Array.isArray(topPerformersRes.data)
+              ? topPerformersRes.data
+              : topPerformersRes.data?.topPerformers || [];
+          const feedbackArr =
+            Array.isArray(feedbackRes.data) ? feedbackRes.data : feedbackRes.data?.feedback || [];
 
           setEmployeeData({
-            totalEmployees: employees.length,
-            activeProjects: projects.filter((p: any) => p.status === 'active').length,
-            completedProjects: projects.filter((p: any) => p.status === 'completed').length,
-            averagePerformance: employees.length > 0 
-              ? employees.reduce((sum: number, emp: any) => sum + (emp.performanceScore || 0), 0) / employees.length
-              : 0,
-            topPerformers,
-            recentFeedback: feedback
+            totalEmployees: employeesArr.length,
+            activeProjects: projectsArr.filter((p) => p.status === "active").length,
+            completedProjects: projectsArr.filter((p) => p.status === "completed").length,
+            averagePerformance:
+              employeesArr.length > 0
+                ? employeesArr.reduce((sum, emp) => sum + (emp.performanceScore || 0), 0) / employeesArr.length
+                : 0,
+            topPerformers: topPerformersArr,
+            recentFeedback: feedbackArr,
           });
-        } catch (empErr) {
+        } catch (empErr: unknown) {
           console.warn("⚠️ Could not fetch employee data:", empErr);
           // Set default empty data
           setEmployeeData({
@@ -102,16 +135,26 @@ export default function HRDashboardPage() {
             completedProjects: 0,
             averagePerformance: 0,
             topPerformers: [],
-            recentFeedback: []
+            recentFeedback: [],
           });
         }
 
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("❌ Error fetching HR dashboard data:", err);
-        console.error("❌ Error response:", err.response?.data);
-        console.error("❌ Error status:", err.response?.status);
-        setError(err.response?.data?.message || err.response?.data?.error || err.message || "Failed to load dashboard data");
+        if (isAxiosError(err)) {
+          console.error("❌ Error response:", err.response?.data);
+          console.error("❌ Error status:", err.response?.status);
+          const msg =
+            (err.response?.data?.message as string) ||
+            (err.response?.data?.error as string) ||
+            "Failed to load dashboard data";
+          setError(msg);
+        } else if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Failed to load dashboard data");
+        }
       } finally {
         setLoading(false);
       }
@@ -137,12 +180,13 @@ export default function HRDashboardPage() {
     try {
       await api.post('/debug/seed');
       // Refresh dashboard data
-      const res = await api.get("/admin/dashboard");
+      const res = await api.get<DashboardData>("/admin/dashboard");
       setData(res.data);
       alert('Sample data created successfully!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error seeding data:', err);
-      alert('Failed to seed data: ' + (err.response?.data?.error || err.message));
+      const msg = isAxiosError(err) ? err.response?.data?.error || 'Failed to seed data' : 'Failed to seed data';
+      alert(msg);
     } finally {
       setSeeding(false);
     }
@@ -150,44 +194,46 @@ export default function HRDashboardPage() {
 
   const checkDatabaseData = async () => {
     try {
-      const res = await api.get('/debug/data');
+      const res = await api.get<{ jobsCount: number; applicationsCount: number; usersCount: number }>('/debug/data');
       console.log('Database data:', res.data);
-      alert(`Database contains: ${res.data.jobsCount} jobs, ${res.data.applicationsCount} applications, ${res.data.usersCount} users`);
-    } catch (err: any) {
+      alert(
+        `Database contains: ${res.data.jobsCount} jobs, ${res.data.applicationsCount} applications, ${res.data.usersCount} users`
+      );
+    } catch (err: unknown) {
       console.error('Error checking data:', err);
       alert('Failed to check database data');
     }
   };
 
   if (loading) return <div className="p-6">Loading dashboard...</div>;
-  if (error) return (
-    <div className="p-6">
-      <div className="text-red-600 mb-4">Error: {error}</div>
-      <div className="space-x-2">
-        <button 
-          onClick={checkDatabaseData}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Check Database
-        </button>
-        <button 
-          onClick={handleSeedData}
-          disabled={seeding}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
-        >
-          {seeding ? 'Creating Sample Data...' : 'Create Sample Data'}
-        </button>
+  if (error)
+    return (
+      <div className="p-6">
+        <div className="text-red-600 mb-4">Error: {error}</div>
+        <div className="space-x-2">
+          <button
+            onClick={checkDatabaseData}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Check Database
+          </button>
+          <button
+            onClick={handleSeedData}
+            disabled={seeding}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
+          >
+            {seeding ? 'Creating Sample Data...' : 'Create Sample Data'}
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
   if (!data) return <div className="p-6 text-red-600">Failed to load dashboard data</div>;
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">HR Dashboard</h1>
-        <div className="space-x-2">
-        </div>
+        <div className="space-x-2"></div>
       </div>
 
       {/* Recruitment Stats */}
@@ -198,7 +244,11 @@ export default function HRDashboardPage() {
           <StatCard label="Open Jobs" value={data.openJobs} color="green" />
           <StatCard label="Closed Jobs" value={data.closedJobs} color="gray" />
           <StatCard label="Total Applications" value={data.totalApplications} color="purple" />
-          <StatCard label="Avg Match Score" value={data.avgMatchScore ? data.avgMatchScore.toFixed(1) + '%' : '0%'} color="orange" />
+          <StatCard
+            label="Avg Match Score"
+            value={data.avgMatchScore ? data.avgMatchScore.toFixed(1) + '%' : '0%'}
+            color="orange"
+          />
         </div>
       </div>
 
@@ -227,7 +277,10 @@ export default function HRDashboardPage() {
             </div>
             <div className="space-y-3">
               {employeeData.topPerformers.map((performer, index) => (
-                <div key={performer.employee._id} className="flex items-center justify-between p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+                <div
+                  key={performer.employee._id}
+                  className="flex items-center justify-between p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200"
+                >
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-yellow-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
                       {index + 1}
@@ -236,17 +289,14 @@ export default function HRDashboardPage() {
                       <div className="font-medium">{performer.employee?.user?.name || 'Unknown Employee'}</div>
                       <div className="text-sm text-gray-600">{performer.employee?.position || 'No Position'}</div>
                       <div className="text-xs text-gray-500">
-                        {performer.metrics?.projectsInvolved || 0} projects • {performer.metrics?.feedbackCount || 0} feedback
+                        {performer.metrics?.projectsInvolved || 0} projects • {performer.metrics?.feedbackCount || 0}{' '}
+                        feedback
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold text-green-600 text-lg">
-                      {performer.employee.performanceScore}%
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {performer.metrics.averageRating.toFixed(1)}★ avg
-                    </div>
+                    <div className="font-bold text-green-600 text-lg">{performer.employee.performanceScore}%</div>
+                    <div className="text-xs text-gray-500">{performer.metrics.averageRating.toFixed(1)}★ avg</div>
                   </div>
                 </div>
               ))}
@@ -272,9 +322,7 @@ export default function HRDashboardPage() {
                     <div className="text-sm text-gray-500">{app.job?.title}</div>
                   </div>
                   <div className="text-right">
-                    <div className="font-semibold text-blue-600">
-                      {app.matchScore ? `${app.matchScore}%` : 'N/A'}
-                    </div>
+                    <div className="font-semibold text-blue-600">{app.matchScore ? `${app.matchScore}%` : 'N/A'}</div>
                   </div>
                 </div>
               ))}
@@ -304,7 +352,8 @@ export default function HRDashboardPage() {
                 </div>
                 <div className="text-xs text-gray-600 mb-1">{feedback.employee?.position || 'No Position'}</div>
                 <div className="text-xs text-gray-500">
-                  {feedback.type || 'Feedback'} by {feedback.reviewer?.name || 'Unknown'} • {new Date(feedback.createdAt).toLocaleDateString()}
+                  {feedback.type || 'Feedback'} by {feedback.reviewer?.name || 'Unknown'} •{' '}
+                  {new Date(feedback.createdAt).toLocaleDateString()}
                 </div>
               </div>
             ))}
@@ -316,25 +365,10 @@ export default function HRDashboardPage() {
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-lg font-semibold mb-4">⚡ Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <QuickActionCard 
-            title="Manage Employees" 
-            description="View and manage employee profiles" 
-            icon="👥" 
-            href="/hr/employees" 
-          />
+          <QuickActionCard title="Manage Employees" description="View and manage employee profiles" icon="👥" href="/hr/employees" />
 
-          <QuickActionCard 
-            title="Give Feedback" 
-            description="Provide employee feedback" 
-            icon="💬" 
-            href="/hr/feedback/give" 
-          />
-          <QuickActionCard 
-            title="Performance Reports" 
-            description="View performance analytics" 
-            icon="📈" 
-            href="/hr/reports" 
-          />
+          <QuickActionCard title="Give Feedback" description="Provide employee feedback" icon="💬" href="/hr/feedback/give" />
+          <QuickActionCard title="Performance Reports" description="View performance analytics" icon="📈" href="/hr/reports" />
         </div>
       </div>
 
@@ -343,7 +377,7 @@ export default function HRDashboardPage() {
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
           <h3 className="text-lg font-medium text-yellow-800 mb-2">No Data Found</h3>
           <p className="text-yellow-700 mb-4">Your database appears to be empty. Would you like to create some sample data?</p>
-          <button 
+          <button
             onClick={handleSeedData}
             disabled={seeding}
             className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:bg-gray-400"
@@ -362,7 +396,7 @@ function StatCard({ label, value, color = 'blue' }: { label: string; value: stri
     green: 'text-green-700 bg-green-50 border-green-200',
     purple: 'text-purple-700 bg-purple-50 border-purple-200',
     orange: 'text-orange-700 bg-orange-50 border-orange-200',
-    gray: 'text-gray-700 bg-gray-50 border-gray-200'
+    gray: 'text-gray-700 bg-gray-50 border-gray-200',
   };
 
   return (

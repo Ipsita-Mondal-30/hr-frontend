@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 
@@ -34,6 +34,12 @@ interface Employee {
   };
 }
 
+type EmployeesApiResponse = { employees?: Employee[] } | Employee[];
+
+function isAxiosError(e: unknown): e is { response?: { data?: any; status?: number } } {
+  return typeof e === 'object' && e !== null && 'response' in e;
+}
+
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,63 +47,70 @@ export default function EmployeesPage() {
   const [filters, setFilters] = useState({
     department: '',
     status: 'active',
-    search: ''
+    search: '',
   });
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [showInsights, setShowInsights] = useState(false);
   const [generatingInsights, setGeneratingInsights] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchEmployees();
-  }, [filters]);
-
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
       if (filters.department) params.append('department', filters.department);
       if (filters.status) params.append('status', filters.status);
-      
-      const response = await api.get(`/hr/employees?${params.toString()}`);
-      let employeeList = response.data?.employees || response.data || [];
-      
-      // Filter by search term
+
+      const response = await api.get<EmployeesApiResponse>(`/hr/employees?${params.toString()}`);
+      const listFromApi: Employee[] = Array.isArray(response.data)
+        ? response.data
+        : response.data?.employees || [];
+
+      // Filter by search term (in-memory)
+      let employeeList: Employee[] = listFromApi;
       if (filters.search) {
-        employeeList = employeeList.filter((emp: Employee) =>
-          emp.user?.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
-          emp.user?.email?.toLowerCase().includes(filters.search.toLowerCase()) ||
-          emp.position?.toLowerCase().includes(filters.search.toLowerCase())
+        const q = filters.search.toLowerCase();
+        employeeList = employeeList.filter(
+          (emp) =>
+            emp.user?.name?.toLowerCase().includes(q) ||
+            emp.user?.email?.toLowerCase().includes(q) ||
+            emp.position?.toLowerCase().includes(q)
         );
       }
-      
+
       setEmployees(employeeList);
       setError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching employees:', err);
-      setError('Failed to fetch employees');
+      const msg =
+        isAxiosError(err) && (err.response?.data?.error || err.response?.data?.message)
+          ? String(err.response.data.error || err.response.data.message)
+          : 'Failed to fetch employees';
+      setError(msg);
       setEmployees([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters.department, filters.status, filters.search]);
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
 
   const generateAIInsights = async (employeeId: string) => {
     try {
       setGeneratingInsights(employeeId);
-      const response = await api.post(`/employees/${employeeId}/ai-insights`);
-      
+      const response = await api.post<{ insights: Employee['aiInsights'] }>(`/employees/${employeeId}/ai-insights`);
+
       // Update the employee in the list with new insights
-      setEmployees(prev => prev.map(emp => 
-        emp._id === employeeId 
-          ? { ...emp, aiInsights: response.data.insights }
-          : emp
-      ));
-      
+      setEmployees((prev) =>
+        prev.map((emp) => (emp._id === employeeId ? { ...emp, aiInsights: response.data.insights } : emp))
+      );
+
       // Update selected employee if it's the same one
       if (selectedEmployee?._id === employeeId) {
-        setSelectedEmployee(prev => prev ? { ...prev, aiInsights: response.data.insights } : null);
+        setSelectedEmployee((prev) => (prev ? { ...prev, aiInsights: response.data.insights } : null));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error generating AI insights:', err);
       alert('Failed to generate AI insights');
     } finally {
@@ -124,16 +137,10 @@ export default function EmployeesPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Employee Management</h1>
         <div className="flex space-x-2">
-          <Link
-            href="/hr/employees/new"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
+          <Link href="/hr/employees/new" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
             Add Employee
           </Link>
-          <Link
-            href="/hr/projects"
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-          >
+          <Link href="/hr/projects" className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
             Manage Projects
           </Link>
         </div>
@@ -147,7 +154,7 @@ export default function EmployeesPage() {
             <input
               type="text"
               value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
               placeholder="Name, email, or position..."
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -156,7 +163,7 @@ export default function EmployeesPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
             <select
               value={filters.department}
-              onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
+              onChange={(e) => setFilters((prev) => ({ ...prev, department: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Departments</option>
@@ -171,7 +178,7 @@ export default function EmployeesPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select
               value={filters.status}
-              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+              onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Status</option>
@@ -181,10 +188,7 @@ export default function EmployeesPage() {
             </select>
           </div>
           <div className="flex items-end">
-            <button
-              onClick={fetchEmployees}
-              className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-            >
+            <button onClick={fetchEmployees} className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
               Refresh
             </button>
           </div>
@@ -202,15 +206,12 @@ export default function EmployeesPage() {
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold">Employees ({employees.length})</h2>
         </div>
-        
+
         {employees.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <div className="text-4xl mb-2">👥</div>
             <p>No employees found</p>
-            <Link
-              href="/hr/employees/new"
-              className="text-blue-600 hover:text-blue-800 text-sm"
-            >
+            <Link href="/hr/employees/new" className="text-blue-600 hover:text-blue-800 text-sm">
               Add your first employee →
             </Link>
           </div>
@@ -233,7 +234,7 @@ export default function EmployeesPage() {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-4">
                     {/* Performance Score */}
                     <div className="text-center">
@@ -242,25 +243,27 @@ export default function EmployeesPage() {
                       </div>
                       <div className="text-xs text-gray-500 mt-1">Performance</div>
                     </div>
-                    
+
                     {/* Project Contribution */}
                     <div className="text-center">
-                      <div className="text-sm font-medium text-gray-900">
-                        {employee.projectContribution}%
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{employee.projectContribution}%</div>
                       <div className="text-xs text-gray-500">Contribution</div>
                     </div>
-                    
+
                     {/* AI Insights */}
                     {employee.aiInsights && (
                       <div className="text-center">
-                        <div className={`px-2 py-1 rounded-full text-xs font-medium ${getRiskColor(employee.aiInsights.attritionRisk?.score || 0)}`}>
+                        <div
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${getRiskColor(
+                            employee.aiInsights.attritionRisk?.score || 0
+                          )}`}
+                        >
                           {employee.aiInsights.attritionRisk?.score || 0}%
                         </div>
                         <div className="text-xs text-gray-500 mt-1">Risk</div>
                       </div>
                     )}
-                    
+
                     {/* Actions */}
                     <div className="flex space-x-2">
                       <button
@@ -296,17 +299,16 @@ export default function EmployeesPage() {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-xl font-semibold">{selectedEmployee.user?.name || 'No Name'}</h2>
-                  <p className="text-gray-600">{selectedEmployee.position} • {selectedEmployee.department?.name}</p>
+                  <p className="text-gray-600">
+                    {selectedEmployee.position} • {selectedEmployee.department?.name}
+                  </p>
                 </div>
-                <button
-                  onClick={() => setShowInsights(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
+                <button onClick={() => setShowInsights(false)} className="text-gray-400 hover:text-gray-600">
                   ✕
                 </button>
               </div>
             </div>
-            
+
             <div className="p-6 space-y-6">
               {/* Performance Overview */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -319,9 +321,7 @@ export default function EmployeesPage() {
                   <div className="text-sm text-green-700">Project Contribution</div>
                 </div>
                 <div className="bg-purple-50 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {new Date(selectedEmployee.hireDate).getFullYear()}
-                  </div>
+                  <div className="text-2xl font-bold text-purple-600">{new Date(selectedEmployee.hireDate).getFullYear()}</div>
                   <div className="text-sm text-purple-700">Hire Year</div>
                 </div>
               </div>
@@ -330,7 +330,7 @@ export default function EmployeesPage() {
               {selectedEmployee.aiInsights && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">🤖 AI Insights</h3>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Promotion Readiness */}
                     <div className="bg-green-50 p-4 rounded-lg border border-green-200">
@@ -343,7 +343,7 @@ export default function EmployeesPage() {
                         ))}
                       </ul>
                     </div>
-                    
+
                     {/* Attrition Risk */}
                     <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                       <h4 className="font-medium text-red-800 mb-2">
@@ -356,7 +356,7 @@ export default function EmployeesPage() {
                       </ul>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Strengths */}
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
@@ -367,7 +367,7 @@ export default function EmployeesPage() {
                         ))}
                       </ul>
                     </div>
-                    
+
                     {/* Improvement Areas */}
                     <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
                       <h4 className="font-medium text-orange-800 mb-2">📈 Improvement Areas</h4>
@@ -378,7 +378,7 @@ export default function EmployeesPage() {
                       </ul>
                     </div>
                   </div>
-                  
+
                   {selectedEmployee.aiInsights.lastAnalyzed && (
                     <div className="text-xs text-gray-500">
                       Last analyzed: {new Date(selectedEmployee.aiInsights.lastAnalyzed).toLocaleString()}

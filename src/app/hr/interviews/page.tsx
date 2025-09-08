@@ -3,18 +3,17 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 
+interface ApplicationLite {
+  _id: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  job?: { title?: string; companyName?: string };
+}
+
 interface Interview {
   _id: string;
-  application?: {
-    _id: string;
-    name?: string;
-    email?: string;
-    phone?: string;
-    job?: {
-      title?: string;
-      companyName?: string;
-    };
-  };
+  application?: ApplicationLite;
   interviewer?: {
     _id: string;
     name?: string;
@@ -39,9 +38,36 @@ interface Interview {
   createdAt: string;
 }
 
+type InterviewsApiRes = Interview[] | { interviews: Interview[] };
+type ApplicationsApiRes = ApplicationLite[] | { applications: ApplicationLite[] };
+
+interface ScheduleInterviewInput {
+  applicationId: string;
+  scheduledAt: string;
+  duration: number;
+  type: 'phone' | 'video' | 'in-person';
+  meetingLink?: string;
+  location?: string;
+  notes?: string;
+}
+
+interface ScorecardInput {
+  technicalSkills: number;
+  communication: number;
+  problemSolving: number;
+  culturalFit: number;
+  overall: number;
+  feedback: string;
+  recommendation: 'hire' | 'no-hire' | 'maybe';
+}
+
+function isAxiosError(e: unknown): e is { response?: { data?: any; status?: number } } {
+  return typeof e === 'object' && e !== null && 'response' in e;
+}
+
 export default function InterviewsPage() {
   const [interviews, setInterviews] = useState<Interview[]>([]);
-  const [applications, setApplications] = useState<any[]>([]);
+  const [applications, setApplications] = useState<ApplicationLite[]>([]);
   const [loading, setLoading] = useState(true);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
@@ -52,7 +78,7 @@ export default function InterviewsPage() {
     status: '',
     type: '',
     date: '',
-    interviewer: ''
+    interviewer: '',
   });
 
   useEffect(() => {
@@ -63,9 +89,10 @@ export default function InterviewsPage() {
   const fetchInterviews = async () => {
     try {
       console.log('🔄 HR fetching interviews...');
-      const res = await api.get('/interviews');
-      console.log(`📊 HR received ${res.data?.length || 0} interviews`);
-      setInterviews(res.data || []);
+      const res = await api.get<InterviewsApiRes>('/interviews');
+      const list = Array.isArray(res.data) ? res.data : res.data?.interviews || [];
+      console.log(`📊 HR received ${list.length} interviews`);
+      setInterviews(list);
     } catch (err) {
       console.error('Failed to fetch interviews:', err);
       setInterviews([]);
@@ -77,39 +104,40 @@ export default function InterviewsPage() {
   const fetchApplications = async () => {
     try {
       console.log('🔄 HR fetching applications for interview scheduling...');
-      const res = await api.get('/applications?status=shortlisted');
-      console.log(`📊 HR received ${res.data?.length || 0} shortlisted applications`);
-      setApplications(res.data || []);
+      const res = await api.get<ApplicationsApiRes>('/applications?status=shortlisted');
+      const list = Array.isArray(res.data) ? res.data : res.data?.applications || [];
+      console.log(`📊 HR received ${list.length} shortlisted applications`);
+      setApplications(list);
     } catch (err) {
       console.error('Failed to fetch applications:', err);
       setApplications([]);
     }
   };
 
-  const scheduleInterview = async (interviewData: any) => {
+  const scheduleInterview = async (interviewData: ScheduleInterviewInput) => {
     try {
       console.log('📅 Scheduling interview:', interviewData);
       const response = await api.post('/interviews', interviewData);
       console.log('✅ Interview scheduled successfully:', response.data);
-      
+
       // Refresh both interviews and applications
       await Promise.all([fetchInterviews(), fetchApplications()]);
       setShowScheduleModal(false);
       alert('Interview scheduled successfully!');
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to schedule interview:', err);
-      alert('Failed to schedule interview: ' + (err.response?.data?.error || err.message));
+      const msg = isAxiosError(err) ? err.response?.data?.error || err.response?.data?.message || 'Failed to schedule interview' : 'Failed to schedule interview';
+      alert('Failed to schedule interview: ' + msg);
     }
   };
 
-  const updateInterviewStatus = async (interviewId: string, status: 'scheduled' | 'completed' | 'cancelled' | 'no-show') => {
+  const updateInterviewStatus = async (
+    interviewId: string,
+    status: 'scheduled' | 'completed' | 'cancelled' | 'no-show'
+  ) => {
     try {
       await api.put(`/interviews/${interviewId}/status`, { status });
-      setInterviews(prev => 
-        prev.map(interview => 
-          interview._id === interviewId ? { ...interview, status } : interview
-        )
-      );
+      setInterviews((prev) => prev.map((interview) => (interview._id === interviewId ? { ...interview, status } : interview)));
       alert(`Interview status updated to ${status}`);
     } catch (err) {
       console.error('Failed to update interview status:', err);
@@ -117,44 +145,53 @@ export default function InterviewsPage() {
     }
   };
 
-  const submitScorecard = async (interviewId: string, scorecard: any) => {
+  const submitScorecard = async (interviewId: string, scorecard: ScorecardInput) => {
     try {
       console.log('📋 Submitting scorecard for interview:', interviewId);
       console.log('📋 Scorecard data:', scorecard);
-      
+
       const response = await api.put(`/interviews/${interviewId}/scorecard`, { scorecard });
       console.log('✅ Scorecard submitted successfully:', response.data);
-      
+
       await fetchInterviews(); // Refresh the interviews list
       setShowScorecardModal(false);
       alert('Scorecard submitted successfully! AI-powered emails have been sent to the candidate and HR team.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Failed to submit scorecard:', err);
-      console.error('❌ Error details:', err.response?.data);
-      alert(`Failed to submit scorecard: ${err.response?.data?.error || err.message || 'Unknown error'}`);
+      const msg = isAxiosError(err) ? err.response?.data?.error || err.response?.data?.message || 'Unknown error' : 'Unknown error';
+      alert(`Failed to submit scorecard: ${msg}`);
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'scheduled': return 'bg-blue-100 text-blue-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'no-show': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'scheduled':
+        return 'bg-blue-100 text-blue-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      case 'no-show':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'phone': return '📞';
-      case 'video': return '📹';
-      case 'in-person': return '🏢';
-      default: return '💬';
+      case 'phone':
+        return '📞';
+      case 'video':
+        return '📹';
+      case 'in-person':
+        return '🏢';
+      default:
+        return '💬';
     }
   };
 
-  const filteredInterviews = interviews.filter(interview => {
+  const filteredInterviews = interviews.filter((interview) => {
     if (filters.status && interview.status !== filters.status) return false;
     if (filters.type && interview.type !== filters.type) return false;
     if (filters.date) {
@@ -165,11 +202,11 @@ export default function InterviewsPage() {
     return true;
   });
 
-  const upcomingInterviews = filteredInterviews.filter(interview => 
-    new Date(interview.scheduledAt) > new Date() && interview.status === 'scheduled'
+  const upcomingInterviews = filteredInterviews.filter(
+    (interview) => new Date(interview.scheduledAt) > new Date() && interview.status === 'scheduled'
   );
 
-  const todayInterviews = filteredInterviews.filter(interview => {
+  const todayInterviews = filteredInterviews.filter((interview) => {
     const today = new Date().toDateString();
     const interviewDate = new Date(interview.scheduledAt).toDateString();
     return today === interviewDate && interview.status === 'scheduled';
@@ -181,7 +218,7 @@ export default function InterviewsPage() {
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="h-24 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -198,10 +235,7 @@ export default function InterviewsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Interview Manager</h1>
           <p className="text-gray-600">Schedule and manage candidate interviews</p>
         </div>
-        <button
-          onClick={() => setShowScheduleModal(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
+        <button onClick={() => setShowScheduleModal(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
           📅 Schedule Interview
         </button>
       </div>
@@ -214,7 +248,7 @@ export default function InterviewsPage() {
         </div>
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="text-2xl font-bold text-orange-600">{todayInterviews.length}</div>
-          <div className="text-sm text-gray-600">Today's Interviews</div>
+          <div className="text-sm text-gray-600">Today&apos;s Interviews</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="text-2xl font-bold text-green-600">{upcomingInterviews.length}</div>
@@ -222,7 +256,7 @@ export default function InterviewsPage() {
         </div>
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="text-2xl font-bold text-purple-600">
-            {interviews.filter(i => i.status === 'completed').length}
+            {interviews.filter((i) => i.status === 'completed').length}
           </div>
           <div className="text-sm text-gray-600">Completed</div>
         </div>
@@ -233,7 +267,7 @@ export default function InterviewsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <select
             value={filters.status}
-            onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Statuses</option>
@@ -245,7 +279,7 @@ export default function InterviewsPage() {
 
           <select
             value={filters.type}
-            onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, type: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Types</option>
@@ -257,7 +291,7 @@ export default function InterviewsPage() {
           <input
             type="date"
             value={filters.date}
-            onChange={(e) => setFilters(prev => ({ ...prev, date: e.target.value }))}
+            onChange={(e) => setFilters((prev) => ({ ...prev, date: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
@@ -270,12 +304,12 @@ export default function InterviewsPage() {
         </div>
       </div>
 
-      {/* Today's Interviews */}
+      {/* Today’s Interviews */}
       {todayInterviews.length > 0 && (
         <div className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Today's Interviews</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Today&apos;s Interviews</h2>
           <div className="grid grid-cols-1 gap-4">
-            {todayInterviews.map(interview => (
+            {todayInterviews.map((interview) => (
               <InterviewCard
                 key={interview._id}
                 interview={interview}
@@ -300,17 +334,14 @@ export default function InterviewsPage() {
           <div className="text-center py-12">
             <div className="text-gray-400 text-6xl mb-4">📅</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No interviews scheduled</h3>
-            <p className="text-gray-500 mb-4">Schedule your first interview to get started</p>
-            <button
-              onClick={() => setShowScheduleModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
+            <p className="text-gray-500 mb-4">Schedule the first interview to get started</p>
+            <button onClick={() => setShowScheduleModal(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
               Schedule Interview
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
-            {filteredInterviews.map(interview => (
+            {filteredInterviews.map((interview) => (
               <InterviewCard
                 key={interview._id}
                 interview={interview}
@@ -347,7 +378,23 @@ export default function InterviewsPage() {
 }
 
 // Interview Card Component
-function InterviewCard({ interview, onUpdateStatus, onViewScorecard, getStatusColor, getTypeIcon, isToday = false }: any) {
+interface InterviewCardProps {
+  interview: Interview;
+  onUpdateStatus: (id: string, status: 'scheduled' | 'completed' | 'cancelled' | 'no-show') => void;
+  onViewScorecard: () => void;
+  getStatusColor: (status: string) => string;
+  getTypeIcon: (type: string) => string;
+  isToday?: boolean;
+}
+
+function InterviewCard({
+  interview,
+  onUpdateStatus,
+  onViewScorecard,
+  getStatusColor,
+  getTypeIcon,
+  isToday = false,
+}: InterviewCardProps) {
   const interviewDate = new Date(interview.scheduledAt);
   const isUpcoming = interviewDate > new Date();
 
@@ -361,36 +408,39 @@ function InterviewCard({ interview, onUpdateStatus, onViewScorecard, getStatusCo
               <h3 className="text-lg font-semibold text-gray-900">
                 {interview.application?.name || 'Candidate Name Not Available'}
               </h3>
-              <p className="text-gray-600">
-                {interview.application?.job?.title || 'Job Title Not Available'}
-              </p>
-              <p className="text-sm text-gray-500">
-                {interview.application?.job?.companyName || 'Company Not Available'}
-              </p>
+              <p className="text-gray-600">{interview.application?.job?.title || 'Job Title Not Available'}</p>
+              <p className="text-sm text-gray-500">{interview.application?.job?.companyName || 'Company Not Available'}</p>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
             <div>
-              <p><strong>Date:</strong> {interviewDate.toLocaleDateString()}</p>
-              <p><strong>Time:</strong> {interviewDate.toLocaleTimeString()}</p>
-              <p><strong>Duration:</strong> {interview.duration} minutes</p>
+              <p>
+                <strong>Date:</strong> {interviewDate.toLocaleDateString()}
+              </p>
+              <p>
+                <strong>Time:</strong> {interviewDate.toLocaleTimeString()}
+              </p>
+              <p>
+                <strong>Duration:</strong> {interview.duration} minutes
+              </p>
             </div>
             <div>
-              <p><strong>Interviewer:</strong> {interview.interviewer?.name || 'Not Available'}</p>
-              <p><strong>Email:</strong> {interview.application?.email || 'Not Available'}</p>
-              <p><strong>Phone:</strong> {interview.application?.phone || 'Not Available'}</p>
+              <p>
+                <strong>Interviewer:</strong> {interview.interviewer?.name || 'Not Available'}
+              </p>
+              <p>
+                <strong>Email:</strong> {interview.application?.email || 'Not Available'}
+              </p>
+              <p>
+                <strong>Phone:</strong> {interview.application?.phone || 'Not Available'}
+              </p>
             </div>
           </div>
 
           {interview.meetingLink && (
             <div className="mt-3">
-              <a
-                href={interview.meetingLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 underline"
-              >
+              <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">
                 🔗 Join Meeting
               </a>
             </div>
@@ -398,7 +448,9 @@ function InterviewCard({ interview, onUpdateStatus, onViewScorecard, getStatusCo
 
           {interview.location && (
             <div className="mt-2">
-              <p className="text-sm text-gray-600"><strong>Location:</strong> {interview.location}</p>
+              <p className="text-sm text-gray-600">
+                <strong>Location:</strong> {interview.location}
+              </p>
             </div>
           )}
         </div>
@@ -407,12 +459,8 @@ function InterviewCard({ interview, onUpdateStatus, onViewScorecard, getStatusCo
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(interview.status)}`}>
             {interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
           </span>
-          
-          {interview.scorecard && (
-            <span className="text-sm text-green-600 font-medium">
-              ⭐ {interview.scorecard.overall}/5
-            </span>
-          )}
+
+          {interview.scorecard && <span className="text-sm text-green-600 font-medium">⭐ {interview.scorecard.overall}/5</span>}
         </div>
       </div>
 
@@ -420,22 +468,13 @@ function InterviewCard({ interview, onUpdateStatus, onViewScorecard, getStatusCo
         <div className="flex space-x-2">
           {isUpcoming && interview.status === 'scheduled' && (
             <>
-              <button
-                onClick={() => onUpdateStatus(interview._id, 'completed')}
-                className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-              >
+              <button onClick={() => onUpdateStatus(interview._id, 'completed')} className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">
                 Mark Complete
               </button>
-              <button
-                onClick={() => onUpdateStatus(interview._id, 'no-show')}
-                className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
-              >
+              <button onClick={() => onUpdateStatus(interview._id, 'no-show')} className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700">
                 No Show
               </button>
-              <button
-                onClick={() => onUpdateStatus(interview._id, 'cancelled')}
-                className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
-              >
+              <button onClick={() => onUpdateStatus(interview._id, 'cancelled')} className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
                 Cancel
               </button>
             </>
@@ -443,10 +482,7 @@ function InterviewCard({ interview, onUpdateStatus, onViewScorecard, getStatusCo
         </div>
 
         <div className="flex space-x-2">
-          <button
-            onClick={onViewScorecard}
-            className="px-3 py-1 border border-blue-600 text-blue-600 rounded text-sm hover:bg-blue-50"
-          >
+          <button onClick={onViewScorecard} className="px-3 py-1 border border-blue-600 text-blue-600 rounded text-sm hover:bg-blue-50">
             {interview.scorecard ? 'View Scorecard' : 'Add Scorecard'}
           </button>
         </div>
@@ -456,15 +492,22 @@ function InterviewCard({ interview, onUpdateStatus, onViewScorecard, getStatusCo
 }
 
 // Schedule Interview Modal Component
-function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: any) {
-  const [formData, setFormData] = useState({
+interface ScheduleInterviewModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSchedule: (data: ScheduleInterviewInput) => Promise<void>;
+  applications: ApplicationLite[];
+}
+
+function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: ScheduleInterviewModalProps) {
+  const [formData, setFormData] = useState<ScheduleInterviewInput>({
     applicationId: '',
     scheduledAt: '',
     duration: 60,
     type: 'video',
     meetingLink: '',
     location: '',
-    notes: ''
+    notes: '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -481,7 +524,7 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: a
       type: 'video',
       meetingLink: '',
       location: '',
-      notes: ''
+      notes: '',
     });
   };
 
@@ -492,7 +535,9 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: a
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Schedule Interview</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            ✕
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -500,14 +545,12 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: a
             <label className="block text-sm font-medium text-gray-700 mb-1">Candidate</label>
             <select
               value={formData.applicationId}
-              onChange={(e) => setFormData(prev => ({ ...prev, applicationId: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, applicationId: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
-              <option value="">
-                {applications.length > 0 ? 'Select candidate' : 'No candidates available'}
-              </option>
-              {applications.map((app: any) => (
+              <option value="">{applications.length > 0 ? 'Select candidate' : 'No candidates available'}</option>
+              {applications.map((app) => (
                 <option key={app._id} value={app._id}>
                   {app.name || 'Unknown Candidate'} - {app.job?.title || 'Unknown Job'}
                 </option>
@@ -516,11 +559,11 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: a
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date & Time</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date &amp; Time</label>
             <input
               type="datetime-local"
               value={formData.scheduledAt}
-              onChange={(e) => setFormData(prev => ({ ...prev, scheduledAt: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, scheduledAt: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -532,7 +575,7 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: a
               <input
                 type="number"
                 value={formData.duration}
-                onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, duration: parseInt(e.target.value, 10) || 0 }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -541,7 +584,7 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: a
               <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
               <select
                 value={formData.type}
-                onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value as ScheduleInterviewInput['type'] }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="video">Video Call</option>
@@ -557,7 +600,7 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: a
               <input
                 type="url"
                 value={formData.meetingLink}
-                onChange={(e) => setFormData(prev => ({ ...prev, meetingLink: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, meetingLink: e.target.value }))}
                 placeholder="https://zoom.us/j/..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -570,7 +613,7 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: a
               <input
                 type="text"
                 value={formData.location}
-                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
                 placeholder="Office address or room number"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -581,7 +624,7 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: a
             <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
             <textarea
               value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
               rows={3}
               placeholder="Additional notes or instructions..."
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -589,17 +632,10 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: a
           </div>
 
           <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-            >
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
               Cancel
             </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
+            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
               Schedule Interview
             </button>
           </div>
@@ -610,15 +646,22 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: a
 }
 
 // Scorecard Modal Component
-function ScorecardModal({ isOpen, onClose, interview, onSubmit }: any) {
-  const [scorecard, setScorecard] = useState({
+interface ScorecardModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  interview: Interview | null;
+  onSubmit: (interviewId: string, scorecard: ScorecardInput) => Promise<void>;
+}
+
+function ScorecardModal({ isOpen, onClose, interview, onSubmit }: ScorecardModalProps) {
+  const [scorecard, setScorecard] = useState<ScorecardInput>({
     technicalSkills: 0,
     communication: 0,
     problemSolving: 0,
     culturalFit: 0,
     overall: 0,
     feedback: '',
-    recommendation: 'maybe'
+    recommendation: 'maybe',
   });
 
   useEffect(() => {
@@ -630,11 +673,12 @@ function ScorecardModal({ isOpen, onClose, interview, onSubmit }: any) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!interview) return;
-    
+
     // Calculate overall score as average
-    const average = (scorecard.technicalSkills + scorecard.communication + scorecard.problemSolving + scorecard.culturalFit) / 4;
-    const updatedScorecard = { ...scorecard, overall: Math.round(average * 10) / 10 };
-    
+    const average =
+      (scorecard.technicalSkills + scorecard.communication + scorecard.problemSolving + scorecard.culturalFit) / 4;
+    const updatedScorecard: ScorecardInput = { ...scorecard, overall: Math.round(average * 10) / 10 };
+
     onSubmit(interview._id, updatedScorecard);
   };
 
@@ -645,16 +689,14 @@ function ScorecardModal({ isOpen, onClose, interview, onSubmit }: any) {
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Interview Scorecard</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            ✕
+          </button>
         </div>
 
         <div className="mb-4 p-4 bg-gray-50 rounded">
-          <h4 className="font-medium">
-            {interview.application?.name || 'Candidate Name Not Available'}
-          </h4>
-          <p className="text-sm text-gray-600">
-            {interview.application?.job?.title || 'Job Title Not Available'}
-          </p>
+          <h4 className="font-medium">{interview.application?.name || 'Candidate Name Not Available'}</h4>
+          <p className="text-sm text-gray-600">{interview.application?.job?.title || 'Job Title Not Available'}</p>
           <p className="text-sm text-gray-500">
             {new Date(interview.scheduledAt).toLocaleDateString()} at {new Date(interview.scheduledAt).toLocaleTimeString()}
           </p>
@@ -666,22 +708,22 @@ function ScorecardModal({ isOpen, onClose, interview, onSubmit }: any) {
             <ScoreField
               label="Technical Skills"
               value={scorecard.technicalSkills}
-              onChange={(value) => setScorecard(prev => ({ ...prev, technicalSkills: value }))}
+              onChange={(value) => setScorecard((prev) => ({ ...prev, technicalSkills: value }))}
             />
             <ScoreField
               label="Communication"
               value={scorecard.communication}
-              onChange={(value) => setScorecard(prev => ({ ...prev, communication: value }))}
+              onChange={(value) => setScorecard((prev) => ({ ...prev, communication: value }))}
             />
             <ScoreField
               label="Problem Solving"
               value={scorecard.problemSolving}
-              onChange={(value) => setScorecard(prev => ({ ...prev, problemSolving: value }))}
+              onChange={(value) => setScorecard((prev) => ({ ...prev, problemSolving: value }))}
             />
             <ScoreField
               label="Cultural Fit"
               value={scorecard.culturalFit}
-              onChange={(value) => setScorecard(prev => ({ ...prev, culturalFit: value }))}
+              onChange={(value) => setScorecard((prev) => ({ ...prev, culturalFit: value }))}
             />
           </div>
 
@@ -689,14 +731,14 @@ function ScorecardModal({ isOpen, onClose, interview, onSubmit }: any) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Recommendation</label>
             <div className="flex space-x-4">
-              {['hire', 'maybe', 'no-hire'].map(option => (
+              {['hire', 'maybe', 'no-hire'].map((option) => (
                 <label key={option} className="flex items-center">
                   <input
                     type="radio"
                     name="recommendation"
                     value={option}
                     checked={scorecard.recommendation === option}
-                    onChange={(e) => setScorecard(prev => ({ ...prev, recommendation: e.target.value }))}
+                    onChange={(e) => setScorecard((prev) => ({ ...prev, recommendation: e.target.value as ScorecardInput['recommendation'] }))}
                     className="mr-2"
                   />
                   <span className="capitalize">{option.replace('-', ' ')}</span>
@@ -710,25 +752,18 @@ function ScorecardModal({ isOpen, onClose, interview, onSubmit }: any) {
             <label className="block text-sm font-medium text-gray-700 mb-2">Detailed Feedback</label>
             <textarea
               value={scorecard.feedback}
-              onChange={(e) => setScorecard(prev => ({ ...prev, feedback: e.target.value }))}
+              onChange={(e) => setScorecard((prev) => ({ ...prev, feedback: e.target.value }))}
               rows={6}
-              placeholder="Provide detailed feedback about the candidate's performance, strengths, areas for improvement, and any other relevant observations..."
+              placeholder="Provide detailed feedback about the candidate&apos;s performance, strengths, areas for improvement, and any other relevant observations..."
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-            >
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
               Cancel
             </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
+            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
               Save Scorecard
             </button>
           </div>
@@ -744,15 +779,13 @@ function ScoreField({ label, value, onChange }: { label: string; value: number; 
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
       <div className="flex items-center space-x-2">
-        {[1, 2, 3, 4, 5].map(score => (
+        {[1, 2, 3, 4, 5].map((score) => (
           <button
             key={score}
             type="button"
             onClick={() => onChange(score)}
             className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-medium ${
-              value >= score
-                ? 'bg-blue-600 border-blue-600 text-white'
-                : 'border-gray-300 text-gray-400 hover:border-blue-300'
+              value >= score ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-300 text-gray-400 hover:border-blue-300'
             }`}
           >
             {score}
