@@ -4,11 +4,25 @@ import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
 
+interface Job {
+  _id: string;
+  title: string;
+  companyName?: string;
+  location?: string;
+  minSalary?: number;
+  maxSalary?: number;
+  [key: string]: unknown;
+}
+
 interface JobApplicationModalProps {
-  job: any;
+  job: Job;
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+}
+
+function isAxiosLikeError(e: unknown): e is { response?: { data?: { error?: string; message?: string } } } {
+  return typeof e === 'object' && e !== null && 'response' in e;
 }
 
 export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }: JobApplicationModalProps) {
@@ -24,7 +38,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
     whyInterested: '',
     phone: '',
     location: '',
-    experience: ''
+    experience: '',
   });
   const [resumeFile, setResumeFile] = useState<File | null>(null);
 
@@ -38,12 +52,12 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
       // Create FormData for file upload
       const submitData = new FormData();
       submitData.append('jobId', job._id);
-      
+
       // Add all form fields
       Object.entries(formData).forEach(([key, value]) => {
         if (value) submitData.append(key, value);
       });
-      
+
       // Add resume file if provided
       if (resumeFile) {
         submitData.append('resume', resumeFile);
@@ -54,29 +68,33 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
           'Content-Type': 'multipart/form-data',
         },
       });
-      
+
       console.log('✅ Application submitted successfully:', response.data);
       alert('Application submitted successfully! You will receive a confirmation email shortly.');
-      
+
       // Trigger refresh of parent component data
       onSuccess();
       onClose();
-      
+
       // Refresh the page to update dashboard stats
       if (typeof window !== 'undefined') {
         window.location.reload();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error applying to job:', err);
-      const errorMessage = err.response?.data?.error || 'Error submitting application';
+      const errorMessage = isAxiosLikeError(err)
+        ? err.response?.data?.error || err.response?.data?.message || 'Error submitting application'
+        : err instanceof Error
+        ? err.message
+        : 'Error submitting application';
       alert(errorMessage);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -84,10 +102,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-900">Apply for {job.title}</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             ✕
           </button>
         </div>
@@ -97,7 +112,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
           <h3 className="font-semibold text-gray-900">{job.title}</h3>
           <p className="text-gray-600">{job.companyName}</p>
           <p className="text-sm text-gray-500">{job.location}</p>
-          {job.minSalary && job.maxSalary && (
+          {typeof job.minSalary === 'number' && typeof job.maxSalary === 'number' && (
             <p className="text-sm text-gray-600 mt-1">
               ${job.minSalary.toLocaleString()} - ${job.maxSalary.toLocaleString()}
             </p>
@@ -119,7 +134,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
                 </div>
               </div>
               <p className="text-xs text-blue-600 mt-2">
-                This information will be used for your application. Update your profile to change these details.
+                This information will be used for the application. Update the profile to change these details.
               </p>
             </div>
           </div>
@@ -129,9 +144,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
             <h4 className="font-medium text-gray-900 mb-3">Contact & Professional Details</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
                 <input
                   type="tel"
                   value={formData.phone}
@@ -143,9 +156,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Location *</label>
                 <input
                   type="text"
                   value={formData.location}
@@ -157,9 +168,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Years of Experience *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Years of Experience *</label>
                 <select
                   value={formData.experience}
                   onChange={(e) => handleInputChange('experience', e.target.value)}
@@ -176,9 +185,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Expected Salary
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Expected Salary</label>
                 <input
                   type="text"
                   value={formData.expectedSalary}
@@ -192,9 +199,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
 
           {/* Resume Upload */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Resume Upload *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Resume Upload *</label>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
               <input
                 type="file"
@@ -225,9 +230,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
           <div className="space-y-4 mb-6">
             {/* Why Interested */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Why are you interested in this position? *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Why are you interested in this position? *</label>
               <textarea
                 value={formData.whyInterested}
                 onChange={(e) => handleInputChange('whyInterested', e.target.value)}
@@ -240,9 +243,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
 
             {/* Cover Letter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cover Letter (Optional)
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Cover Letter (Optional)</label>
               <textarea
                 value={formData.coverLetter}
                 onChange={(e) => handleInputChange('coverLetter', e.target.value)}
@@ -255,9 +256,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
             {/* Portfolio & Links */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Portfolio URL
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Portfolio URL</label>
                 <input
                   type="url"
                   value={formData.portfolio}
@@ -268,9 +267,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  LinkedIn Profile
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">LinkedIn Profile</label>
                 <input
                   type="url"
                   value={formData.linkedIn}
@@ -281,9 +278,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  GitHub Profile
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">GitHub Profile</label>
                 <input
                   type="url"
                   value={formData.github}
@@ -294,9 +289,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Expected Salary
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Expected Salary</label>
                 <input
                   type="text"
                   value={formData.expectedSalary}
@@ -309,9 +302,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
 
             {/* Available Start Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Available Start Date
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Available Start Date</label>
               <input
                 type="date"
                 value={formData.availableStartDate}
@@ -323,11 +314,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
 
           {/* Actions */}
           <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-            >
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
               Cancel
             </button>
             <button

@@ -16,7 +16,7 @@ export function ModernHeroSection() {
       setCurrentSlide((prev) => (prev + 1) % images.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [images.length]);
 
   return (
     <section className="relative min-h-[90vh] overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -68,7 +68,7 @@ export function ModernHeroSection() {
             
             <p className="text-xl text-gray-300 leading-relaxed max-w-2xl">
               Experience Next-Level Recruitment Solutions. From AI-powered matching 
-              to seamless candidate management - We're redefining how talent meets opportunity.
+              to seamless candidate management - We&apos;re redefining how talent meets opportunity.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -86,7 +86,7 @@ export function ModernHeroSection() {
               </Link>
               
               <button className="px-8 py-4 border-2 border-white/20 rounded-2xl text-white font-semibold text-lg hover:bg-white/10 hover:border-white/30 transition-all duration-300 backdrop-blur-sm">
-                Let's Talk
+                Let&apos;s Talk
               </button>
             </div>
 

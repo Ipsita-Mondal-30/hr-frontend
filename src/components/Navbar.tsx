@@ -6,7 +6,6 @@ import { useState } from 'react';
 import {
   Navbar as ResizableNavbar,
   NavBody,
-  NavItems,
   MobileNav,
   MobileNavHeader,
   MobileNavMenu,
