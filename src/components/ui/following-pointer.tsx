@@ -1,8 +1,7 @@
 // Core component that receives mouse positions and renders pointer and content
 
 import React, { useEffect, useState } from "react";
-
-import { motion, AnimatePresence, useMotionValue } from "motion/react";
+import { motion, AnimatePresence, useMotionValue, MotionValue } from "motion/react";
 import { cn } from "@/lib/utils";
 
 export const FollowerPointerCard = ({
@@ -18,7 +17,7 @@ export const FollowerPointerCard = ({
   const y = useMotionValue(0);
   const ref = React.useRef<HTMLDivElement>(null);
   const [rect, setRect] = useState<DOMRect | null>(null);
-  const [isInside, setIsInside] = useState<boolean>(false); // Add this line
+  const [isInside, setIsInside] = useState<boolean>(false);
 
   useEffect(() => {
     if (ref.current) {
@@ -46,15 +45,11 @@ export const FollowerPointerCard = ({
       onMouseLeave={handleMouseLeave}
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
-      style={{
-        cursor: "none",
-      }}
+      style={{ cursor: "none" }}
       ref={ref}
       className={cn("relative", className)}
     >
-      <AnimatePresence>
-        {isInside && <FollowPointer x={x} y={y} title={title} />}
-      </AnimatePresence>
+      <AnimatePresence>{isInside && <FollowPointer x={x} y={y} title={title} />}</AnimatePresence>
       {children}
     </div>
   );
@@ -65,19 +60,11 @@ export const FollowPointer = ({
   y,
   title,
 }: {
-  x: any;
-  y: any;
+  x: MotionValue<number>;
+  y: MotionValue<number>;
   title?: string | React.ReactNode;
 }) => {
-  const colors = [
-    "#0ea5e9",
-    "#737373",
-    "#14b8a6",
-    "#22c55e",
-    "#3b82f6",
-    "#ef4444",
-    "#eab308",
-  ];
+  const colors = ["#0ea5e9", "#737373", "#14b8a6", "#22c55e", "#3b82f6", "#ef4444", "#eab308"];
   return (
     <motion.div
       className="absolute z-50 h-4 w-4 rounded-full"
@@ -86,18 +73,9 @@ export const FollowPointer = ({
         left: x,
         pointerEvents: "none",
       }}
-      initial={{
-        scale: 1,
-        opacity: 1,
-      }}
-      animate={{
-        scale: 1,
-        opacity: 1,
-      }}
-      exit={{
-        scale: 0,
-        opacity: 0,
-      }}
+      initial={{ scale: 1, opacity: 1 }}
+      animate={{ scale: 1, opacity: 1 }}
+      exit={{ scale: 0, opacity: 0 }}
     >
       <svg
         stroke="currentColor"
@@ -115,21 +93,10 @@ export const FollowPointer = ({
         style={{
           backgroundColor: colors[Math.floor(Math.random() * colors.length)],
         }}
-        initial={{
-          scale: 0.5,
-          opacity: 0,
-        }}
-        animate={{
-          scale: 1,
-          opacity: 1,
-        }}
-        exit={{
-          scale: 0.5,
-          opacity: 0,
-        }}
-        className={
-          "min-w-max rounded-full bg-neutral-200 px-2 py-2 text-xs whitespace-nowrap text-white"
-        }
+        initial={{ scale: 0.5, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.5, opacity: 0 }}
+        className="min-w-max rounded-full bg-neutral-200 px-2 py-2 text-xs whitespace-nowrap text-white"
       >
         {title || `William Shakespeare`}
       </motion.div>
