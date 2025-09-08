@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
@@ -69,7 +68,7 @@ type ApiProjectsRes = { projects?: ProjectLite[] } | ProjectLite[];
 type ApiTopPerformersRes = { topPerformers?: TopPerformer[] } | TopPerformer[];
 type ApiFeedbackRes = { feedback?: FeedbackLite[] } | FeedbackLite[];
 
-function isAxiosError(e: unknown): e is { response?: { data?: any; status?: number } } {
+function isAxiosError(e: unknown): e is { response?: { data?: unknown; status?: number } } {
   return typeof e === "object" && e !== null && "response" in e;
 }
 
@@ -145,10 +144,8 @@ export default function HRDashboardPage() {
         if (isAxiosError(err)) {
           console.error("❌ Error response:", err.response?.data);
           console.error("❌ Error status:", err.response?.status);
-          const msg =
-            (err.response?.data?.message as string) ||
-            (err.response?.data?.error as string) ||
-            "Failed to load dashboard data";
+          const respData = err.response?.data as { message?: string; error?: string } | undefined;
+          const msg = respData?.message || respData?.error || "Failed to load dashboard data";
           setError(msg);
         } else if (err instanceof Error) {
           setError(err.message);
@@ -185,7 +182,7 @@ export default function HRDashboardPage() {
       alert('Sample data created successfully!');
     } catch (err: unknown) {
       console.error('Error seeding data:', err);
-      const msg = isAxiosError(err) ? err.response?.data?.error || 'Failed to seed data' : 'Failed to seed data';
+      const msg = isAxiosError(err) ? ((err.response?.data as { error?: string })?.error || 'Failed to seed data') : 'Failed to seed data';
       alert(msg);
     } finally {
       setSeeding(false);
@@ -206,6 +203,7 @@ export default function HRDashboardPage() {
   };
 
   if (loading) return <div className="p-6">Loading dashboard...</div>;
+
   if (error)
     return (
       <div className="p-6">
@@ -227,6 +225,7 @@ export default function HRDashboardPage() {
         </div>
       </div>
     );
+
   if (!data) return <div className="p-6 text-red-600">Failed to load dashboard data</div>;
 
   return (
@@ -366,7 +365,6 @@ export default function HRDashboardPage() {
         <h2 className="text-lg font-semibold mb-4">⚡ Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <QuickActionCard title="Manage Employees" description="View and manage employee profiles" icon="👥" href="/hr/employees" />
-
           <QuickActionCard title="Give Feedback" description="Provide employee feedback" icon="💬" href="/hr/feedback/give" />
           <QuickActionCard title="Performance Reports" description="View performance analytics" icon="📈" href="/hr/reports" />
         </div>
@@ -398,7 +396,6 @@ function StatCard({ label, value, color = 'blue' }: { label: string; value: stri
     orange: 'text-orange-700 bg-orange-50 border-orange-200',
     gray: 'text-gray-700 bg-gray-50 border-gray-200',
   };
-
   return (
     <div className={`p-4 rounded-lg border text-center ${colorClasses[color as keyof typeof colorClasses] || colorClasses.blue}`}>
       <div className="text-gray-600 text-sm font-medium">{label}</div>

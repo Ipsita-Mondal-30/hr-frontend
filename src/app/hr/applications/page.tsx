@@ -50,11 +50,16 @@ interface JobLite {
 type SortKey = 'createdAt' | 'matchScore' | 'name' | 'status';
 type SortOrder = 'asc' | 'desc';
 
+function isAxiosLikeError(e: unknown): e is { response?: { data?: { error?: string; message?: string }; status?: number } } {
+  return typeof e === 'object' && e !== null && 'response' in e;
+}
+
 export default function ApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [jobs, setJobs] = useState<JobLite[]>([]);
   const [filteredApplications, setFilteredApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [selectedApplications, setSelectedApplications] = useState<string[]>([]);
   const [messageModal, setMessageModal] = useState<{ isOpen: boolean; applicationId: string | null }>({
     isOpen: false,
@@ -148,7 +153,17 @@ export default function ApplicationsPage() {
     });
 
     setFilteredApplications(filtered);
-  }, [applications, filters.job, filters.status, filters.minScore, filters.skills, filters.experience, filters.search, sortBy, sortOrder]);
+  }, [
+    applications,
+    filters.job,
+    filters.status,
+    filters.minScore,
+    filters.skills,
+    filters.experience,
+    filters.search,
+    sortBy,
+    sortOrder,
+  ]);
 
   useEffect(() => {
     applyFiltersAndSort();
@@ -185,9 +200,14 @@ export default function ApplicationsPage() {
 
       // Show success message
       alert(`Status updated to ${newStatus} successfully`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Status update failed', err);
-      alert('Failed to update status: ' + (err.response?.data?.error || err.message));
+      const msg = isAxiosLikeError(err)
+        ? err.response?.data?.error || err.response?.data?.message || 'Failed to update status'
+        : err instanceof Error
+        ? err.message
+        : 'Failed to update status';
+      alert('Failed to update status: ' + msg);
       // Refresh on error to ensure consistency
       fetchApplications();
     }
@@ -204,9 +224,14 @@ export default function ApplicationsPage() {
 
       setNotesModal({ isOpen: false, applicationId: null });
       alert('Notes saved successfully');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to save notes', err);
-      alert('Failed to save notes: ' + (err.response?.data?.error || err.message));
+      const msg = isAxiosLikeError(err)
+        ? err.response?.data?.error || err.response?.data?.message || 'Failed to save notes'
+        : err instanceof Error
+        ? err.message
+        : 'Failed to save notes';
+      alert('Failed to save notes: ' + msg);
     }
   };
 
@@ -230,9 +255,14 @@ export default function ApplicationsPage() {
 
       setSelectedApplications([]);
       alert(`${selectedApplications.length} applications updated to ${status} successfully`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Bulk update failed', err);
-      alert('Failed to update applications: ' + (err.response?.data?.error || err.message));
+      const msg = isAxiosLikeError(err)
+        ? err.response?.data?.error || err.response?.data?.message || 'Failed to update applications'
+        : err instanceof Error
+        ? err.message
+        : 'Failed to update applications';
+      alert('Failed to update applications: ' + msg);
       // Refresh on error to ensure consistency
       fetchApplications();
     }
@@ -433,9 +463,7 @@ export default function ApplicationsPage() {
             </div>
           </div>
 
-          <div className="text-sm text-gray-600">
-            Showing {filteredApplications.length} of {applications.length} applications
-          </div>
+          <div className="text-sm text-gray-600">Showing {filteredApplications.length} of {applications.length} applications</div>
         </div>
       </div>
 

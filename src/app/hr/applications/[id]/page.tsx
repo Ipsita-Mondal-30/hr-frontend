@@ -45,12 +45,14 @@ interface ApplicationDetail {
     missingSkills: string[];
     tags: string[];
   };
+  hrNotes?: string;
   createdAt: string;
 }
 
 export default function ApplicationDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+
   const [application, setApplication] = useState<ApplicationDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState('');
@@ -60,9 +62,9 @@ export default function ApplicationDetailPage() {
     async (id: string) => {
       try {
         setLoading(true);
-        const res = await api.get(`/applications/${id}`);
-        setApplication(res.data as ApplicationDetail);
-        setNotes((res.data as any).hrNotes || ''); // keep compatibility if hrNotes exists
+        const res = await api.get<ApplicationDetail>(`/applications/${id}`);
+        setApplication(res.data);
+        setNotes(res.data.hrNotes || '');
       } catch (err) {
         console.error('Failed to fetch application:', err);
         alert('Failed to load application details');
@@ -82,7 +84,6 @@ export default function ApplicationDetailPage() {
 
   const updateStatus = async (newStatus: string) => {
     if (!application) return;
-
     try {
       await api.put(`/applications/${application._id}/status`, { status: newStatus });
       setApplication((prev) => (prev ? { ...prev, status: newStatus } : null));
@@ -95,10 +96,10 @@ export default function ApplicationDetailPage() {
 
   const saveNotes = async () => {
     if (!application) return;
-
     setSavingNotes(true);
     try {
       await api.put(`/applications/${application._id}/notes`, { notes });
+      setApplication((prev) => (prev ? { ...prev, hrNotes: notes } : prev));
       alert('Notes saved successfully');
     } catch (err) {
       console.error('Failed to save notes:', err);
@@ -113,7 +114,6 @@ export default function ApplicationDetailPage() {
       alert('No resume available');
       return;
     }
-
     const link = document.createElement('a');
     link.href = application.resumeUrl;
     link.download = `${application.name}_Resume.pdf`;
@@ -139,7 +139,7 @@ export default function ApplicationDetailPage() {
   };
 
   const getScoreColor = (score?: number) => {
-    if (!score) return 'bg-gray-100 text-gray-800';
+    if (!score && score !== 0) return 'bg-gray-100 text-gray-800';
     if (score >= 80) return 'bg-green-100 text-green-800';
     if (score >= 60) return 'bg-yellow-100 text-yellow-800';
     return 'bg-red-100 text-red-800';
@@ -196,17 +196,12 @@ export default function ApplicationDetailPage() {
           <h1 className="text-2xl font-bold text-gray-900">{application.name}</h1>
           <p className="text-gray-600">Application for {application.job.title}</p>
         </div>
-
         <div className="flex items-center space-x-3">
-          <span
-            className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(application.status)}`}
-          >
+          <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(application.status)}`}>
             {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
           </span>
-          {application.matchScore && (
-            <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(application.matchScore)}`}
-            >
+          {typeof application.matchScore === 'number' && (
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(application.matchScore)}`}>
               {application.matchScore}% Match
             </span>
           )}
@@ -219,7 +214,6 @@ export default function ApplicationDetailPage() {
           {/* Candidate Information */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Candidate Information</h2>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="font-medium text-gray-900 mb-3">Contact Details</h3>
@@ -238,7 +232,6 @@ export default function ApplicationDetailPage() {
                   </div>
                 </div>
               </div>
-
               <div>
                 <h3 className="font-medium text-gray-900 mb-3">Professional Details</h3>
                 <div className="space-y-2 text-sm">
@@ -347,13 +340,11 @@ export default function ApplicationDetailPage() {
           {application.matchInsights && (
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">🤖 AI Match Analysis</h2>
-
               <div className="mb-4">
                 <p className="text-gray-700 text-sm bg-blue-50 p-3 rounded">
                   {application.matchInsights.explanation}
                 </p>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {application.matchInsights.matchingSkills &&
                   application.matchInsights.matchingSkills.length > 0 && (
@@ -368,7 +359,6 @@ export default function ApplicationDetailPage() {
                       </div>
                     </div>
                   )}
-
                 {application.matchInsights.missingSkills &&
                   application.matchInsights.missingSkills.length > 0 && (
                     <div>
@@ -383,7 +373,6 @@ export default function ApplicationDetailPage() {
                     </div>
                   )}
               </div>
-
               {application.matchInsights.tags && application.matchInsights.tags.length > 0 && (
                 <div className="mt-4">
                   <h3 className="font-medium text-blue-700 mb-2">🏷️ Tags</h3>
@@ -405,22 +394,16 @@ export default function ApplicationDetailPage() {
           {/* Actions */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
-
             <div className="space-y-3">
-              <button
-                onClick={downloadResume}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
+              <button onClick={downloadResume} className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
                 📄 Download Resume
               </button>
-
               <button
                 onClick={() => window.open(`mailto:${application.email}`, '_blank')}
                 className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
               >
                 ✉️ Send Email
               </button>
-
               <button
                 onClick={() => window.open(`tel:${application.phone}`, '_blank')}
                 className="w-full px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
@@ -434,7 +417,6 @@ export default function ApplicationDetailPage() {
           {/* Status Management */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Status Management</h2>
-
             <div className="space-y-2">
               {['pending', 'reviewed', 'shortlisted', 'rejected'].map((status) => (
                 <button
@@ -453,7 +435,6 @@ export default function ApplicationDetailPage() {
           {/* Job Information */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Job Information</h2>
-
             <div className="space-y-3 text-sm">
               <div>
                 <strong>Position:</strong> {application.job.title}
@@ -468,7 +449,6 @@ export default function ApplicationDetailPage() {
                 <strong>Applied:</strong> {new Date(application.createdAt).toLocaleDateString()}
               </div>
             </div>
-
             {application.job.skills && application.job.skills.length > 0 && (
               <div className="mt-4">
                 <strong className="text-sm">Required Skills:</strong>
@@ -486,7 +466,6 @@ export default function ApplicationDetailPage() {
           {/* Notes */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">HR Notes</h2>
-
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -494,7 +473,6 @@ export default function ApplicationDetailPage() {
               placeholder="Add notes about this candidate..."
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             />
-
             <button
               onClick={saveNotes}
               disabled={savingNotes}

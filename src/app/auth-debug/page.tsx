@@ -21,13 +21,6 @@ type MeSuccess = {
   [key: string]: unknown;
 };
 
-type MeFailure = {
-  success?: false;
-  error?: unknown;
-  message?: string;
-  [key: string]: unknown;
-};
-
 type ServerTestResponse =
   | { success: true; [key: string]: unknown }
   | { success: false; error?: string; [key: string]: unknown };

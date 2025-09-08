@@ -32,6 +32,10 @@ interface PayrollStats {
   avgSalary: number;
 }
 
+function isAxiosLikeError(e: unknown): e is { response?: { data?: unknown; status?: number } } {
+  return typeof e === 'object' && e !== null && 'response' in e;
+}
+
 export default function AdminPayrollManagement() {
   const [payrolls, setPayrolls] = useState<Payroll[]>([]);
   const [stats, setStats] = useState<PayrollStats | null>(null);
@@ -39,7 +43,7 @@ export default function AdminPayrollManagement() {
   const [filter, setFilter] = useState({
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
-    status: 'all'
+    status: 'all',
   });
 
   const fetchData = useCallback(async () => {
@@ -52,12 +56,12 @@ export default function AdminPayrollManagement() {
 
       console.log('🔍 API calls:', {
         payroll: `/admin/payroll?${params}`,
-        stats: '/admin/payroll/stats'
+        stats: '/admin/payroll/stats',
       });
 
       const [payrollResponse, statsResponse] = await Promise.all([
-        api.get(`/admin/payroll?${params}`),
-        api.get('/admin/payroll/stats')
+        api.get<Payroll[]>(`/admin/payroll?${params}`),
+        api.get<PayrollStats>('/admin/payroll/stats'),
       ]);
 
       console.log('✅ Payroll response:', payrollResponse.data);
@@ -65,10 +69,12 @@ export default function AdminPayrollManagement() {
 
       setPayrolls(payrollResponse.data);
       setStats(statsResponse.data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error fetching payroll data:', error);
-      console.error('❌ Error details:', error.response?.data);
-      console.error('❌ Error status:', error.response?.status);
+      if (isAxiosLikeError(error)) {
+        console.error('❌ Error details:', error.response?.data);
+        console.error('❌ Error status:', error.response?.status);
+      }
     } finally {
       setLoading(false);
     }
@@ -90,16 +96,30 @@ export default function AdminPayrollManagement() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-800';
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'paid': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'draft':
+        return 'bg-gray-100 text-gray-800';
+      case 'approved':
+        return 'bg-green-100 text-green-800';
+      case 'paid':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   if (loading) {
@@ -191,7 +211,9 @@ export default function AdminPayrollManagement() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {months.map((month, index) => (
-                <option key={index} value={index + 1}>{month}</option>
+                <option key={index} value={index + 1}>
+                  {month}
+                </option>
               ))}
             </select>
           </div>
@@ -203,8 +225,10 @@ export default function AdminPayrollManagement() {
               onChange={(e) => setFilter({ ...filter, year: parseInt(e.target.value) })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {[2024, 2025, 2026].map(year => (
-                <option key={year} value={year}>{year}</option>
+              {[2024, 2025, 2026].map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
               ))}
             </select>
           </div>
@@ -224,10 +248,7 @@ export default function AdminPayrollManagement() {
           </div>
 
           <div className="flex items-end">
-            <button
-              onClick={fetchData}
-              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-            >
+            <button onClick={fetchData} className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
               Filter
             </button>
           </div>
@@ -240,27 +261,13 @@ export default function AdminPayrollManagement() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Employee
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Period
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Base Salary
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Gross Salary
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Net Salary
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base Salary</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gross Salary</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net Salary</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -277,12 +284,8 @@ export default function AdminPayrollManagement() {
                   <tr key={payroll._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {payroll.employee.user.name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {payroll.employee.user.email}
-                        </div>
+                        <div className="text-sm font-medium text-gray-900">{payroll.employee.user.name}</div>
+                        <div className="text-sm text-gray-500">{payroll.employee.user.email}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -298,23 +301,19 @@ export default function AdminPayrollManagement() {
                       ${payroll.netSalary.toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(payroll.status)}`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(payroll.status)}`}
+                      >
                         {payroll.status.charAt(0).toUpperCase() + payroll.status.slice(1)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       {payroll.status === 'draft' && (
-                        <button
-                          onClick={() => handleApprove(payroll._id)}
-                          className="text-green-600 hover:text-green-900"
-                        >
+                        <button onClick={() => handleApprove(payroll._id)} className="text-green-600 hover:text-green-900">
                           Approve
                         </button>
                       )}
-                      <Link
-                        href={`/admin/payroll/${payroll._id}`}
-                        className="text-indigo-600 hover:text-indigo-900"
-                      >
+                      <Link href={`/admin/payroll/${payroll._id}`} className="text-indigo-600 hover:text-indigo-900">
                         View Details
                       </Link>
                     </td>
