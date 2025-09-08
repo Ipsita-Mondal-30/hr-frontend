@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/AuthContext";
-import AuthDebug from "@/components/AuthDebug";
 
 export const metadata: Metadata = {
   title: "HR Portal",

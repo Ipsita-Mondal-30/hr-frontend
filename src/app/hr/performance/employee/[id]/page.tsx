@@ -99,12 +99,6 @@ export default function EmployeePerformanceDetails() {
 
   const { employee, metrics, recentFeedback = [], okrs = [] } = data;
 
-  const getPerformanceColor = (score: number) => {
-    if (score >= 90) return 'text-green-600 bg-green-100';
-    if (score >= 75) return 'text-blue-600 bg-blue-100';
-    if (score >= 60) return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
-  };
 
   const getProgressColor = (progress: number) => {
     if (progress >= 90) return 'bg-green-500';
