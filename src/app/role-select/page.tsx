@@ -6,12 +6,6 @@ import { jwtDecode } from 'jwt-decode';
 import { setAuthToken } from '@/lib/cookies';
 import { useAuth } from '@/lib/AuthContext';
 
-interface CustomJwtPayload {
-  _id: string;
-  name: string;
-  email: string;
-  role: string;
-}
 
 export default function RoleSelectPage() {
   const [role, setRole] = useState('');

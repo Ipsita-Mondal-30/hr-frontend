@@ -1,4 +1,5 @@
 'use client';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
@@ -8,6 +9,15 @@ import { AboutSection } from '../components/AboutSection';
 import { ProcessSection } from '../components/ProcessSection';
 import { TestimonialsSection } from '../components/TestimonialsSection';
 import { CTASection } from '../components/CTASection';
+
+type UserRole = 'admin' | 'hr' | 'candidate' | 'user' | string;
+
+interface DashboardUser {
+  name: string;
+  role: UserRole;
+  email?: string;
+  [key: string]: unknown;
+}
 
 export default function HomePage() {
   const { user, loading } = useAuth();
@@ -28,7 +38,7 @@ export default function HomePage() {
       <Navbar />
       {user ? (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <UserDashboard user={user} />
+          <UserDashboard user={user as DashboardUser} />
         </main>
       ) : (
         <PublicHomePage />
@@ -37,7 +47,7 @@ export default function HomePage() {
   );
 }
 
-function UserDashboard({ user }: { user: any }) {
+function UserDashboard({ user }: { user: DashboardUser }) {
   const getDashboardLink = () => {
     switch (user.role) {
       case 'admin':
@@ -99,13 +109,11 @@ function UserDashboard({ user }: { user: any }) {
         <div className="flex items-center space-x-4 mb-4">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
             <span className="text-blue-600 font-bold text-xl">
-              {user.name.charAt(0).toUpperCase()}
+              {user.name?.charAt(0).toUpperCase() || 'U'}
             </span>
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Welcome back, {user.name}!
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user.name}!</h1>
             <p className="text-gray-600">{getRoleDescription()}</p>
           </div>
         </div>
@@ -123,11 +131,7 @@ function UserDashboard({ user }: { user: any }) {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {getQuickActions().map((action, index) => (
-            <Link
-              key={index}
-              href={action.href}
-              className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow"
-            >
+            <Link key={index} href={action.href} className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
               <div className="text-3xl mb-3">{action.icon}</div>
               <h3 className="font-medium text-gray-900">{action.title}</h3>
             </Link>
@@ -175,13 +179,13 @@ function PublicHomePage() {
               <span className="text-purple-600">designed for your role</span>
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Whether you're an HR professional, admin, or job candidate, Talora provides 
+              Whether you&apos;re an HR professional, admin, or job candidate, Talora provides
               specialized experiences tailored to your unique needs in the hiring ecosystem.
             </p>
           </div>
           <RoleCards3D />
-           {/* Process Section */}
-      <ProcessSection />
+          {/* Process Section */}
+          <ProcessSection />
         </div>
       </div>
 
