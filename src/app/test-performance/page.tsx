@@ -64,7 +64,7 @@ export default function TestPerformancePage() {
           <h3 className="font-semibold text-blue-800 mb-2">Employee ID for Testing:</h3>
           <p className="text-blue-700 font-mono">{employeeId}</p>
           <p className="text-blue-600 text-sm mt-1">
-            This is the ID of the employee "Ipsita Mondal" in the database
+            This is the ID of the employee &quot;Ipsita Mondal&quot; in the database
           </p>
         </div>
       </div>
