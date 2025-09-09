@@ -198,7 +198,7 @@ export default function EmployeePayrollPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <div className="text-2xl font-bold text-blue-600">
-                {formatCurrency(payrollRecords?.baseSalary || 0)}
+                {formatCurrency(payrollRecords.reduce((sum, record) => sum + record.baseSalary, 0))}
               </div>
               <div className="text-sm text-blue-700">Base Salary</div>
             </div>

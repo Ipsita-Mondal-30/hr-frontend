@@ -1,24 +1,10 @@
 'use client';
-
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
 import JobApplicationModal from '@/components/JobApplicationModal';
+import { Job } from '../../../types/index'
 
-interface Job {
-  _id: string;
-  title: string;
-  companyName: string;
-  location: string;
-  remote: boolean;
-  employmentType: string;
-  experienceRequired?: number;
-  minSalary?: number;
-  maxSalary?: number;
-  skills: string[];
-  description: string;
-  department: { name: string };
-  createdAt: string;
-}
+// Remove the local Job interface - use the shared one instead
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -51,39 +37,32 @@ export default function JobsPage() {
         const searchableText = `${job.title} ${job.companyName} ${job.description}`.toLowerCase();
         if (!searchableText.includes(searchTerm)) return false;
       }
-
       // Location filter
-      if (filters.location && !job.location.toLowerCase().includes(filters.location.toLowerCase())) {
+      if (filters.location && job.location && !job.location.toLowerCase().includes(filters.location.toLowerCase())) {
         return false;
       }
-
       // Employment type filter
       if (filters.employmentType && job.employmentType !== filters.employmentType) {
         return false;
       }
-
       // Remote filter
       if (filters.remote) {
         if (filters.remote === 'remote' && !job.remote) return false;
         if (filters.remote === 'onsite' && job.remote) return false;
       }
-
       // Salary filter
       if (filters.minSalary && job.minSalary && job.minSalary < parseInt(filters.minSalary)) {
         return false;
       }
-
       // Skills filter
-      if (filters.skills) {
+      if (filters.skills && job.skills) {
         const requiredSkills = filters.skills.toLowerCase().split(',').map((s) => s.trim());
         const jobSkills = job.skills.map((s) => s.toLowerCase());
         const hasSkills = requiredSkills.some((skill) => jobSkills.some((jobSkill) => jobSkill.includes(skill)));
         if (!hasSkills) return false;
       }
-
       return true;
     });
-
     setFilteredJobs(filtered);
   }, [jobs, filters]);
 
@@ -186,7 +165,6 @@ export default function JobsPage() {
             onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-
           <input
             type="text"
             placeholder="Location"
@@ -194,7 +172,6 @@ export default function JobsPage() {
             onChange={(e) => setFilters((prev) => ({ ...prev, location: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-
           <select
             value={filters.employmentType}
             onChange={(e) => setFilters((prev) => ({ ...prev, employmentType: e.target.value }))}
@@ -205,7 +182,6 @@ export default function JobsPage() {
             <option value="part-time">Part Time</option>
             <option value="internship">Internship</option>
           </select>
-
           <select
             value={filters.remote}
             onChange={(e) => setFilters((prev) => ({ ...prev, remote: e.target.value }))}
@@ -215,7 +191,6 @@ export default function JobsPage() {
             <option value="remote">Remote</option>
             <option value="onsite">Onsite</option>
           </select>
-
           <input
             type="number"
             placeholder="Min Salary"
@@ -223,7 +198,6 @@ export default function JobsPage() {
             onChange={(e) => setFilters((prev) => ({ ...prev, minSalary: e.target.value }))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-
           <input
             type="text"
             placeholder="Skills (comma separated)"
@@ -232,7 +206,6 @@ export default function JobsPage() {
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-
         <div className="mt-4 flex justify-between items-center">
           <button
             onClick={() =>
@@ -249,7 +222,6 @@ export default function JobsPage() {
           >
             Clear Filters
           </button>
-
           <span className="text-sm text-gray-600">
             Showing {filteredJobs.length} of {jobs.length} jobs
           </span>
@@ -326,19 +298,15 @@ function JobCard({
               </span>
             )}
             <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium capitalize">
-              {job.employmentType.replace('-', ' ')}
+              {job.employmentType?.replace('-', ' ') || 'Not specified'}
             </span>
           </div>
-
           <p className="text-gray-600 mb-2">{job.companyName}</p>
-          <p className="text-gray-500 text-sm mb-3">📍 {job.location}</p>
-
+          <p className="text-gray-500 text-sm mb-3">📍 {job.location || 'Location not specified'}</p>
           {formatSalary(job.minSalary, job.maxSalary) && (
             <p className="text-green-600 font-medium text-sm mb-3">💰 {formatSalary(job.minSalary, job.maxSalary)}</p>
           )}
-
           <p className="text-gray-700 text-sm mb-4 line-clamp-2">{job.description}</p>
-
           {job.skills && job.skills.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {job.skills.slice(0, 5).map((skill, index) => (
@@ -353,7 +321,6 @@ function JobCard({
           )}
         </div>
       </div>
-
       <div className="flex justify-between items-center pt-4 border-t border-gray-200">
         <div className="text-sm text-gray-500">
           Posted {new Date(job.createdAt).toLocaleDateString()}
@@ -361,7 +328,6 @@ function JobCard({
             <span className="ml-3">• {job.experienceRequired}+ years experience</span>
           )}
         </div>
-
         <div className="flex space-x-2">
           <button
             onClick={() => onSave(job._id)}

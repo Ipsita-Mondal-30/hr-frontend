@@ -25,6 +25,10 @@ interface PendingJob {
   createdAt: string;
 }
 
+function isAxiosLikeError(error: unknown): error is { response?: { data?: { error?: string } } } {
+  return typeof error === 'object' && error !== null && 'response' in error;
+}
+
 export default function PendingJobsPage() {
   const [pendingJobs, setPendingJobs] = useState<PendingJob[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,8 +70,12 @@ export default function PendingJobsPage() {
       alert('Job approved successfully!');
     } catch (err) {
       console.error('Failed to approve job:', err);
-      if (err instanceof Error && 'response' in err) {
-        alert('Failed to approve job: ' + ((err as any).response?.data?.error || err.message));
+      if (err instanceof Error) {
+        if (isAxiosLikeError(err)) {
+          alert('Failed to approve job: ' + (err.response?.data?.error || err.message));
+        } else {
+          alert('Failed to approve job: ' + err.message);
+        }
       } else {
         alert('Failed to approve job: ' + String(err));
       }
@@ -97,14 +105,12 @@ export default function PendingJobsPage() {
       alert('Job rejected successfully!');
     } catch (err) {
       console.error('Failed to reject job:', err);
-      if (
-        err instanceof Error &&
-        'response' in err &&
-        err.response &&
-        typeof err.response === 'object' &&
-        'data' in err.response
-      ) {
-        alert('Failed to reject job: ' + ((err.response as any).data?.error || err.message));
+      if (err instanceof Error) {
+        if (isAxiosLikeError(err)) {
+          alert('Failed to reject job: ' + (err.response?.data?.error || err.message));
+        } else {
+          alert('Failed to reject job: ' + err.message);
+        }
       } else {
         alert('Failed to reject job: ' + String(err));
       }

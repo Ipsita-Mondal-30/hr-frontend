@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getAuthToken, setAuthToken } from '@/lib/cookies';
 import Link from 'next/link';
@@ -11,7 +11,8 @@ interface UserInfo {
   [key: string]: unknown;
 }
 
-export default function TestRedirectPage() {
+// Separate component that uses useSearchParams
+function TestRedirectContent() {
   const [status, setStatus] = useState('Checking...');
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const router = useRouter();
@@ -27,13 +28,14 @@ export default function TestRedirectPage() {
 
     const decodeAndSet = (jwt: string) => {
       const parts = jwt.split('.');
-      const payloadPart = parts;
+      const payloadPart = parts[1];
       if (!payloadPart) {
         setStatus('Invalid token format');
         return;
       }
+
       try {
-        const payload: UserInfo = JSON.parse(atob(parts[1]));
+        const payload: UserInfo = JSON.parse(atob(payloadPart));
         setUserInfo(payload);
         console.log('👤 User info:', payload);
         setStatus(`Token set successfully! User: ${payload.name ?? 'Unknown'} (${payload.role ?? 'Unknown'})`);
@@ -124,5 +126,29 @@ export default function TestRedirectPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading fallback component
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow">
+        <h1 className="text-2xl font-bold mb-6 text-center">Redirect Test Page</h1>
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2 text-gray-600">Loading...</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main component that wraps the content in Suspense
+export default function TestRedirectPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <TestRedirectContent />
+    </Suspense>
   );
 }

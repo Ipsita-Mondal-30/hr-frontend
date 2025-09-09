@@ -40,8 +40,17 @@ type TestResults = {
 export default function AuthDebugPage() {
   const { user, loading } = useAuth();
   const [testResults, setTestResults] = useState<TestResults | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted before accessing browser APIs
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const runTests = async () => {
+    // Only run tests in browser environment
+    if (typeof window === 'undefined') return;
+
     const results: TestResults = {
       tokenInCookies: 'Missing',
       tokenValue: 'None',
@@ -55,9 +64,11 @@ export default function AuthDebugPage() {
     results.tokenInCookies = token ? 'Present' : 'Missing';
     results.tokenValue = token ? token.substring(0, 20) + '...' : 'None';
 
-    // Test 2: Check localStorage
-    const localToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
-    results.tokenInLocalStorage = localToken ? 'Present' : 'Missing';
+    // Test 2: Check localStorage (with browser check)
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const localToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
+      results.tokenInLocalStorage = localToken ? 'Present' : 'Missing';
+    }
 
     // Test 3: Test API call to /auth/me
     try {
@@ -94,6 +105,8 @@ export default function AuthDebugPage() {
   };
 
   const manualLogin = async () => {
+    if (typeof window === 'undefined') return;
+
     try {
       const response = await api.post('/auth/login', {
         email: 'ipsitaamondal@gmail.com',
@@ -106,21 +119,63 @@ export default function AuthDebugPage() {
         window.location.reload();
       }
     } catch (error: unknown) {
-      // Keep console logging for debugging visibility
       console.error('Manual login failed:', error);
     }
   };
 
   const clearAuth = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('token');
-    document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    window.location.reload();
+    if (typeof window === 'undefined') return;
+
+    if (window.localStorage) {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
+    }
+    if (typeof document !== 'undefined') {
+      document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    }
+    if (window.location) {
+      window.location.reload();
+    }
+  };
+
+  const getCookieString = () => {
+    if (typeof document !== 'undefined') {
+      return document.cookie || 'No cookies';
+    }
+    return 'Server-side rendering (cookies not available)';
+  };
+
+  const getLocalStorageData = () => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return JSON.stringify(
+        {
+          auth_token: localStorage.getItem('auth_token'),
+          token: localStorage.getItem('token'),
+        },
+        null,
+        2
+      );
+    }
+    return 'Server-side rendering (localStorage not available)';
   };
 
   useEffect(() => {
-    runTests();
-  }, []);
+    if (mounted) {
+      runTests();
+    }
+  }, [mounted]);
+
+  // Show loading state during hydration
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Loading debug panel...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -214,22 +269,11 @@ export default function AuthDebugPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h3 className="font-semibold mb-2">Cookies</h3>
-                <pre className="text-xs bg-gray-100 p-3 rounded">
-                  {document.cookie || 'No cookies'}
-                </pre>
+                <pre className="text-xs bg-gray-100 p-3 rounded">{getCookieString()}</pre>
               </div>
               <div>
                 <h3 className="font-semibold mb-2">LocalStorage</h3>
-                <pre className="text-xs bg-gray-100 p-3 rounded">
-                  {JSON.stringify(
-                    {
-                      auth_token: localStorage.getItem('auth_token'),
-                      token: localStorage.getItem('token'),
-                    },
-                    null,
-                    2
-                  )}
-                </pre>
+                <pre className="text-xs bg-gray-100 p-3 rounded">{getLocalStorageData()}</pre>
               </div>
             </div>
           </div>
