@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 
 export function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  
+
   const images = [
     "https://images.unsplash.com/photo-1497032205916-ac775f0649ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
     "https://images.unsplash.com/photo-1559136555-9303baea8ebd?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
@@ -16,7 +16,7 @@ export function HeroSection() {
       setCurrentSlide((prev) => (prev + 1) % images.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [images.length]);
 
   return (
     <section className="relative min-h-screen pt-20 pb-12 overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -44,14 +44,11 @@ export function HeroSection() {
       {/* Content Container */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full min-h-[90vh] flex items-center">
         <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          
           {/* Left Content */}
           <div className="text-white space-y-8 animate-in slide-in-from-left duration-1000">
             <div className="space-y-2">
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-sm font-medium text-white/90 mb-4">
-      
-              </div>
-              
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-sm font-medium text-white/90 mb-4"></div>
+
               <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
                 WE CRAFT{' '}
                 <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -60,14 +57,14 @@ export function HeroSection() {
                 <br />
                 & DIGITAL<br />
                 <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-                OPPORTUNITIES
+                  OPPORTUNITIES
                 </span>
               </h1>
             </div>
-            
+
             <p className="text-xl text-gray-300 leading-relaxed max-w-2xl">
-            Redefining the way candidates, HRs, employees, and admins connect in one seamless ecosystem.
-From smart job discovery to streamlined hiring workflows, we’re building a platform where talent meets opportunity effortlessly.
+              Redefining the way candidates, HRs, employees, and admins connect in one seamless ecosystem.
+              From smart job discovery to streamlined hiring workflows, we’re building a platform where talent meets opportunity effortlessly.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -76,30 +73,20 @@ From smart job discovery to streamlined hiring workflows, we’re building a pla
                 className="px-8 py-4 border-2 border-white/20 rounded-2xl text-white font-semibold text-lg hover:bg-white/10 hover:border-white/30 transition-all duration-300 backdrop-blur-sm"
               >
                 <span className="relative z-10 flex items-center">
-                The Future of Hiring, Built Today.
+                  The Future of Hiring, Built Today.
                   <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
                 </span>
                 <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
               </Link>
-            
             </div>
 
             {/* Trust Indicators */}
             <div className="flex items-center space-x-8 pt-8 opacity-80">
-              <div className="text-center">
-  
-               
-              </div>
-
-              <div className="text-center">
-             
-              
-              </div>
-  
-              <div className="text-center">
-              </div>
+              <div className="text-center"></div>
+              <div className="text-center"></div>
+              <div className="text-center"></div>
             </div>
           </div>
 
@@ -166,9 +153,7 @@ From smart job discovery to streamlined hiring workflows, we’re building a pla
             key={index}
             onClick={() => setCurrentSlide(index)}
             className={`w-3 h-3 rounded-full transition-all duration-300 ${
-              index === currentSlide 
-                ? 'bg-white shadow-lg' 
-                : 'bg-white/30 hover:bg-white/50'
+              index === currentSlide ? 'bg-white shadow-lg' : 'bg-white/30 hover:bg-white/50'
             }`}
           />
         ))}

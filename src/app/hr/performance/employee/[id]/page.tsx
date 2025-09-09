@@ -47,6 +47,10 @@ interface PerformanceData {
   }>;
 }
 
+function isAxiosError(error: unknown): error is { response?: { data?: unknown } } {
+  return typeof error === 'object' && error !== null && 'response' in error;
+}
+
 export default function EmployeePerformanceDetails() {
   const params = useParams();
   const employeeId = params.id as string;
@@ -62,7 +66,9 @@ export default function EmployeePerformanceDetails() {
         setData(response.data);
       } catch (error) {
         console.error('❌ Error fetching performance data:', error);
-        console.error('❌ Error details:', error.response?.data);
+        if (isAxiosError(error)) {
+          console.error('❌ Error details:', error.response?.data);
+        }
       } finally {
         setLoading(false);
       }
@@ -98,7 +104,6 @@ export default function EmployeePerformanceDetails() {
   }
 
   const { employee, metrics, recentFeedback = [], okrs = [] } = data;
-
 
   const getProgressColor = (progress: number) => {
     if (progress >= 90) return 'bg-green-500';

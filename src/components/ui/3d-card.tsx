@@ -49,19 +49,13 @@ export const CardContainer = ({
 
   return (
     <MouseEnterContext.Provider value={[isMouseEntered, setIsMouseEntered]}>
-      <div
-        className={cn("py-20 flex items-center justify-center", containerClassName)}
-        style={{ perspective: "1000px" }}
-      >
+      <div className={cn("py-20 flex items-center justify-center", containerClassName)} style={{ perspective: "1000px" }}>
         <div
           ref={containerRef}
           onMouseEnter={handleMouseEnter}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          className={cn(
-            "flex items-center justify-center relative transition-all duration-200 ease-linear",
-            className
-          )}
+          className={cn("flex items-center justify-center relative transition-all duration-200 ease-linear", className)}
           style={{ transformStyle: "preserve-3d" }}
         >
           {children}
@@ -79,12 +73,7 @@ export const CardBody = ({
   className?: string;
 }) => {
   return (
-    <div
-      className={cn(
-        "h-96 w-96 [transform-style:preserve-3d]  [&>*]:[transform-style:preserve-3d]",
-        className
-      )}
-    >
+    <div className={cn("h-96 w-96 [transform-style:preserve-3d]  [&>*]:[transform-style:preserve-3d]", className)}>
       {children}
     </div>
   );
@@ -133,10 +122,15 @@ export const CardItem = <T extends ElementType = "div">({
     handleAnimations();
   }, [handleAnimations]);
 
+  // Type-safe ref without any
+  const TagWithRef = Tag as unknown as React.ComponentType<
+    ComponentPropsWithoutRef<T> & { ref?: React.Ref<HTMLElement> }
+  >;
+
   return (
-    <Tag ref={ref as any} className={cn("w-fit transition duration-200 ease-linear", className)} {...rest}>
+    <TagWithRef ref={ref} className={cn("w-fit transition duration-200 ease-linear", className)} {...(rest as ComponentPropsWithoutRef<T>)}>
       {children}
-    </Tag>
+    </TagWithRef>
   );
 };
 

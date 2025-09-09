@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
 
 interface AnalyticsData {
@@ -35,30 +35,31 @@ export default function HRReportsPage() {
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState({
     startDate: '',
-    endDate: ''
+    endDate: '',
   });
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, []);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (dateRange.startDate) params.append('startDate', dateRange.startDate);
       if (dateRange.endDate) params.append('endDate', dateRange.endDate);
-      
-      const res = await api.get(`/hr/analytics?${params.toString()}`);
+
+      const res = await api.get<AnalyticsData>(`/hr/analytics?${params.toString()}`);
       setAnalytics(res.data);
     } catch (err) {
       console.error('Failed to fetch analytics:', err);
+      setAnalytics(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange.startDate, dateRange.endDate]);
 
-  const handleDateRangeChange = (field: string, value: string) => {
-    setDateRange(prev => ({ ...prev, [field]: value }));
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
+
+  const handleDateRangeChange = (field: keyof typeof dateRange, value: string) => {
+    setDateRange((prev) => ({ ...prev, [field]: value }));
   };
 
   const applyDateFilter = () => {
@@ -69,9 +70,9 @@ export default function HRReportsPage() {
   const exportData = async () => {
     try {
       const response = await api.get('/hr/export-applications?format=csv', {
-        responseType: 'blob'
+        responseType: 'blob',
       });
-      
+
       const blob = new Blob([response.data], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -93,7 +94,7 @@ export default function HRReportsPage() {
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            {[1, 2, 3, 4].map(i => (
+            {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-24 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -126,10 +127,7 @@ export default function HRReportsPage() {
           <h1 className="text-2xl font-bold text-gray-900">HR Reports & Analytics</h1>
           <p className="text-gray-600">Track your recruitment performance and insights</p>
         </div>
-        <button
-          onClick={exportData}
-          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-        >
+        <button onClick={exportData} className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
           📊 Export Data
         </button>
       </div>
@@ -156,10 +154,7 @@ export default function HRReportsPage() {
             />
           </div>
           <div className="pt-6">
-            <button
-              onClick={applyDateFilter}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
+            <button onClick={applyDateFilter} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
               Apply Filter
             </button>
           </div>
@@ -168,30 +163,10 @@ export default function HRReportsPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          title="Total Applications"
-          value={analytics.summary.totalApplications}
-          icon="📋"
-          color="bg-blue-50 text-blue-600"
-        />
-        <StatCard
-          title="Pending Review"
-          value={analytics.summary.pendingApplications}
-          icon="⏳"
-          color="bg-yellow-50 text-yellow-600"
-        />
-        <StatCard
-          title="Shortlisted"
-          value={analytics.summary.shortlistedApplications}
-          icon="✅"
-          color="bg-green-50 text-green-600"
-        />
-        <StatCard
-          title="Conversion Rate"
-          value={`${analytics.summary.conversionRate}%`}
-          icon="📈"
-          color="bg-purple-50 text-purple-600"
-        />
+        <StatCard title="Total Applications" value={analytics.summary.totalApplications} icon="📋" color="bg-blue-50 text-blue-600" />
+        <StatCard title="Pending Review" value={analytics.summary.pendingApplications} icon="⏳" color="bg-yellow-50 text-yellow-600" />
+        <StatCard title="Shortlisted" value={analytics.summary.shortlistedApplications} icon="✅" color="bg-green-50 text-green-600" />
+        <StatCard title="Conversion Rate" value={`${analytics.summary.conversionRate}%`} icon="📈" color="bg-purple-50 text-purple-600" />
       </div>
 
       {/* Detailed Stats */}
@@ -201,7 +176,7 @@ export default function HRReportsPage() {
           <div className="text-2xl font-bold text-blue-600">{analytics.summary.responseRate}%</div>
           <p className="text-sm text-gray-500">Applications reviewed</p>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <h3 className="font-semibold text-gray-900 mb-2">Average Match Score</h3>
           <div className="text-2xl font-bold text-green-600">
@@ -211,14 +186,14 @@ export default function HRReportsPage() {
             Range: {analytics.matchScoreStats.minScore || 0}% - {analytics.matchScoreStats.maxScore || 0}%
           </p>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <h3 className="font-semibold text-gray-900 mb-2">Rejection Rate</h3>
           <div className="text-2xl font-bold text-red-600">
-            {analytics.summary.totalApplications > 0 
+            {analytics.summary.totalApplications > 0
               ? Math.round((analytics.summary.rejectedApplications / analytics.summary.totalApplications) * 100)
-              : 0
-            }%
+              : 0}
+            %
           </div>
           <p className="text-sm text-gray-500">{analytics.summary.rejectedApplications} rejected</p>
         </div>
@@ -228,7 +203,7 @@ export default function HRReportsPage() {
         {/* Applications by Job */}
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Applications by Job</h2>
-          
+
           {analytics.applicationsByJob.length === 0 ? (
             <p className="text-gray-500 text-center py-8">No job data available</p>
           ) : (
@@ -241,9 +216,7 @@ export default function HRReportsPage() {
                   </div>
                   <div className="text-right">
                     <div className="font-semibold text-blue-600">{job.count} applications</div>
-                    <div className="text-sm text-gray-500">
-                      Avg Score: {job.avgScore ? Math.round(job.avgScore) : 0}%
-                    </div>
+                    <div className="text-sm text-gray-500">Avg Score: {job.avgScore ? Math.round(job.avgScore) : 0}%</div>
                   </div>
                 </div>
               ))}
@@ -254,7 +227,7 @@ export default function HRReportsPage() {
         {/* Applications Timeline */}
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Applications Timeline</h2>
-          
+
           {analytics.applicationsByMonth.length === 0 ? (
             <p className="text-gray-500 text-center py-8">No timeline data available</p>
           ) : (
@@ -262,23 +235,21 @@ export default function HRReportsPage() {
               {analytics.applicationsByMonth.slice(-6).map((month, index) => (
                 <div key={index} className="flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700">
-                    {new Date(month.month + '-01').toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'long' 
-                    })}
+                    {new Date(month.month + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
                   </span>
                   <div className="flex items-center">
                     <div className="w-32 bg-gray-200 rounded-full h-2 mr-3">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full" 
-                        style={{ 
-                          width: `${Math.min((month.count / Math.max(...analytics.applicationsByMonth.map(m => m.count))) * 100, 100)}%` 
+                      <div
+                        className="bg-blue-600 h-2 rounded-full"
+                        style={{
+                          width: `${Math.min(
+                            (month.count / Math.max(...analytics.applicationsByMonth.map((m) => m.count))) * 100,
+                            100
+                          )}%`,
                         }}
                       ></div>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900 w-8 text-right">
-                      {month.count}
-                    </span>
+                    <span className="text-sm font-semibold text-gray-900 w-8 text-right">{month.count}</span>
                   </div>
                 </div>
               ))}
@@ -290,49 +261,49 @@ export default function HRReportsPage() {
       {/* Status Breakdown */}
       <div className="mt-6 bg-white p-6 rounded-lg shadow-sm border">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Application Status Breakdown</h2>
-        
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-yellow-600">{analytics.summary.pendingApplications}</div>
             <div className="text-sm text-gray-500">Pending</div>
             <div className="text-xs text-gray-400">
-              {analytics.summary.totalApplications > 0 
+              {analytics.summary.totalApplications > 0
                 ? Math.round((analytics.summary.pendingApplications / analytics.summary.totalApplications) * 100)
-                : 0
-              }%
+                : 0}
+              %
             </div>
           </div>
-          
+
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">{analytics.summary.reviewedApplications}</div>
             <div className="text-sm text-gray-500">Reviewed</div>
             <div className="text-xs text-gray-400">
-              {analytics.summary.totalApplications > 0 
+              {analytics.summary.totalApplications > 0
                 ? Math.round((analytics.summary.reviewedApplications / analytics.summary.totalApplications) * 100)
-                : 0
-              }%
+                : 0}
+              %
             </div>
           </div>
-          
+
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">{analytics.summary.shortlistedApplications}</div>
             <div className="text-sm text-gray-500">Shortlisted</div>
             <div className="text-xs text-gray-400">
-              {analytics.summary.totalApplications > 0 
+              {analytics.summary.totalApplications > 0
                 ? Math.round((analytics.summary.shortlistedApplications / analytics.summary.totalApplications) * 100)
-                : 0
-              }%
+                : 0}
+              %
             </div>
           </div>
-          
+
           <div className="text-center">
             <div className="text-2xl font-bold text-red-600">{analytics.summary.rejectedApplications}</div>
             <div className="text-sm text-gray-500">Rejected</div>
             <div className="text-xs text-gray-400">
-              {analytics.summary.totalApplications > 0 
+              {analytics.summary.totalApplications > 0
                 ? Math.round((analytics.summary.rejectedApplications / analytics.summary.totalApplications) * 100)
-                : 0
-              }%
+                : 0}
+              %
             </div>
           </div>
         </div>
@@ -341,7 +312,12 @@ export default function HRReportsPage() {
   );
 }
 
-function StatCard({ title, value, icon, color }: {
+function StatCard({
+  title,
+  value,
+  icon,
+  color,
+}: {
   title: string;
   value: string | number;
   icon: string;

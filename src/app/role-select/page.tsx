@@ -17,7 +17,9 @@ interface DecodedJwt {
 }
 
 function isErrorWithMessage(e: unknown): e is { message: string } {
-  return typeof e === 'object' && e !== null && 'message' in e && typeof (e as any).message === 'string';
+  if (typeof e !== 'object' || e === null) return false;
+  const maybe = e as { message?: unknown };
+  return typeof maybe.message === 'string';
 }
 
 export default function RoleSelectPage() {
