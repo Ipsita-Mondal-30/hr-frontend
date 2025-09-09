@@ -61,7 +61,7 @@ interface ScorecardInput {
   recommendation: 'hire' | 'no-hire' | 'maybe';
 }
 
-function isAxiosError(e: unknown): e is { response?: { data?: any; status?: number } } {
+function isAxiosError(e: unknown): e is { response?: { data?: unknown; status?: number } } {
   return typeof e === 'object' && e !== null && 'response' in e;
 }
 
@@ -126,7 +126,11 @@ export default function InterviewsPage() {
       alert('Interview scheduled successfully!');
     } catch (err: unknown) {
       console.error('Failed to schedule interview:', err);
-      const msg = isAxiosError(err) ? err.response?.data?.error || err.response?.data?.message || 'Failed to schedule interview' : 'Failed to schedule interview';
+      const msg = isAxiosError(err)
+        ? (err.response?.data as { error?: string; message?: string } | undefined)?.error ||
+          (err.response?.data as { error?: string; message?: string } | undefined)?.message ||
+          'Failed to schedule interview'
+        : 'Failed to schedule interview';
       alert('Failed to schedule interview: ' + msg);
     }
   };
@@ -158,7 +162,11 @@ export default function InterviewsPage() {
       alert('Scorecard submitted successfully! AI-powered emails have been sent to the candidate and HR team.');
     } catch (err: unknown) {
       console.error('❌ Failed to submit scorecard:', err);
-      const msg = isAxiosError(err) ? err.response?.data?.error || err.response?.data?.message || 'Unknown error' : 'Unknown error';
+      const msg = isAxiosError(err)
+        ? (err.response?.data as { error?: string; message?: string } | undefined)?.error ||
+          (err.response?.data as { error?: string; message?: string } | undefined)?.message ||
+          'Unknown error'
+        : 'Unknown error';
       alert(`Failed to submit scorecard: ${msg}`);
     }
   };
@@ -471,7 +479,7 @@ function InterviewCard({
               <button onClick={() => onUpdateStatus(interview._id, 'completed')} className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">
                 Mark Complete
               </button>
-              <button onClick={() => onUpdateStatus(interview._id, 'no-show')} className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700">
+              <button onClick={() => onUpdateStatus(interview._id, 'no-show')} className="px-3 py-1 bg-gray-600 text白 rounded text-sm hover:bg-gray-700">
                 No Show
               </button>
               <button onClick={() => onUpdateStatus(interview._id, 'cancelled')} className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
@@ -596,7 +604,7 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: S
 
           {formData.type === 'video' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Link</label>
+              <label className="block text sm font-medium text-gray-700 mb-1">Meeting Link</label>
               <input
                 type="url"
                 value={formData.meetingLink}

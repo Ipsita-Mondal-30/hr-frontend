@@ -18,6 +18,10 @@ interface Employee {
 
 type FeedbackType = 'performance' | 'peer' | 'self';
 
+function isAxiosLikeError(e: unknown): e is { response?: { data?: unknown } } {
+  return typeof e === 'object' && e !== null && 'response' in e;
+}
+
 export default function GiveFeedbackPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -48,8 +52,8 @@ export default function GiveFeedbackPage() {
         setEmployee(response.data);
       } catch (error: unknown) {
         console.error('❌ Error fetching employee:', error);
-        if (typeof error === 'object' && error && 'response' in error) {
-          console.error('❌ Error details:', (error as any).response?.data);
+        if (isAxiosLikeError(error)) {
+          console.error('❌ Error details:', error.response?.data);
         }
       } finally {
         setLoading(false);
@@ -83,7 +87,7 @@ export default function GiveFeedbackPage() {
 
       alert('Feedback submitted successfully!');
       router.push('/hr/performance');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error submitting feedback:', error);
       alert('Failed to submit feedback. Please try again.');
     } finally {
@@ -196,7 +200,12 @@ export default function GiveFeedbackPage() {
                   <h4 className="text-sm font-medium text-gray-900">{category.label}</h4>
                   <p className="text-sm text-gray-600">{category.description}</p>
                 </div>
-                <div className="ml-6">{renderStars(category.key as keyof typeof formData.ratings, formData.ratings[category.key as keyof typeof formData.ratings])}</div>
+                <div className="ml-6">
+                  {renderStars(
+                    category.key as keyof typeof formData.ratings,
+                    formData.ratings[category.key as keyof typeof formData.ratings]
+                  )}
+                </div>
               </div>
             ))}
           </div>

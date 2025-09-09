@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 
 interface Project {
@@ -37,24 +37,26 @@ export default function HRProjectsPage() {
   const [filter, setFilter] = useState('all');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  useEffect(() => {
-    fetchProjects();
-  }, [filter]);
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
       if (filter !== 'all') params.append('status', filter);
-      
-      const response = await api.get(`/projects?${params.toString()}`);
-      setProjects(response.data?.projects || []);
+
+      const response = await api.get<{ projects?: Project[] } | Project[]>(`/projects?${params.toString()}`);
+      const list = Array.isArray(response.data) ? response.data : response.data?.projects || [];
+      setProjects(list);
     } catch (error) {
       console.error('Error fetching projects:', error);
+      setProjects([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -92,7 +94,7 @@ export default function HRProjectsPage() {
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
           <div className="space-y-3">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="h-24 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -133,9 +135,7 @@ export default function HRProjectsPage() {
           <div className="text-sm text-blue-700">Total Projects</div>
         </div>
         <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-          <div className="text-2xl font-bold text-green-600">
-            {projects.filter(p => p.status === 'active').length}
-          </div>
+          <div className="text-2xl font-bold text-green-600">{projects.filter((p) => p.status === 'active').length}</div>
           <div className="text-sm text-green-700">Active Projects</div>
         </div>
         <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
@@ -157,7 +157,7 @@ export default function HRProjectsPage() {
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold">Projects Overview</h2>
         </div>
-        
+
         {projects.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <div className="text-4xl mb-2">📊</div>
@@ -171,14 +171,17 @@ export default function HRProjectsPage() {
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="text-lg font-medium text-gray-900">{project.name}</h3>
-                      <div className={`w-3 h-3 rounded-full ${getPriorityColor(project.priority)}`} title={`${project.priority} priority`}></div>
+                      <div
+                        className={`w-3 h-3 rounded-full ${getPriorityColor(project.priority)}`}
+                        title={`${project.priority} priority`}
+                      ></div>
                       <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(project.status)}`}>
                         {project.status}
                       </span>
                     </div>
-                    
+
                     <p className="text-gray-600 mb-3">{project.description}</p>
-                    
+
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                       <div>
                         <span className="text-gray-500">Project Manager:</span>
@@ -197,7 +200,7 @@ export default function HRProjectsPage() {
                         <div className="font-medium">{new Date(project.startDate).toLocaleDateString()}</div>
                       </div>
                     </div>
-                    
+
                     {/* Progress Bar */}
                     <div className="mb-3">
                       <div className="flex justify-between text-sm text-gray-600 mb-1">
@@ -205,8 +208,8 @@ export default function HRProjectsPage() {
                         <span>{project.completionPercentage}%</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${project.completionPercentage}%` }}
                         ></div>
                       </div>
@@ -233,7 +236,7 @@ export default function HRProjectsPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="ml-4">
                     <button
                       onClick={() => setSelectedProject(project)}
@@ -267,15 +270,12 @@ export default function HRProjectsPage() {
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedProject(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
+                <button onClick={() => setSelectedProject(null)} className="text-gray-400 hover:text-gray-600">
                   ✕
                 </button>
               </div>
             </div>
-            
+
             <div className="p-6 space-y-6">
               {/* Project Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -312,18 +312,11 @@ export default function HRProjectsPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm font-medium text-blue-600">
-                          {member.contributionPercentage}% contribution
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {member.hoursWorked} hours worked
-                        </div>
+                        <div className="text-sm font-medium text-blue-600">{member.contributionPercentage}% contribution</div>
+                        <div className="text-xs text-gray-500">{member.hoursWorked} hours worked</div>
                         <div className="mt-1">
                           <div className="w-24 bg-gray-200 rounded-full h-1.5">
-                            <div 
-                              className="bg-blue-600 h-1.5 rounded-full" 
-                              style={{ width: `${member.contributionPercentage}%` }}
-                            ></div>
+                            <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: `${member.contributionPercentage}%` }}></div>
                           </div>
                         </div>
                       </div>
@@ -336,15 +329,9 @@ export default function HRProjectsPage() {
               <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
                 <h4 className="font-medium text-yellow-800 mb-2">HR Actions Available</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <button className="px-3 py-2 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200">
-                    📝 Give Team Feedback
-                  </button>
-                  <button className="px-3 py-2 bg-green-100 text-green-700 rounded text-sm hover:bg-green-200">
-                    📊 Performance Review
-                  </button>
-                  <button className="px-3 py-2 bg-purple-100 text-purple-700 rounded text-sm hover:bg-purple-200">
-                    🎯 Set Team OKRs
-                  </button>
+                  <button className="px-3 py-2 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200">📝 Give Team Feedback</button>
+                  <button className="px-3 py-2 bg-green-100 text-green-700 rounded text-sm hover:bg-green-200">📊 Performance Review</button>
+                  <button className="px-3 py-2 bg-purple-100 text-purple-700 rounded text-sm hover:bg-purple-200">🎯 Set Team OKRs</button>
                 </div>
               </div>
             </div>

@@ -36,7 +36,7 @@ interface Employee {
 
 type EmployeesApiResponse = { employees?: Employee[] } | Employee[];
 
-function isAxiosError(e: unknown): e is { response?: { data?: any; status?: number } } {
+function isAxiosError(e: unknown): e is { response?: { data?: unknown; status?: number } } {
   return typeof e === 'object' && e !== null && 'response' in e;
 }
 
@@ -81,10 +81,8 @@ export default function EmployeesPage() {
       setError(null);
     } catch (err: unknown) {
       console.error('Error fetching employees:', err);
-      const msg =
-        isAxiosError(err) && (err.response?.data?.error || err.response?.data?.message)
-          ? String(err.response.data.error || err.response.data.message)
-          : 'Failed to fetch employees';
+      const data = isAxiosError(err) ? (err.response?.data as { error?: string; message?: string } | undefined) : undefined;
+      const msg = data?.error || data?.message || 'Failed to fetch employees';
       setError(msg);
       setEmployees([]);
     } finally {
