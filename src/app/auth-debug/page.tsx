@@ -5,6 +5,9 @@ import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
 import { getAuthToken } from '@/lib/cookies';
 
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
 type ApiError = {
   response?: { data?: unknown };
   message?: string;
@@ -42,13 +45,11 @@ export default function AuthDebugPage() {
   const [testResults, setTestResults] = useState<TestResults | null>(null);
   const [mounted, setMounted] = useState(false);
 
-  // Ensure component is mounted before accessing browser APIs
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const runTests = async () => {
-    // Only run tests in browser environment
     if (typeof window === 'undefined') return;
 
     const results: TestResults = {
@@ -59,18 +60,19 @@ export default function AuthDebugPage() {
       serverConnectivity: { success: false, error: 'Not run' },
     };
 
-    // Test 1: Check token in cookies
+    // Test 1: Cookies
     const token = getAuthToken();
     results.tokenInCookies = token ? 'Present' : 'Missing';
     results.tokenValue = token ? token.substring(0, 20) + '...' : 'None';
 
-    // Test 2: Check localStorage (with browser check)
+    // Test 2: LocalStorage
     if (typeof window !== 'undefined' && window.localStorage) {
-      const localToken = localStorage.getItem('auth_token') || localStorage.getItem('token');
+      const localToken =
+        localStorage.getItem('auth_token') || localStorage.getItem('token');
       results.tokenInLocalStorage = localToken ? 'Present' : 'Missing';
     }
 
-    // Test 3: Test API call to /auth/me
+    // Test 3: /auth/me
     try {
       const response = await api.get('/auth/me');
       results.apiMeCall = {
@@ -85,9 +87,11 @@ export default function AuthDebugPage() {
       };
     }
 
-    // Test 4: Check server connectivity
+    // Test 4: /api/test (server connectivity)
     try {
-      const response = await fetch('http://localhost:8080/api/test');
+      const response = await fetch(`${BASE_URL}/api/test`, {
+        credentials: 'include',
+      });
       const data: unknown = await response.json();
       results.serverConnectivity = {
         success: true,
@@ -131,33 +135,30 @@ export default function AuthDebugPage() {
       localStorage.removeItem('token');
     }
     if (typeof document !== 'undefined') {
-      document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie =
+        'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     }
     if (window.location) {
       window.location.reload();
     }
   };
 
-  const getCookieString = () => {
-    if (typeof document !== 'undefined') {
-      return document.cookie || 'No cookies';
-    }
-    return 'Server-side rendering (cookies not available)';
-  };
+  const getCookieString = () =>
+    typeof document !== 'undefined'
+      ? document.cookie || 'No cookies'
+      : 'SSR (cookies not available)';
 
-  const getLocalStorageData = () => {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      return JSON.stringify(
-        {
-          auth_token: localStorage.getItem('auth_token'),
-          token: localStorage.getItem('token'),
-        },
-        null,
-        2
-      );
-    }
-    return 'Server-side rendering (localStorage not available)';
-  };
+  const getLocalStorageData = () =>
+    typeof window !== 'undefined' && window.localStorage
+      ? JSON.stringify(
+          {
+            auth_token: localStorage.getItem('auth_token'),
+            token: localStorage.getItem('token'),
+          },
+          null,
+          2
+        )
+      : 'SSR (localStorage not available)';
 
   useEffect(() => {
     if (mounted) {
@@ -165,7 +166,6 @@ export default function AuthDebugPage() {
     }
   }, [mounted]);
 
-  // Show loading state during hydration
   if (!mounted) {
     return (
       <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
@@ -255,7 +255,7 @@ export default function AuthDebugPage() {
                 👤 Role Select
               </a>
               <a
-                href="http://localhost:8080/api/auth/google"
+                href={`${BASE_URL}/api/auth/google`}
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 inline-block"
               >
                 🔗 Google OAuth
@@ -269,11 +269,15 @@ export default function AuthDebugPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h3 className="font-semibold mb-2">Cookies</h3>
-                <pre className="text-xs bg-gray-100 p-3 rounded">{getCookieString()}</pre>
+                <pre className="text-xs bg-gray-100 p-3 rounded">
+                  {getCookieString()}
+                </pre>
               </div>
               <div>
                 <h3 className="font-semibold mb-2">LocalStorage</h3>
-                <pre className="text-xs bg-gray-100 p-3 rounded">{getLocalStorageData()}</pre>
+                <pre className="text-xs bg-gray-100 p-3 rounded">
+                  {getLocalStorageData()}
+                </pre>
               </div>
             </div>
           </div>

@@ -13,6 +13,9 @@ import {
 } from '@/components/ui/resizable-navbar';
 import Link from 'next/link';
 
+// ✅ Use env variable for backend URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
 export default function LoginPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -30,7 +33,10 @@ export default function LoginPage() {
         <MobileNav>
           <MobileNavHeader>
             <NavbarLogo />
-            <MobileNavToggle isOpen={mobileMenuOpen} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} />
+            <MobileNavToggle
+              isOpen={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            />
           </MobileNavHeader>
           <MobileNavMenu isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)}>
             <NavbarButton href="/login" variant="primary" className="mt-4">
@@ -51,7 +57,7 @@ export default function LoginPage() {
           {/* Google OAuth Login */}
           <div className="space-y-4">
             <a
-              href="http://localhost:8080/api/auth/google"
+              href={`${API_BASE_URL}/api/auth/google`} // ✅ dynamic URL
               className="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-base font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200"
             >
               <svg className="w-6 h-6 mr-3" viewBox="0 0 24 24">

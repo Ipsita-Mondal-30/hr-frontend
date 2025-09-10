@@ -10,6 +10,9 @@ type DebugInfo =
   | { error: string }
   | null;
 
+// ✅ Use env variable for backend API URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
 export default function OAuthDebugPage() {
   const [debugInfo, setDebugInfo] = useState<DebugInfo>(null);
   const [loading, setLoading] = useState(false);
@@ -19,8 +22,8 @@ export default function OAuthDebugPage() {
     try {
       // Test backend connectivity and OAuth config
       const [oauthResponse, usersResponse] = await Promise.all([
-        fetch('http://localhost:8080/api/oauth-test'),
-        fetch('http://localhost:8080/api/debug/users'),
+        fetch(`${API_BASE_URL}/api/oauth-test`),
+        fetch(`${API_BASE_URL}/api/debug/users`),
       ]);
 
       const oauthData: OAuthTest = await oauthResponse.json();
@@ -42,7 +45,7 @@ export default function OAuthDebugPage() {
 
   const initiateGoogleLogin = () => {
     // Direct redirect to Google OAuth
-    window.location.href = 'http://localhost:8080/api/auth/google';
+    window.location.href = `${API_BASE_URL}/api/auth/google`;
   };
 
   useEffect(() => {
@@ -67,7 +70,7 @@ export default function OAuthDebugPage() {
 
             <div className="space-y-2 text-sm">
               <p>
-                <strong>Backend URL:</strong> http://localhost:8080
+                <strong>Backend URL:</strong> {API_BASE_URL}
               </p>
               <p>
                 <strong>OAuth Endpoint:</strong> /api/auth/google
@@ -101,14 +104,14 @@ export default function OAuthDebugPage() {
             <h2 className="text-xl font-semibold mb-4">Manual Tests</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <a
-                href="http://localhost:8080/api/auth/google"
+                href={`${API_BASE_URL}/api/auth/google`}
                 target="_blank"
                 className="bg-red-500 text-white px-4 py-2 rounded text-center hover:bg-red-600"
               >
                 🔗 Direct OAuth Link
               </a>
               <a
-                href="http://localhost:8080/api/debug/users"
+                href={`${API_BASE_URL}/api/debug/users`}
                 target="_blank"
                 className="bg-green-500 text-white px-4 py-2 rounded text-center hover:bg-green-600"
               >
@@ -128,9 +131,11 @@ export default function OAuthDebugPage() {
         <div className="mt-8 bg-yellow-50 border border-yellow-200 p-6 rounded-lg">
           <h3 className="text-lg font-semibold mb-2">🔧 Troubleshooting Steps</h3>
           <ol className="list-decimal list-inside space-y-2 text-sm">
-            <li>Make sure backend is running on http://localhost:8080</li>
+            <li>Make sure backend is running on {API_BASE_URL}</li>
             <li>Check if Google OAuth credentials are configured in .env</li>
-            <li>Verify the callback URL in Google Console matches: http://localhost:8080/api/auth/google/callback</li>
+            <li>
+              Verify the callback URL in Google Console matches: {API_BASE_URL}/api/auth/google/callback
+            </li>
             <li>Check browser console for any CORS errors</li>
             <li>Try the direct OAuth link above</li>
           </ol>
