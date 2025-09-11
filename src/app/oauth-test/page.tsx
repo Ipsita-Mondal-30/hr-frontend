@@ -4,18 +4,35 @@ import { useState, useEffect } from 'react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
+interface OAuthTestResults {
+  error?: string;
+  success?: boolean;
+  message?: string;
+  config?: {
+    clientId?: string;
+    redirectUri?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+function isErrorWithMessage(error: unknown): error is { message: string } {
+  return typeof error === 'object' && error !== null && 'message' in error && typeof (error as { message?: unknown }).message === 'string';
+}
+
 export default function OAuthTestPage() {
-  const [testResults, setTestResults] = useState<any>(null);
+  const [testResults, setTestResults] = useState<OAuthTestResults | null>(null);
   const [loading, setLoading] = useState(false);
 
   const testOAuthConfig = async () => {
     setLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/oauth-test`);
-      const data = await response.json();
+      const data: OAuthTestResults = await response.json();
       setTestResults(data);
-    } catch (error) {
-      setTestResults({ error: error.message });
+    } catch (error: unknown) {
+      const errorMessage = isErrorWithMessage(error) ? error.message : 'Unknown error occurred';
+      setTestResults({ error: errorMessage });
     }
     setLoading(false);
   };
@@ -34,7 +51,7 @@ export default function OAuthTestPage() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
               <h2 className="text-xl font-semibold text-blue-900 mb-4">Current Configuration</h2>
               <div className="space-y-2 text-sm">
-                <p><strong>Frontend URL:</strong> {window.location.origin}</p>
+                <p><strong>Frontend URL:</strong> {typeof window !== 'undefined' ? window.location.origin : 'Loading...'}</p>
                 <p><strong>Backend API URL:</strong> {API_BASE_URL}</p>
                 <p><strong>OAuth Login URL:</strong> {API_BASE_URL}/api/auth/google</p>
               </div>

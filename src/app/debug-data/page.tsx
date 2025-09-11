@@ -3,10 +3,39 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 
+interface User {
+  _id: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  isActive?: boolean;
+  isVerified?: boolean;
+}
+
+interface Employee {
+  _id: string;
+  user?: User;
+  position?: string;
+  status?: string;
+}
+
+interface Payroll {
+  _id: string;
+  employee?: Employee;
+  month: number;
+  year: number;
+  status: string;
+  netSalary?: number;
+}
+
+function isErrorWithMessage(error: unknown): error is { message: string } {
+  return typeof error === 'object' && error !== null && 'message' in error && typeof (error as { message?: unknown }).message === 'string';
+}
+
 export default function DebugDataPage() {
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [payrolls, setPayrolls] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [payrolls, setPayrolls] = useState<Payroll[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,8 +68,9 @@ export default function DebugDataPage() {
         console.error('Error fetching users:', err);
       }
 
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const errorMessage = isErrorWithMessage(err) ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

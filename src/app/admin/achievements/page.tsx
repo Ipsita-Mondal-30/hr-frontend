@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import Link from 'next/link';
 
 interface Achievement {
   _id: string;
@@ -26,16 +25,27 @@ interface Achievement {
   level?: string;
 }
 
+interface Employee {
+  _id: string;
+  user?: {
+    name: string;
+    email: string;
+  };
+  position: string;
+}
+
+type AchievementType = 'performance' | 'skill' | 'recognition' | 'certification' | 'milestone';
+
 export default function AdminAchievementsPage() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState({
     employeeId: '',
     title: '',
     description: '',
-    type: 'performance' as const,
+    type: 'performance' as AchievementType,
     category: '',
     points: 0,
     level: ''
@@ -179,7 +189,7 @@ export default function AdminAchievementsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                 <select
                   value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value as AchievementType })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="performance">Performance</option>
