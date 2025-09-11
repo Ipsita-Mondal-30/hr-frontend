@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Navbar,
   NavBody,
@@ -19,6 +20,21 @@ const API_BASE_URL =
 
 export default function LoginPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    const messageParam = searchParams.get('message');
+    
+    if (errorParam) {
+      if (errorParam === 'oauth_failed') {
+        setError(`OAuth Login Failed: ${messageParam || 'Unknown error'}`);
+      } else {
+        setError(`Login Error: ${messageParam || errorParam}`);
+      }
+    }
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -61,6 +77,31 @@ export default function LoginPage() {
               Sign in with your Google account to continue
             </p>
           </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">Login Error</h3>
+                  <p className="mt-1 text-sm text-red-700">{error}</p>
+                  <div className="mt-2">
+                    <button
+                      onClick={() => setError(null)}
+                      className="text-sm text-red-600 hover:text-red-500 underline"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Google OAuth Login */}
           <div className="space-y-4">
@@ -129,6 +170,11 @@ export default function LoginPage() {
                 🏠{' '}
                 <Link href="/" className="text-blue-500 hover:underline">
                   Back to Home
+                </Link>
+                {' | '}
+                🔧{' '}
+                <Link href="/oauth-test" className="text-blue-500 hover:underline">
+                  Test OAuth
                 </Link>
               </p>
             </div>

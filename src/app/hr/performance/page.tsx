@@ -184,10 +184,10 @@ export default function PerformanceManagement() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {employee.user?.name || 'No Name'}
+                            {employee?.user?.name || 'No Name'}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {employee.user?.email || 'No Email'}
+                            {employee?.user?.email || 'No Email'}
                           </div>
                         </div>
                       </td>
@@ -320,7 +320,7 @@ export default function PerformanceManagement() {
                             {okr.objective}
                           </h4>
                           <span className="text-sm text-gray-500">
-                            {okr.employee.user.name} • {okr.period} {okr.year}
+                            {okr?.employee?.user?.name || 'No Name'} • {okr.period} {okr.year}
                           </span>
                         </div>
                         <div className="flex items-center space-x-4">
