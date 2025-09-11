@@ -18,6 +18,10 @@ export default function SelectRolePage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // ✅ Base API URL from env
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
   useEffect(() => {
     // Get token from URL manually to avoid useSearchParams issues
     const urlParams = new URLSearchParams(window.location.search);
@@ -43,7 +47,7 @@ export default function SelectRolePage() {
     if (!role) return alert('Please select a role');
 
     try {
-      const res = await fetch('http://localhost:8080/api/auth/set-role', {
+      const res = await fetch(`${API_URL}/api/auth/set-role`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -94,7 +98,9 @@ export default function SelectRolePage() {
   return (
     <div className="flex flex-col items-center justify-center h-screen">
       <h1 className="text-xl font-bold mb-4">Select Your Role</h1>
-      <p className="text-sm text-gray-600 mb-4">Token: {token ? 'Found' : 'Missing'}</p>
+      <p className="text-sm text-gray-600 mb-4">
+        Token: {token ? 'Found' : 'Missing'}
+      </p>
       <form onSubmit={handleSubmit} className="space-y-4 w-64">
         <select
           className="w-full border rounded px-3 py-2"
