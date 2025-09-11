@@ -13,8 +13,9 @@ import {
 } from '@/components/ui/resizable-navbar';
 import Link from 'next/link';
 
-// ✅ Use env variable for backend URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+// ✅ Use the correct env variable name from .env
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 export default function LoginPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -38,7 +39,10 @@ export default function LoginPage() {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             />
           </MobileNavHeader>
-          <MobileNavMenu isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)}>
+          <MobileNavMenu
+            isOpen={mobileMenuOpen}
+            onClose={() => setMobileMenuOpen(false)}
+          >
             <NavbarButton href="/login" variant="primary" className="mt-4">
               Login
             </NavbarButton>
@@ -50,14 +54,18 @@ export default function LoginPage() {
       <div className="flex items-center justify-center min-h-screen pt-32">
         <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
           <div className="text-center">
-            <h2 className="text-3xl font-extrabold text-gray-900 mb-2">Welcome to Talora</h2>
-            <p className="text-gray-600 mb-8">Sign in with your Google account to continue</p>
+            <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
+              Welcome to Talora
+            </h2>
+            <p className="text-gray-600 mb-8">
+              Sign in with your Google account to continue
+            </p>
           </div>
 
           {/* Google OAuth Login */}
           <div className="space-y-4">
             <a
-              href={`${API_BASE_URL}/api/auth/google`} // ✅ dynamic URL
+              href={`${API_BASE_URL}/api/auth/google`} // ✅ now uses correct env
               className="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-base font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200"
             >
               <svg className="w-6 h-6 mr-3" viewBox="0 0 24 24">
@@ -86,7 +94,11 @@ export default function LoginPage() {
           <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-start">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                <svg
+                  className="h-5 w-5 text-blue-400"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
                   <path
                     fillRule="evenodd"
                     d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
@@ -95,9 +107,12 @@ export default function LoginPage() {
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-blue-800">Secure OAuth 2.0 Authentication</h3>
+                <h3 className="text-sm font-medium text-blue-800">
+                  Secure OAuth 2.0 Authentication
+                </h3>
                 <p className="mt-1 text-sm text-blue-700">
-                  Your login is secured by Google&apos;s OAuth 2.0 protocol. We never store your password.
+                  Your login is secured by Google&apos;s OAuth 2.0 protocol. We
+                  never store your password.
                 </p>
               </div>
             </div>
@@ -106,7 +121,8 @@ export default function LoginPage() {
           {/* Footer Links */}
           <div className="mt-8 text-center space-y-2">
             <p className="text-sm text-gray-500">
-              New to our platform? Your account will be created automatically after Google authentication.
+              New to our platform? Your account will be created automatically
+              after Google authentication.
             </p>
             <div className="text-xs text-gray-400 space-y-1">
               <p>

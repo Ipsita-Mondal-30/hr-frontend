@@ -5,8 +5,11 @@ import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
 import { getAuthToken } from '@/lib/cookies';
 
+// ✅ Use correct env vars
 const BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+const FRONTEND_URL =
+  process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
 
 type ApiError = {
   response?: { data?: unknown };
@@ -60,19 +63,19 @@ export default function AuthDebugPage() {
       serverConnectivity: { success: false, error: 'Not run' },
     };
 
-    // Test 1: Cookies
+    // ✅ Test 1: Cookies
     const token = getAuthToken();
     results.tokenInCookies = token ? 'Present' : 'Missing';
     results.tokenValue = token ? token.substring(0, 20) + '...' : 'None';
 
-    // Test 2: LocalStorage
+    // ✅ Test 2: LocalStorage
     if (typeof window !== 'undefined' && window.localStorage) {
       const localToken =
         localStorage.getItem('auth_token') || localStorage.getItem('token');
       results.tokenInLocalStorage = localToken ? 'Present' : 'Missing';
     }
 
-    // Test 3: /auth/me
+    // ✅ Test 3: /auth/me
     try {
       const response = await api.get('/auth/me');
       results.apiMeCall = {
@@ -87,7 +90,7 @@ export default function AuthDebugPage() {
       };
     }
 
-    // Test 4: /api/test (server connectivity)
+    // ✅ Test 4: /api/test (server connectivity)
     try {
       const response = await fetch(`${BASE_URL}/api/test`, {
         credentials: 'include',
@@ -243,13 +246,13 @@ export default function AuthDebugPage() {
                 🗑️ Clear All Auth Data
               </button>
               <a
-                href="/hr/dashboard"
+                href={`${FRONTEND_URL}/hr/dashboard`}
                 className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 inline-block"
               >
                 🎯 Try HR Dashboard
               </a>
               <a
-                href="/role-select"
+                href={`${FRONTEND_URL}/role-select`}
                 className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 inline-block"
               >
                 👤 Role Select

@@ -5,6 +5,10 @@ import { AuthProvider } from "@/lib/AuthContext";
 export const metadata: Metadata = {
   title: "HR Portal",
   description: "Smart HR system with AI match scoring and insights",
+  icons: {
+    icon: "/talora.png", // <- your new favicon
+    shortcut: "/talora.png", // optional, for browsers that use shortcut icons
+  },
 };
 
 export default function RootLayout({
@@ -17,7 +21,6 @@ export default function RootLayout({
       <body className="antialiased">
         <AuthProvider>
           {children}
-          {/* <AuthDebug /> */}
         </AuthProvider>
       </body>
     </html>
