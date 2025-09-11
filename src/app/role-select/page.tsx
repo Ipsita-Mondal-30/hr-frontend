@@ -6,6 +6,8 @@ import { jwtDecode } from 'jwt-decode';
 import { setAuthToken } from '@/lib/cookies';
 import { useAuth } from '@/lib/AuthContext';
 
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://hr-system-x2uf.onrender.com';
+
 interface DecodedJwt {
   name?: string;
   email?: string;
@@ -32,29 +34,21 @@ export default function RoleSelectPage() {
   const { refreshUser } = useAuth();
 
   useEffect(() => {
-    // Get token from URL
     const urlParams = new URLSearchParams(window.location.search);
     const jwtFromQuery = urlParams.get('token');
 
-    console.log('Role-select page - Token from query:', jwtFromQuery);
-
     if (!jwtFromQuery) {
       console.error('No token in role-select URL');
-      // Don't redirect immediately, give user a chance to see the error
       setTimeout(() => router.push('/'), 2000);
       return;
     }
 
     try {
       const decoded = jwtDecode<DecodedJwt>(jwtFromQuery);
-      console.log('Decoded token:', decoded);
       setUserInfo(decoded);
       setToken(jwtFromQuery);
-
-      // Only set token in cookies, don't trigger any redirects
       setAuthToken(jwtFromQuery);
-      console.log('Token set in cookies');
-    } catch (err: unknown) {
+    } catch (err) {
       console.error('Error decoding token:', err);
       setTimeout(() => router.push('/'), 2000);
     }
@@ -67,56 +61,40 @@ export default function RoleSelectPage() {
       return;
     }
 
-    if (submitting) return; // Prevent double submission
-
+    if (submitting) return;
     setSubmitting(true);
     setError('');
 
     try {
-      console.log('🔄 Submitting role:', role);
-      console.log('🔑 Using token:', token ? 'Present' : 'Missing');
-
       // First test if backend is reachable
-      const testRes = await fetch('http://localhost:8080/api/test', {
-        method: 'GET',
-      });
-
+      const testRes = await fetch(`${BASE_URL}/api/test`);
       if (!testRes.ok) {
-        throw new Error('Backend server is not running. Please start the backend server.');
+        throw new Error('Backend server is not running. Please check your Render deployment.');
       }
 
-      console.log('✅ Backend server is reachable');
-
-      const res = await fetch('http://localhost:8080/api/auth/set-role', {
+      const res = await fetch(`${BASE_URL}/api/auth/set-role`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        credentials: 'include', // Include cookies
+        credentials: 'include',
         body: JSON.stringify({ role }),
       });
 
       const data: { token?: string; error?: string } = await res.json();
-      console.log('📝 Set role response:', data);
 
       if (!res.ok) {
         throw new Error(data.error || `Server error: ${res.status} ${res.statusText}`);
       }
 
-      const newToken = data.token;
-      if (newToken) {
-        setAuthToken(newToken);
+      if (data.token) {
+        setAuthToken(data.token);
       }
-      console.log('✅ New token set, refreshing user context...');
 
-      // Refresh the user context with the new role
       await refreshUser();
 
-      // Add a small delay before redirect to ensure context is updated
       setTimeout(() => {
-        console.log('🎯 Redirecting to:', role, 'dashboard');
-
         switch (role) {
           case 'admin':
             router.push('/admin/dashboard');
@@ -136,36 +114,24 @@ export default function RoleSelectPage() {
       }, 1000);
     } catch (err: unknown) {
       console.error('❌ Error setting role:', err);
-
       let errorMessage = 'Failed to set role. ';
-
       const msg = isErrorWithMessage(err) ? err.message : '';
+
       if (msg.includes('Backend server is not running')) {
-        errorMessage += 'The backend server is not running. Please start it and try again.';
+        errorMessage += 'Your Render backend is not reachable.';
       } else if (msg.includes('Failed to fetch')) {
-        errorMessage += 'Cannot connect to server. Please check if the backend is running on port 8080.';
+        errorMessage += 'Cannot connect to backend. Did you update the BASE_URL?';
       } else if (msg.includes('Database connection failed')) {
-        errorMessage += 'Database connection issue. Please try again in a moment.';
+        errorMessage += 'Database issue. Try again later.';
       } else {
         errorMessage += msg || 'Please try again.';
       }
 
       setError(errorMessage);
       setSubmitting(false);
-
-      // Auto-retry after 3 seconds for database connection issues
-      if (msg.includes('Database connection failed')) {
-        setTimeout(() => {
-          console.log('🔄 Auto-retrying after database connection issue...');
-          setError('Retrying...');
-          // Re-run submit without reusing the event (construct a dummy submit)
-          handleSubmit(new Event('submit') as unknown as React.FormEvent<HTMLFormElement>);
-        }, 3000);
-      }
     }
   };
 
-  // Don't render anything if we don't have user info yet
   if (!userInfo && !error) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -181,17 +147,11 @@ export default function RoleSelectPage() {
 
         {userInfo && (
           <div className="mb-6 p-4 bg-blue-50 rounded">
-            <p className="text-sm">
-              <strong>Name:</strong> {userInfo.name}
-            </p>
-            <p className="text-sm">
-              <strong>Email:</strong> {userInfo.email}
-            </p>
+            <p className="text-sm"><strong>Name:</strong> {userInfo.name}</p>
+            <p className="text-sm"><strong>Email:</strong> {userInfo.email}</p>
             <p className="text-xs text-gray-500 mt-2">Token: {token ? 'Present' : 'Missing'}</p>
           </div>
         )}
-
-        <p className="text-gray-600 mb-4 text-center">Please select your role to continue:</p>
 
         {error && <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">{error}</div>}
 
@@ -201,7 +161,7 @@ export default function RoleSelectPage() {
             value={role}
             onChange={(e) => {
               setRole(e.target.value);
-              setError(''); // Clear error when user selects a role
+              setError('');
             }}
             disabled={submitting}
           >
