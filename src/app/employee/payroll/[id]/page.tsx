@@ -316,8 +316,6 @@ export default function EmployeePayrollDetailPage() {
             </div>
           </div>
         </div>
-
-        {/* Download/Print Actions */}
         <div className="mt-6 flex justify-center space-x-4">
           <button onClick={() => window.print()} className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
             Print Payslip

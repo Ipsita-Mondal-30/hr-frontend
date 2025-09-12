@@ -18,7 +18,7 @@ export default function QuickTestPage() {
     try {
       setTestResult('Logging in...');
       const response = await api.post('/auth/login', {
-        email: 'ipsitaamondal@gmail.com',
+        email: 'admin@company.com',
         password: 'any',
       });
 
@@ -27,30 +27,6 @@ export default function QuickTestPage() {
         setTestResult('Login successful! Refreshing user data...');
         await refreshUser();
         setTestResult('User data refreshed! You should now be authenticated.');
-      }
-    } catch (error: unknown) {
-      const message = isAxiosError(error)
-        ? error.response?.data?.error || error.response?.data?.message || 'Login failed'
-        : error instanceof Error
-        ? error.message
-        : 'Login failed';
-      setTestResult('Login failed: ' + message);
-    }
-  };
-
-  const adminLogin = async () => {
-    try {
-      setTestResult('Logging in as admin...');
-      const response = await api.post('/auth/login', {
-        email: 'kgipsita30@gmail.com',
-        password: 'any',
-      });
-
-      if (response.data.success) {
-        localStorage.setItem('auth_token', response.data.token);
-        setTestResult('Admin login successful! Refreshing user data...');
-        await refreshUser();
-        setTestResult('User data refreshed! You should now be authenticated as admin.');
       }
     } catch (error: unknown) {
       const message = isAxiosError(error)
@@ -80,15 +56,8 @@ export default function QuickTestPage() {
           {user ? (
             <div className="bg-green-50 p-4 rounded">
               <p className="text-green-800">✅ Authenticated</p>
-              <p>
-                <strong>Name:</strong> {user.name}
-              </p>
-              <p>
-                <strong>Email:</strong> {user.email}
-              </p>
-              <p>
-                <strong>Role:</strong> {user.role}
-              </p>
+              <p><strong>Name:</strong> {user.name}</p>
+              <p><strong>Role:</strong> {user.role}</p>
             </div>
           ) : (
             <div className="bg-red-50 p-4 rounded">
@@ -100,12 +69,11 @@ export default function QuickTestPage() {
         <div className="bg-white p-6 rounded-lg shadow mb-6">
           <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
           <div className="space-y-4">
-            <button onClick={quickLogin} className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-              🔑 Quick Login as Ipsita (HR)
-            </button>
-
-            <button onClick={adminLogin} className="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
-              👑 Login as Admin
+            <button
+              onClick={quickLogin}
+              className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              🔑 Quick Login as Admin
             </button>
 
             <button

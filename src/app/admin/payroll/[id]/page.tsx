@@ -52,7 +52,7 @@ interface PayrollRecord {
   updatedAt: string;
 }
 
-export default function PayrollDetailPage() {
+export default function AdminPayrollDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [payroll, setPayroll] = useState<PayrollRecord | null>(null);
@@ -79,12 +79,10 @@ export default function PayrollDetailPage() {
 
   const handleApprove = async () => {
     if (!payroll) return;
-
-    setUpdating(true);
     try {
+      setUpdating(true);
       await api.put(`/admin/payroll/${payroll._id}/approve`);
-      alert('Payroll approved successfully');
-      fetchPayrollDetails();
+      await fetchPayrollDetails();
     } catch (error) {
       console.error('Error approving payroll:', error);
       alert('Error approving payroll');
@@ -93,16 +91,14 @@ export default function PayrollDetailPage() {
     }
   };
 
-  const handleMarkAsPaid = async () => {
+  const handleMarkPaid = async () => {
     if (!payroll) return;
-
-    setUpdating(true);
     try {
+      setUpdating(true);
       await api.put(`/admin/payroll/${payroll._id}/mark-paid`);
-      alert('Payroll marked as paid successfully');
-      fetchPayrollDetails();
+      await fetchPayrollDetails();
     } catch (error) {
-      console.error('Error marking as paid:', error);
+      console.error('Error marking payroll as paid:', error);
       alert('Error marking payroll as paid');
     } finally {
       setUpdating(false);
@@ -111,9 +107,9 @@ export default function PayrollDetailPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-800';
       case 'paid':
+        return 'bg-green-100 text-green-800';
+      case 'approved':
         return 'bg-blue-100 text-blue-800';
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
@@ -131,18 +127,8 @@ export default function PayrollDetailPage() {
 
   const getMonthName = (month: number) => {
     const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
     ];
     return months[month - 1];
   };
@@ -183,23 +169,19 @@ export default function PayrollDetailPage() {
             </p>
           </div>
           <div className="flex items-center space-x-3">
-            <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                payroll.status
-              )}`}
-            >
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(payroll.status)}`}>
               {payroll.status.charAt(0).toUpperCase() + payroll.status.slice(1)}
             </span>
             <button
               onClick={() => router.back()}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
             >
               Back
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Employee Information */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-lg font-semibold mb-4">Employee Information</h2>
@@ -209,221 +191,149 @@ export default function PayrollDetailPage() {
                 <p className="text-gray-900">{payroll.employee.user.name}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">Employee ID</label>
-                <p className="text-gray-900">{payroll.employee.employeeId}</p>
+                <label className="text-sm font-medium text-gray-500">Email</label>
+                <p className="text-gray-900">{payroll.employee.user.email}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Position</label>
                 <p className="text-gray-900">{payroll.employee.position}</p>
               </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Department</label>
-                <p className="text-gray-900">{payroll.employee.department?.name || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Email</label>
-                <p className="text-gray-900">{payroll.employee.user.email}</p>
-              </div>
+              {payroll.employee.department && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Department</label>
+                  <p className="text-gray-900">{payroll.employee.department.name}</p>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Salary Breakdown */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Earnings */}
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-lg font-semibold mb-4">Earnings</h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Base Salary</label>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {formatCurrency(payroll.baseSalary)}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Bonus</label>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {formatCurrency(payroll.bonus)}
-                  </p>
-                </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-lg font-semibold mb-4">Salary Breakdown</h2>
+            <div className="space-y-4">
+              <div className="flex justify-between">
+                <span>Base Salary</span>
+                <span className="font-medium">{formatCurrency(payroll.baseSalary)}</span>
               </div>
-
-              <h3 className="text-md font-medium mt-4 mb-2">Allowances</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm text-gray-500">Housing</label>
-                  <p className="font-medium">{formatCurrency(payroll.allowances.housing)}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">Transport</label>
-                  <p className="font-medium">{formatCurrency(payroll.allowances.transport)}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">Medical</label>
-                  <p className="font-medium">{formatCurrency(payroll.allowances.medical)}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">Other</label>
-                  <p className="font-medium">{formatCurrency(payroll.allowances.other)}</p>
-                </div>
-              </div>
-
-              {payroll.overtime.hours > 0 && (
-                <>
-                  <h3 className="text-md font-medium mt-4 mb-2">Overtime</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <label className="text-sm text-gray-500">Hours</label>
-                      <p className="font-medium">{payroll.overtime.hours}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Rate</label>
-                      <p className="font-medium">{formatCurrency(payroll.overtime.rate)}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Amount</label>
-                      <p className="font-medium">{formatCurrency(payroll.overtime.amount)}</p>
-                    </div>
+              
+              <div className="border-t pt-2">
+                <h3 className="font-medium text-green-600 mb-2">Allowances</h3>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Housing</span>
+                    <span>{formatCurrency(payroll.allowances.housing)}</span>
                   </div>
-                </>
+                  <div className="flex justify-between">
+                    <span>Transport</span>
+                    <span>{formatCurrency(payroll.allowances.transport)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Medical</span>
+                    <span>{formatCurrency(payroll.allowances.medical)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Other</span>
+                    <span>{formatCurrency(payroll.allowances.other)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-2">
+                <h3 className="font-medium text-red-600 mb-2">Deductions</h3>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Tax</span>
+                    <span>{formatCurrency(payroll.deductions.tax)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Insurance</span>
+                    <span>{formatCurrency(payroll.deductions.insurance)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Provident Fund</span>
+                    <span>{formatCurrency(payroll.deductions.providentFund)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Other</span>
+                    <span>{formatCurrency(payroll.deductions.other)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {payroll.bonus > 0 && (
+                <div className="flex justify-between border-t pt-2">
+                  <span>Bonus</span>
+                  <span className="font-medium text-green-600">{formatCurrency(payroll.bonus)}</span>
+                </div>
               )}
-            </div>
 
-            {/* Deductions */}
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-lg font-semibold mb-4">Deductions</h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm text-gray-500">Tax</label>
-                  <p className="font-medium text-red-600">{formatCurrency(payroll.deductions.tax)}</p>
+              <div className="border-t pt-2 space-y-2">
+                <div className="flex justify-between">
+                  <span>Gross Salary</span>
+                  <span className="font-medium">{formatCurrency(payroll.grossSalary)}</span>
                 </div>
-                <div>
-                  <label className="text-sm text-gray-500">Insurance</label>
-                  <p className="font-medium text-red-600">
-                    {formatCurrency(payroll.deductions.insurance)}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">Provident Fund</label>
-                  <p className="font-medium text-red-600">
-                    {formatCurrency(payroll.deductions.providentFund)}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">Other</label>
-                  <p className="font-medium text-red-600">{formatCurrency(payroll.deductions.other)}</p>
+                <div className="flex justify-between text-lg font-bold">
+                  <span>Net Salary</span>
+                  <span className="text-green-600">{formatCurrency(payroll.netSalary)}</span>
                 </div>
               </div>
             </div>
-
-            {/* Summary */}
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-lg font-semibold mb-4">Summary</h2>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Gross Salary</span>
-                  <span className="font-semibold">{formatCurrency(payroll.grossSalary)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Total Deductions</span>
-                  <span className="font-semibold text-red-600">
-                    -
-                    {formatCurrency(
-                      Object.values(payroll.deductions).reduce((sum, val) => sum + val, 0)
-                    )}
-                  </span>
-                </div>
-                <hr />
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold">Net Salary</span>
-                  <span className="text-lg font-bold text-green-600">
-                    {formatCurrency(payroll.netSalary)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Download Button */}
-            {payroll.status === 'paid' && (
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h2 className="text-lg font-semibold mb-4">Download</h2>
-                <button
-                  onClick={() => window.open(`/api/admin/payroll/${params.id}/download`, '_blank')}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  Download Payslip
-                </button>
-              </div>
-            )}
-
-            {/* Actions */}
-            {payroll.status !== 'paid' && (
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h2 className="text-lg font-semibold mb-4">Actions</h2>
-                <div className="flex space-x-4">
-                  {payroll.status === 'pending' && (
-                    <button
-                      onClick={handleApprove}
-                      disabled={updating}
-                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-                    >
-                      {updating ? 'Approving...' : 'Approve Payroll'}
-                    </button>
-                  )}
-                  {payroll.status === 'approved' && (
-                    <button
-                      onClick={handleMarkAsPaid}
-                      disabled={updating}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      {updating ? 'Processing...' : 'Mark as Paid'}
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Approval Information */}
-            {payroll.approvedBy && (
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h2 className="text-lg font-semibold mb-4">Approval Information</h2>
-                <div className="space-y-2">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Approved By</label>
-                    <p className="text-gray-900">{payroll.approvedBy.name}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Approved At</label>
-                    <p className="text-gray-900">
-                      {payroll.approvedAt ? new Date(payroll.approvedAt).toLocaleString() : 'N/A'}
-                    </p>
-                  </div>
-                  {payroll.paymentDate && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Payment Date</label>
-                      <p className="text-gray-900">
-                        {new Date(payroll.paymentDate).toLocaleDateString()}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* Actions */}
+        <div className="mt-6 flex justify-end space-x-3">
+          {payroll.status === 'pending' && (
+            <button
+              onClick={handleApprove}
+              disabled={updating}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+            >
+              {updating ? 'Approving...' : 'Approve'}
+            </button>
+          )}
+          {payroll.status === 'approved' && (
+            <button
+              onClick={handleMarkPaid}
+              disabled={updating}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              {updating ? 'Processing...' : 'Mark as Paid'}
+            </button>
+          )}
+        </div>
+
+        {/* Approval Information */}
+        {(payroll.approvedBy || payroll.paymentDate) && (
+          <div className="mt-6 bg-white p-6 rounded-lg shadow">
+            <h2 className="text-lg font-semibold mb-4">Approval Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {payroll.approvedBy && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Approved By</label>
+                  <p className="text-gray-900">{payroll.approvedBy.name}</p>
+                  <p className="text-sm text-gray-500">{payroll.approvedBy.email}</p>
+                </div>
+              )}
+              {payroll.approvedAt && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Approved At</label>
+                  <p className="text-gray-900">
+                    {new Date(payroll.approvedAt).toLocaleString()}
+                  </p>
+                </div>
+              )}
+              {payroll.paymentDate && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Payment Date</label>
+                  <p className="text-gray-900">
+                    {new Date(payroll.paymentDate).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

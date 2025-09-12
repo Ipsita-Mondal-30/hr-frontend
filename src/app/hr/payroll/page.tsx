@@ -206,10 +206,10 @@ export default function PayrollManagement() {
                         <div className="text-sm font-medium text-gray-900">
                           {payroll.employee?.user?.name || 'No Name'}
                         </div>
-                        <div className="text-sm text-gray-500">
+                          {payroll.employee.user.name}
                           {payroll.employee?.user?.email || 'No Email'}
                         </div>
-                      </div>
+                          {payroll.employee.user.email}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {months[payroll.month - 1]} {payroll.year}
