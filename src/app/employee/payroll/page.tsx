@@ -52,19 +52,19 @@ export default function EmployeePayrollPage() {
 
   const fetchPayrollRecords = useCallback(async () => {
     if (!user) return;
-    
+
     try {
       setLoading(true);
       const response = await api.get(`/employee/payroll?year=${selectedYear}`);
       const records: ApiPayrollRecord[] = response.data || [];
-      
+
       // Transform month number to month name
       const transformedRecords: PayrollRecord[] = records.map(record => ({
         ...record,
         month: getMonthName(record.month),
         payDate: record.createdAt || new Date().toISOString(),
       }));
-      
+
       setPayrollRecords(transformedRecords);
     } catch (error) {
       console.error('Error fetching payroll records:', error);
@@ -318,7 +318,7 @@ export default function EmployeePayrollPage() {
                     <span>Base Salary</span>
                     <span className="font-medium">{formatCurrency(selectedRecord.baseSalary)}</span>
                   </div>
-                  
+
                   <div className="border-t pt-3">
                     <h4 className="font-medium text-green-600 mb-2">Allowances</h4>
                     <div className="space-y-1 text-sm pl-4">

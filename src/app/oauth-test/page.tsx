@@ -46,7 +46,7 @@ export default function OAuthTestPage() {
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">OAuth Configuration Test</h1>
-          
+
           <div className="space-y-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
               <h2 className="text-xl font-semibold text-blue-900 mb-4">Current Configuration</h2>
@@ -73,7 +73,7 @@ export default function OAuthTestPage() {
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Test OAuth Flow</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button
                   onClick={() => window.open(`${API_BASE_URL}/api/oauth-test`, '_blank')}
@@ -81,7 +81,7 @@ export default function OAuthTestPage() {
                 >
                   Test Backend OAuth Config
                 </button>
-                
+
                 <a
                   href={`${API_BASE_URL}/api/auth/google`}
                   className="inline-block px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-center"
