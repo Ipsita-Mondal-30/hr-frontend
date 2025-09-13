@@ -98,10 +98,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      // Only redirect to role selection if user has no role and is on a protected page
+      // Handle role-based redirects
       if (!userData.role) {
         console.log('User has no role, redirecting to role selection');
         window.location.href = `/role-select?token=${token}`;
+      } else {
+        // Auto-redirect authenticated users to their dashboard if they're on the home page
+        if (currentPath === '/' || currentPath === '/login') {
+          console.log('User authenticated with role, redirecting to dashboard:', userData.role);
+          switch (userData.role) {
+            case 'admin':
+              window.location.href = '/admin/dashboard';
+              break;
+            case 'hr':
+              window.location.href = '/hr/dashboard';
+              break;
+            case 'candidate':
+              window.location.href = '/candidate/dashboard';
+              break;
+            case 'employee':
+              window.location.href = '/employee/dashboard';
+              break;
+          }
+        }
       }
     } catch (err) {
       console.error('Auth check failed:', err);
