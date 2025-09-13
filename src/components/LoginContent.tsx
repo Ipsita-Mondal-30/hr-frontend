@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import {
   Navbar,
   NavBody,
@@ -13,100 +13,10 @@ import {
   NavbarButton,
 } from '@/components/ui/resizable-navbar';
 import Link from 'next/link';
-import api from '@/lib/api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
-function ManualLoginForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const router = useRouter();
 
-  const handleManualLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setLoginError(null);
-
-    try {
-      const response = await api.post('/auth/login', { email, password });
-      
-      if (response.data.success) {
-        // Store token
-        localStorage.setItem('auth_token', response.data.token);
-        
-        // Redirect based on role
-        const role = response.data.user.role;
-        switch (role) {
-          case 'admin':
-            router.push('/admin/dashboard');
-            break;
-          case 'hr':
-            router.push('/hr/dashboard');
-            break;
-          case 'employee':
-            router.push('/employee/dashboard');
-            break;
-          case 'candidate':
-            router.push('/candidate/dashboard');
-            break;
-          default:
-            router.push('/role-select');
-        }
-      }
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      setLoginError(error.response?.data?.error || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleManualLogin} className="space-y-4">
-      {loginError && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-red-700 text-sm">{loginError}</p>
-        </div>
-      )}
-      
-      <div>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email address"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          required
-        />
-      </div>
-      
-      <div>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password (any password works for existing users)"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          required
-        />
-      </div>
-      
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full py-2 px-4 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50"
-      >
-        {loading ? 'Signing in...' : 'Sign in with Email'}
-      </button>
-      
-      <p className="text-xs text-gray-500 text-center">
-        Note: This works only if you already have an account created via Google OAuth
-      </p>
-    </form>
-  );
-}
 
 export default function LoginContent() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -218,45 +128,6 @@ export default function LoginContent() {
               </svg>
               Continue with Google
             </a>
-            
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with email</span>
-              </div>
-            </div>
-            
-            <ManualLoginForm />
-          </div>
-
-          {/* Security Notice */}
-          <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-blue-400"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-blue-800">
-                  Secure OAuth 2.0 Authentication
-                </h3>
-                <p className="mt-1 text-sm text-blue-700">
-                  Your login is secured by Google&apos;s OAuth 2.0 protocol. We
-                  never store your password.
-                </p>
-              </div>
-            </div>
           </div>
 
           {/* Footer Links */}
@@ -265,18 +136,10 @@ export default function LoginContent() {
               New to our platform? Your account will be created automatically
               after Google authentication.
             </p>
-            <div className="text-xs text-gray-400 space-y-1">
-              <p>
-                🏠{' '}
-                <Link href="/" className="text-blue-500 hover:underline">
-                  Back to Home
-                </Link>
-                {' | '}
-                🔧{' '}
-                <Link href="/oauth-test" className="text-blue-500 hover:underline">
-                  Test OAuth
-                </Link>
-              </p>
+            <div className="text-xs text-gray-400">
+              <Link href="/" className="text-blue-500 hover:underline">
+                🏠 Back to Home
+              </Link>
             </div>
           </div>
         </div>
