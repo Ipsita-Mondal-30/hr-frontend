@@ -2,6 +2,7 @@
 import { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import TokenHandler from '@/components/TokenHandler';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -76,6 +77,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
+      <TokenHandler />
       <aside className="w-72 bg-white shadow-sm border-r border-gray-200">
         <div className="p-6 border-b border-gray-200">
           <h1 className="text-xl font-bold text-gray-900">🛠️ Admin Panel</h1>

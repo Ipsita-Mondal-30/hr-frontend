@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
+import TokenHandler from '@/components/TokenHandler';
 
 export default function HRLayout({ children }: { children: ReactNode }) {
   const { user, loading, logout } = useAuth();
@@ -59,6 +60,7 @@ export default function HRLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
+      <TokenHandler />
       <aside className="w-64 bg-gray-800 text-white p-6 space-y-4">
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-white">HR Panel</h1>
