@@ -7,7 +7,7 @@ import { getAuthToken } from '@/lib/cookies';
 
 // ✅ Use correct env vars
 const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'https://hr-system-x2uf.onrender.com';
 const FRONTEND_URL =
   process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
 
