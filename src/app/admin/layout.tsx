@@ -1,11 +1,62 @@
 'use client';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/AuthContext';
 import TokenHandler from '@/components/TokenHandler';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading } = useAuth();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.push('/');
+        return;
+      }
+      
+      if (user.role !== 'admin') {
+        // Show access denied message
+        alert('Access Denied: Admin credentials required');
+        router.push('/');
+        return;
+      }
+      
+      setIsAuthorized(true);
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-red-50">
+        <div className="text-center p-8">
+          <div className="text-6xl mb-4">🚫</div>
+          <h1 className="text-2xl font-bold text-red-800 mb-2">Access Denied</h1>
+          <p className="text-red-600 mb-4">You need admin credentials to access this area.</p>
+          <button 
+            onClick={() => router.push('/')}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            Return to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const isActive = (path: string) => pathname === path;
 
