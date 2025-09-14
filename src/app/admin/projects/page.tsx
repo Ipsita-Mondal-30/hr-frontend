@@ -16,13 +16,13 @@ interface Project {
   actualHours: number;
   completionPercentage: number;
   projectManager: {
-    user: { name: string };
+    user?: { name?: string } | null;
     position: string;
   };
   teamMembers: Array<{
     employee: {
       _id: string;
-      user: { name: string };
+      user?: { name?: string } | null;
       position: string;
     };
     role: string;
@@ -207,7 +207,7 @@ export default function AdminProjectsPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                       <div>
                         <span className="text-gray-500">Project Manager:</span>
-                        <div className="font-medium">{project.projectManager.user.name}</div>
+                        <div className="font-medium">{project.projectManager?.user?.name || 'No Name'}</div>
                       </div>
                       <div>
                         <span className="text-gray-500">Team Size:</span>
@@ -341,10 +341,10 @@ export default function AdminProjectsPage() {
                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold">
-                          {member.employee.user.name.charAt(0).toUpperCase()}
+                          {(member.employee?.user?.name || 'N').charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <h4 className="font-medium text-gray-900">{member.employee.user.name}</h4>
+                          <h4 className="font-medium text-gray-900">{member.employee?.user?.name || 'No Name'}</h4>
                           <p className="text-sm text-gray-600">{member.employee.position}</p>
                         </div>
                       </div>

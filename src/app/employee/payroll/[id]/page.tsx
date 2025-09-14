@@ -9,10 +9,10 @@ interface PayrollRecord {
   employee: {
     _id: string;
     employeeId: string;
-    user: {
-      name: string;
-      email: string;
-    };
+    user?: {
+      name?: string;
+      email?: string;
+    } | null;
     position: string;
     department?: {
       name: string;
@@ -169,7 +169,7 @@ export default function EmployeePayrollDetailPage() {
             <div className="space-y-3">
               <div>
                 <label className="text-sm font-medium text-gray-500">Name</label>
-                <p className="text-gray-900">{payroll.employee.user.name}</p>
+                <p className="text-gray-900">{payroll.employee?.user?.name || 'No Name'}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Employee ID</label>

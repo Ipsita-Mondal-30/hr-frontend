@@ -8,10 +8,10 @@ interface Payroll {
   _id: string;
   employee: {
     _id: string;
-    user: {
-      name: string;
-      email: string;
-    };
+    user?: {
+      name?: string;
+      email?: string;
+    } | null;
   };
   month: number;
   year: number;
@@ -206,10 +206,10 @@ export default function PayrollManagement() {
                         <div className="text-sm font-medium text-gray-900">
                           {payroll.employee?.user?.name || 'No Name'}
                         </div>
-                          {payroll.employee.user.name}
+                        <div className="text-sm text-gray-500">
                           {payroll.employee?.user?.email || 'No Email'}
                         </div>
-                          {payroll.employee.user.email}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {months[payroll.month - 1]} {payroll.year}
