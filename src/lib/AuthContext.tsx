@@ -108,7 +108,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         window.location.href = `/role-select?token=${token}`;
       } else {
         // Auto-redirect authenticated users to their dashboard if they're on the home page
-        if (currentPath === '/' || currentPath === '/login') {
+        // But don't redirect if they're already on their correct dashboard path
+        const isOnCorrectDashboard = (
+          (userData.role === 'admin' && currentPath.startsWith('/admin')) ||
+          (userData.role === 'hr' && currentPath.startsWith('/hr')) ||
+          (userData.role === 'candidate' && currentPath.startsWith('/candidate')) ||
+          (userData.role === 'employee' && currentPath.startsWith('/employee'))
+        );
+        
+        if ((currentPath === '/' || currentPath === '/login') && !isOnCorrectDashboard) {
           console.log('User authenticated with role, redirecting to dashboard:', userData.role);
           switch (userData.role) {
             case 'admin':
@@ -124,6 +132,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               window.location.href = '/employee/dashboard';
               break;
           }
+        } else if (isOnCorrectDashboard) {
+          console.log('User already on correct dashboard path, no redirect needed');
         }
       }
     } catch (err) {
