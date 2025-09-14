@@ -112,8 +112,8 @@ export default function AdminJobs() {
   };
 
   const filteredJobs = jobs.filter(job =>
-    job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (job.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (job.companyName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (job.department?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -162,7 +162,7 @@ export default function AdminJobs() {
         </div>
         <div className="bg-white rounded-lg shadow-sm border p-4 text-center">
           <div className="text-2xl font-bold text-purple-600">
-            {jobs.reduce((sum, job) => sum + job.applicationsCount, 0)}
+            {jobs.reduce((sum, job) => sum + (job.applicationsCount || 0), 0)}
           </div>
           <div className="text-sm text-gray-600">Total Applications</div>
         </div>
@@ -280,9 +280,9 @@ export default function AdminJobs() {
                       <div className="text-sm font-medium text-gray-900">{job.title}</div>
                       <div className="text-sm text-gray-500">{job.department?.name || 'No Department'}</div>
                       <div className="text-sm text-gray-500">{job.location} • {job.type}</div>
-                      {job.salary && (
+                      {job.salary && job.salary.min && job.salary.max && (
                         <div className="text-xs text-gray-400">
-                          {job.salary.currency} {job.salary.min.toLocaleString()} - {job.salary.max.toLocaleString()}
+                          {job.salary.currency || 'USD'} {job.salary.min.toLocaleString()} - {job.salary.max.toLocaleString()}
                         </div>
                       )}
                     </div>
@@ -305,7 +305,7 @@ export default function AdminJobs() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
-                    {job.applicationsCount}
+                    {job.applicationsCount || 0}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {new Date(job.createdAt).toLocaleDateString()}
