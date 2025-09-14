@@ -3,9 +3,11 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { setAuthToken } from '@/lib/cookies';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function TokenHandler() {
   const router = useRouter();
+  const { refreshUser } = useAuth();
 
   useEffect(() => {
     console.log('🔍 TokenHandler - checking URL for token');
@@ -26,13 +28,13 @@ export default function TokenHandler() {
       console.log('🔄 Removing token from URL, new URL:', newUrl);
       window.history.replaceState({}, '', newUrl);
       
-      // Refresh the page to trigger AuthContext
-      console.log('🔄 Reloading page to trigger AuthContext');
-      window.location.reload();
+      // Refresh AuthContext instead of reloading page
+      console.log('🔄 Refreshing AuthContext to load user data');
+      refreshUser();
     } else {
       console.log('ℹ️ No token in URL, continuing normally');
     }
-  }, [router]);
+  }, [router, refreshUser]);
 
   return null; // This component doesn't render anything
 }
