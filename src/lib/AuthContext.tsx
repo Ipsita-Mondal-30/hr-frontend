@@ -60,23 +60,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUser = async () => {
     const token = getAuthToken();
-    console.log('AuthContext token:', token ? 'Present' : 'Missing');
+    console.log('🔍 AuthContext fetchUser - token:', token ? 'Present' : 'Missing');
+    console.log('🔍 AuthContext fetchUser - current URL:', window.location.href);
+    console.log('🔍 AuthContext fetchUser - current path:', window.location.pathname);
 
     // Always allow access to public pages without redirects
     const publicPages = ['/', '/debug', '/select-role', '/role-select', '/auth/callback', '/login'];
     const currentPath = window.location.pathname;
     
     if (!token) {
-      console.log('No token found, user not authenticated');
+      console.log('❌ No token found, user not authenticated');
       setUser(null);
       setLoading(false);
       return;
     }
 
     try {
+      console.log('🔄 Making API call to /auth/me with token');
       const res = await api.get('/auth/me');
       const userData = res.data;
-      console.log('User data from token:', userData);
+      console.log('✅ User data from token:', userData);
+      console.log('👤 User role:', userData.role);
       // If user is a candidate, fetch additional profile data including completeness
       if (userData.role === 'candidate') {
         try {
