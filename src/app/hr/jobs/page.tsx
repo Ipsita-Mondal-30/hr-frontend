@@ -61,6 +61,25 @@ export default function JobsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!form.title.trim()) {
+      alert('Job title is required');
+      return;
+    }
+    if (!form.description.trim()) {
+      alert('Job description is required');
+      return;
+    }
+    if (!form.department) {
+      alert('Please select a department');
+      return;
+    }
+    if (!form.role) {
+      alert('Please select a role');
+      return;
+    }
+    
     try {
       // Prepare form data with proper types
       const jobData = {
@@ -107,10 +126,11 @@ export default function JobsPage() {
       if (err.response) {
         console.error('Response data:', err.response.data);
         console.error('Response status:', err.response.status);
-        alert(`Error saving job: ${err.response.data.message || err.response.data.error || 'Unknown error'}`);
+        const errorMessage = err.response.data?.message || err.response.data?.error || JSON.stringify(err.response.data) || 'Unknown error';
+        alert(`Error saving job: ${errorMessage}`);
       } else {
         console.error('Network or other error:', err.message);
-        alert('Error saving job. Please try again.');
+        alert(`Error saving job: ${err.message || 'Please try again.'}`);
       }
     }
   };

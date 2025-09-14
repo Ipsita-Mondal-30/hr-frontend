@@ -7,17 +7,17 @@ interface Job {
   _id: string;
   title: string;
   companyName: string;
-  department: { name: string };
+  department?: { name: string } | null;
   location: string;
   type: string;
   status: 'active' | 'inactive' | 'pending' | 'rejected';
   salary?: { min: number; max: number; currency: string };
   applicationsCount: number;
   createdAt: string;
-  postedBy: {
+  postedBy?: {
     name: string;
     email: string;
-  };
+  } | null;
   isApproved: boolean;
   rejectionReason?: string;
 }
@@ -114,7 +114,7 @@ export default function AdminJobs() {
   const filteredJobs = jobs.filter(job =>
     job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     job.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.department.name.toLowerCase().includes(searchTerm.toLowerCase())
+    (job.department?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusColor = (status: Job['status']) => {
@@ -278,7 +278,7 @@ export default function AdminJobs() {
                   <td className="px-6 py-4">
                     <div>
                       <div className="text-sm font-medium text-gray-900">{job.title}</div>
-                      <div className="text-sm text-gray-500">{job.department.name}</div>
+                      <div className="text-sm text-gray-500">{job.department?.name || 'No Department'}</div>
                       <div className="text-sm text-gray-500">{job.location} • {job.type}</div>
                       {job.salary && (
                         <div className="text-xs text-gray-400">
@@ -290,8 +290,8 @@ export default function AdminJobs() {
                   <td className="px-6 py-4">
                     <div>
                       <div className="text-sm font-medium text-gray-900">{job.companyName}</div>
-                      <div className="text-sm text-gray-500">{job.postedBy.name}</div>
-                      <div className="text-xs text-gray-400">{job.postedBy.email}</div>
+                      <div className="text-sm text-gray-500">{job.postedBy?.name || 'Unknown User'}</div>
+                      <div className="text-xs text-gray-400">{job.postedBy?.email || 'No Email'}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
