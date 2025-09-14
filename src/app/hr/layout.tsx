@@ -12,20 +12,29 @@ export default function HRLayout({ children }: { children: ReactNode }) {
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
+    console.log('🏢 HR Layout - Authorization check:', { user, loading, isAuthorized });
+    
     if (!loading) {
       if (!user) {
+        console.log('❌ HR Layout - No user found, redirecting to home');
         router.push('/');
         return;
       }
       
+      console.log('👤 HR Layout - User found:', { email: user.email, role: user.role });
+      
       if (user.role !== 'hr' && user.role !== 'admin') {
+        console.log('🚫 HR Layout - Access denied, user role:', user.role);
         // Show access denied message
         alert('Access Denied: HR credentials required');
         router.push('/');
         return;
       }
       
+      console.log('✅ HR Layout - Authorization successful, setting authorized to true');
       setIsAuthorized(true);
+    } else {
+      console.log('⏳ HR Layout - Still loading, waiting...');
     }
   }, [user, loading, router]);
 
