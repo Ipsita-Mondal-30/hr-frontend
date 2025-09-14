@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
+import TokenHandler from "@/components/TokenHandler";
 
 interface DashboardData {
   totalJobs: number;
@@ -230,6 +231,7 @@ export default function HRDashboardPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <TokenHandler />
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">HR Dashboard</h1>
         <div className="space-x-2"></div>
