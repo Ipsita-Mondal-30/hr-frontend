@@ -14,19 +14,19 @@ export default function HRLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     console.log('🏢 HR Layout - Authorization check:', { user, loading, isAuthorized });
     
+    // Check if there's a token in URL that needs processing
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasToken = urlParams.get('token');
+    
     if (!loading) {
       if (!user) {
         console.log('❌ HR Layout - No user found');
-        // Check if there's a token in URL (OAuth redirect) before redirecting
-        const urlParams = new URLSearchParams(window.location.search);
-        const hasToken = urlParams.get('token');
         
         if (!hasToken) {
           console.log('❌ No token in URL, redirecting to home');
           router.push('/');
-        } else {
-          console.log('⏳ Token found in URL, waiting for TokenHandler to process');
         }
+        // If there's a token, don't redirect - let TokenHandler process it
         return;
       }
       
@@ -59,6 +59,22 @@ export default function HRLayout({ children }: { children: ReactNode }) {
   }
 
   if (!isAuthorized) {
+    // Check if there's a token in URL - if so, show loading instead of access denied
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasToken = urlParams.get('token');
+    
+    if (hasToken) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <TokenHandler />
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p>Processing authentication...</p>
+          </div>
+        </div>
+      );
+    }
+    
     return (
       <div className="flex items-center justify-center min-h-screen bg-red-50">
         <div className="text-center p-8 bg-white rounded-lg shadow-md">

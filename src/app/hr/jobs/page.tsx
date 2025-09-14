@@ -72,10 +72,14 @@ export default function JobsPage() {
         tags: form.tags ? form.tags.split(',').map(s => s.trim()).filter(s => s) : [],
       };
 
+      console.log('🚀 Submitting job data:', jobData);
+
       if (editingId) {
-        await api.put(`/jobs/${editingId}`, jobData);
+        const response = await api.put(`/jobs/${editingId}`, jobData);
+        console.log('✅ Job updated successfully:', response.data);
       } else {
-        await api.post('/jobs', jobData);
+        const response = await api.post('/jobs', jobData);
+        console.log('✅ Job created successfully:', response.data);
       }
       
       setForm({ 
@@ -98,9 +102,16 @@ export default function JobsPage() {
       setEditingId(null);
       setFormVisible(false);
       fetchJobs();
-    } catch (err) {
-      console.error('Error saving job:', err);
-      alert('Error saving job. Please try again.');
+    } catch (err: any) {
+      console.error('❌ Error saving job:', err);
+      if (err.response) {
+        console.error('Response data:', err.response.data);
+        console.error('Response status:', err.response.status);
+        alert(`Error saving job: ${err.response.data.message || err.response.data.error || 'Unknown error'}`);
+      } else {
+        console.error('Network or other error:', err.message);
+        alert('Error saving job. Please try again.');
+      }
     }
   };
 

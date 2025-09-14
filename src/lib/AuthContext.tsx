@@ -19,6 +19,7 @@ export type User = {
   portfolioUrl?: string;
   education?: string;
   profileCompleteness?: number;
+  isVerified?: boolean;
 };
 
 type AuthContextType = {
