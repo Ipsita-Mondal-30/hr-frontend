@@ -121,16 +121,18 @@ export default function JobsPage() {
       setEditingId(null);
       setFormVisible(false);
       fetchJobs();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Error saving job:', err);
-      if (err.response) {
-        console.error('Response data:', err.response.data);
-        console.error('Response status:', err.response.status);
-        const errorMessage = err.response.data?.message || err.response.data?.error || JSON.stringify(err.response.data) || 'Unknown error';
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosErr = err as { response: { data?: any; status?: number } };
+        console.error('Response data:', axiosErr.response.data);
+        console.error('Response status:', axiosErr.response.status);
+        const errorMessage = axiosErr.response.data?.message || axiosErr.response.data?.error || JSON.stringify(axiosErr.response.data) || 'Unknown error';
         alert(`Error saving job: ${errorMessage}`);
       } else {
-        console.error('Network or other error:', err.message);
-        alert(`Error saving job: ${err.message || 'Please try again.'}`);
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        console.error('Network or other error:', errorMessage);
+        alert(`Error saving job: ${errorMessage || 'Please try again.'}`);
       }
     }
   };

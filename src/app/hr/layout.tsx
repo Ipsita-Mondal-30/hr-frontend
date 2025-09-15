@@ -45,7 +45,7 @@ export default function HRLayout({ children }: { children: ReactNode }) {
     } else {
       console.log('⏳ HR Layout - Still loading, waiting...');
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isAuthorized]);
 
   if (loading) {
     return (
