@@ -124,7 +124,7 @@ export default function JobsPage() {
     } catch (err: unknown) {
       console.error('❌ Error saving job:', err);
       if (err && typeof err === 'object' && 'response' in err) {
-        const axiosErr = err as { response: { data?: any; status?: number } };
+        const axiosErr = err as { response: { data?: { message?: string; error?: string; [key: string]: unknown }; status?: number } };
         console.error('Response data:', axiosErr.response.data);
         console.error('Response status:', axiosErr.response.status);
         const errorMessage = axiosErr.response.data?.message || axiosErr.response.data?.error || JSON.stringify(axiosErr.response.data) || 'Unknown error';
