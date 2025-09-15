@@ -13,15 +13,15 @@ interface PendingJob {
   minSalary?: number;
   maxSalary?: number;
   skills: string[];
-  createdBy: {
+  createdBy?: {
     _id: string;
     name: string;
     email: string;
     companyName?: string;
-  };
-  department: {
+  } | null;
+  department?: {
     name: string;
-  };
+  } | null;
   createdAt: string;
 }
 
@@ -173,7 +173,7 @@ export default function PendingJobsPage() {
                     <div>
                       <h3 className="font-medium text-gray-900">{job.title}</h3>
                       <p className="text-sm text-gray-600">{job.companyName}</p>
-                      <p className="text-sm text-gray-500">by {job.createdBy.name}</p>
+                      <p className="text-sm text-gray-500">by {job.createdBy?.name || 'Unknown User'}</p>
                     </div>
                     <div className="text-xs text-gray-400">
                       {new Date(job.createdAt).toLocaleDateString()}
@@ -215,7 +215,7 @@ export default function PendingJobsPage() {
                   <div className="grid grid-cols-1 gap-3 text-sm">
                     <div><strong>Title:</strong> {selectedJob.title}</div>
                     <div><strong>Company:</strong> {selectedJob.companyName}</div>
-                    <div><strong>Department:</strong> {selectedJob.department.name}</div>
+                    <div><strong>Department:</strong> {selectedJob.department?.name || 'No Department'}</div>
                     <div><strong>Location:</strong> {selectedJob.location}</div>
                     <div><strong>Type:</strong> {selectedJob.employmentType.replace('-', ' ')}</div>
                     {(selectedJob.minSalary || selectedJob.maxSalary) && (
@@ -236,9 +236,9 @@ export default function PendingJobsPage() {
                 <div>
                   <h3 className="font-medium text-gray-900 mb-3">Posted By</h3>
                   <div className="grid grid-cols-1 gap-3 text-sm">
-                    <div><strong>HR Name:</strong> {selectedJob.createdBy.name}</div>
-                    <div><strong>Email:</strong> {selectedJob.createdBy.email}</div>
-                    {selectedJob.createdBy.companyName && (
+                    <div><strong>HR Name:</strong> {selectedJob.createdBy?.name || 'Unknown User'}</div>
+                    <div><strong>Email:</strong> {selectedJob.createdBy?.email || 'No Email'}</div>
+                    {selectedJob.createdBy?.companyName && (
                       <div><strong>Company:</strong> {selectedJob.createdBy.companyName}</div>
                     )}
                   </div>
