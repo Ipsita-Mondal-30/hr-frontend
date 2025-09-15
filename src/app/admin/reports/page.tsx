@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
+import toast from '@/lib/toast';
 
 interface PlatformAnalytics {
   totalUsers: number;
@@ -61,7 +62,7 @@ export default function AdminReports() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Failed to export report:', err);
-      alert('Failed to export report');
+      toast.error('Failed to export report');
     }
   };
 

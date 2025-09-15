@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import toast from '@/lib/toast';
 
 interface Department {
   _id: string;
@@ -39,7 +40,7 @@ export default function DepartmentManagement() {
     } catch (err: unknown) {
       const e = err as ApiError;
       console.error('Failed to fetch departments:', e);
-      alert(e.response?.data?.error || e.response?.data?.message || 'Failed to fetch departments');
+      toast.error(e.response?.data?.error || e.response?.data?.message || 'Failed to fetch departments');
     } finally {
       setLoading(false);
     }
@@ -48,7 +49,7 @@ export default function DepartmentManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      alert('Department name is required');
+      toast.warning('Department name is required');
       return;
     }
 
@@ -58,12 +59,12 @@ export default function DepartmentManagement() {
         // Update existing department
         const res = await api.put(`/admin/departments/${editingDept._id}`, formData);
         setDepartments(departments.map((dept) => (dept._id === editingDept._id ? res.data : dept)));
-        alert('Department updated successfully');
+        toast.success('Department updated successfully');
       } else {
         // Create new department
         const res = await api.post('/admin/departments', formData);
         setDepartments([res.data, ...departments]);
-        alert('Department created successfully');
+        toast.success('Department created successfully');
       }
 
       setShowModal(false);
@@ -72,7 +73,7 @@ export default function DepartmentManagement() {
     } catch (err: unknown) {
       const e = err as ApiError;
       console.error('Failed to save department:', e);
-      alert(e.response?.data?.error || e.response?.data?.message || 'Failed to save department');
+      toast.error(e.response?.data?.error || e.response?.data?.message || 'Failed to save department');
     } finally {
       setSaving(false);
     }
@@ -90,11 +91,11 @@ export default function DepartmentManagement() {
     try {
       await api.delete(`/admin/departments/${dept._id}`);
       setDepartments(departments.filter((d) => d._id !== dept._id));
-      alert('Department deleted successfully');
+      toast.success('Department deleted successfully');
     } catch (err: unknown) {
       const e = err as ApiError;
       console.error('Failed to delete department:', e);
-      alert(e.response?.data?.error || e.response?.data?.message || 'Failed to delete department');
+      toast.error(e.response?.data?.error || e.response?.data?.message || 'Failed to delete department');
     }
   };
 

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
 import TokenHandler from '@/components/TokenHandler';
+import toast from '@/lib/toast';
 
 // Error boundary component
 interface ErrorBoundaryState {
@@ -71,7 +72,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       if (user.role !== 'admin') {
         console.log('🚫 Admin Layout - Access denied, user role:', user.role);
         // Show access denied message
-        alert('Access Denied: Admin credentials required');
+        toast.error('Access Denied: Admin credentials required');
         router.push('/');
         return;
       }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import toast from '@/lib/toast';
 
 interface ApiTestResponse {
   message?: string;
@@ -76,7 +77,7 @@ export default function DebugPage() {
     document.cookie = `token=${testToken}; path=/; max-age=${7 * 24 * 60 * 60}`;
     document.cookie = `auth_token=${testToken}; path=/; max-age=${7 * 24 * 60 * 60}`;
 
-    alert('Test token set! Refresh the page to test.');
+    toast.success('Test token set! Refresh the page to test.');
   };
 
   const clearTokens = () => {
@@ -85,7 +86,7 @@ export default function DebugPage() {
     document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
     document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
 
-    alert('Tokens cleared! Refresh the page to test.');
+    toast.success('Tokens cleared! Refresh the page to test.');
   };
 
   if (loading) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
+import toast from '@/lib/toast';
 
 interface Job {
   _id: string;
@@ -51,10 +52,10 @@ export default function AdminJobs() {
       setJobs(jobs.map(job =>
         job._id === jobId ? { ...job, status, rejectionReason: reason } : job
       ));
-      alert(`Job ${status} successfully`);
+      toast.success(`Job ${status} successfully`);
     } catch (err) {
       console.error('Failed to update job status:', err);
-      alert('Failed to update job status');
+      toast.error('Failed to update job status');
     }
   };
 
@@ -64,16 +65,16 @@ export default function AdminJobs() {
     try {
       await api.delete(`/admin/jobs/${jobId}`);
       setJobs(jobs.filter(job => job._id !== jobId));
-      alert('Job deleted successfully');
+      toast.success('Job deleted successfully');
     } catch (err) {
       console.error('Failed to delete job:', err);
-      alert('Failed to delete job');
+      toast.error('Failed to delete job');
     }
   };
 
   const bulkAction = async (action: 'approve' | 'reject' | 'delete') => {
     if (selectedJobs.length === 0) {
-      alert('Please select jobs first');
+      toast.warning('Please select jobs first');
       return;
     }
 
@@ -104,10 +105,10 @@ export default function AdminJobs() {
       }
 
       setSelectedJobs([]);
-      alert(`Successfully ${action}d ${selectedJobs.length} jobs`);
+      toast.success(`Successfully ${action}d ${selectedJobs.length} jobs`);
     } catch (err) {
       console.error(`Failed to ${action} jobs:`, err);
-      alert(`Failed to ${action} jobs`);
+      toast.error(`Failed to ${action} jobs`);
     }
   };
 

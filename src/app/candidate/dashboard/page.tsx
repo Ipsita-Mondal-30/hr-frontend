@@ -38,7 +38,7 @@ interface InterviewPrep {
   skillGaps: {
     missing: string[];
     recommended: string[];
-  };
+  } | string[];
   strengths: string[];
   preparationTips: string[];
   technicalTopics: string[];
@@ -470,12 +470,26 @@ export default function CandidateDashboard() {
               <div className="bg-white rounded-lg p-4 border">
                 <h3 className="font-medium text-orange-700 mb-2">📈 Areas to Improve</h3>
                 <ul className="space-y-1">
-                  {(interviewPrep.skillGaps?.missing || []).slice(0, 3).map((gap, index) => (
-                    <li key={index} className="text-sm text-gray-700 flex items-center">
-                      <span className="text-orange-500 mr-2">→</span>
-                      {gap}
-                    </li>
-                  ))}
+                  {(() => {
+                    // Handle both array and object formats for skillGaps
+                    const skillGaps = interviewPrep.skillGaps;
+                    let gapsToShow: string[] = [];
+                    
+                    if (Array.isArray(skillGaps)) {
+                      // If skillGaps is an array, use it directly
+                      gapsToShow = skillGaps;
+                    } else if (skillGaps && typeof skillGaps === 'object' && 'missing' in skillGaps) {
+                      // If skillGaps is an object with missing property
+                      gapsToShow = skillGaps.missing;
+                    }
+                    
+                    return (gapsToShow || []).slice(0, 3).map((gap, index) => (
+                      <li key={index} className="text-sm text-gray-700 flex items-center">
+                        <span className="text-orange-500 mr-2">→</span>
+                        {gap}
+                      </li>
+                    ));
+                  })()}
                 </ul>
               </div>
             </div>

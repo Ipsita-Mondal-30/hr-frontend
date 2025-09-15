@@ -172,7 +172,9 @@ export default function ApplicationsPage() {
 
   const fetchApplications = async () => {
     try {
+      console.log('🔄 HR fetching all applications...');
       const res = await api.get<Application[]>('/applications');
+      console.log(`📊 HR received ${res.data.length} applications`);
       setApplications(res.data);
     } catch (err) {
       console.error('Failed to fetch applications', err);

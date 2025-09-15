@@ -9,6 +9,12 @@ interface ApplicationLite {
   name?: string;
   email?: string;
   phone?: string;
+  candidate?: {
+    _id: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+  };
   job?: { title?: string; companyName?: string };
 }
 
@@ -104,10 +110,11 @@ export default function InterviewsPage() {
 
   const fetchApplications = async () => {
     try {
-      console.log('🔄 HR fetching applications for interview scheduling...');
+      console.log('🔄 HR fetching shortlisted applications for interview scheduling...');
+      // Fetch only shortlisted applications for interview scheduling
       const res = await api.get<ApplicationsApiRes>('/applications?status=shortlisted');
       const list = Array.isArray(res.data) ? res.data : res.data?.applications || [];
-      console.log(`📊 HR received ${list.length} shortlisted applications`);
+      console.log(`📊 HR received ${list.length} shortlisted applications available for interviews`);
       setApplications(list);
     } catch (err) {
       console.error('Failed to fetch applications:', err);
@@ -415,7 +422,7 @@ function InterviewCard({
             <span className="text-2xl">{getTypeIcon(interview.type)}</span>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
-                {interview.application?.name || 'Candidate Name Not Available'}
+                {interview.application?.candidate?.name || interview.application?.name || 'Candidate Name Not Available'}
               </h3>
               <p className="text-gray-600">{interview.application?.job?.title || 'Job Title Not Available'}</p>
               <p className="text-sm text-gray-500">{interview.application?.job?.companyName || 'Company Not Available'}</p>
@@ -439,10 +446,10 @@ function InterviewCard({
                 <strong>Interviewer:</strong> {interview.interviewer?.name || 'Not Available'}
               </p>
               <p>
-                <strong>Email:</strong> {interview.application?.email || 'Not Available'}
+                <strong>Email:</strong> {interview.application?.candidate?.email || interview.application?.email || 'Not Available'}
               </p>
               <p>
-                <strong>Phone:</strong> {interview.application?.phone || 'Not Available'}
+                <strong>Phone:</strong> {interview.application?.candidate?.phone || interview.application?.phone || 'Not Available'}
               </p>
             </div>
           </div>
