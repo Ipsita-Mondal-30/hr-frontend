@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 import Link from 'next/link';
 
 interface Application {
@@ -199,7 +200,7 @@ export default function ApplicationsPage() {
       setApplications((prev) => prev.map((app) => (app._id === id ? { ...app, status: newStatus } : app)));
 
       // Show success message
-      alert(`Status updated to ${newStatus} successfully`);
+      showToast.success(`Status updated to ${newStatus} successfully`);
     } catch (err: unknown) {
       console.error('Status update failed', err);
       const msg = isAxiosLikeError(err)
@@ -207,7 +208,7 @@ export default function ApplicationsPage() {
         : err instanceof Error
         ? err.message
         : 'Failed to update status';
-      alert('Failed to update status: ' + msg);
+      showToast.error('Failed to update status: ' + msg);
       // Refresh on error to ensure consistency
       fetchApplications();
     }
@@ -223,7 +224,7 @@ export default function ApplicationsPage() {
       setApplications((prev) => prev.map((app) => (app._id === id ? { ...app, hrNotes: notes } : app)));
 
       setNotesModal({ isOpen: false, applicationId: null });
-      alert('Notes saved successfully');
+      showToast.success('Notes saved successfully');
     } catch (err: unknown) {
       console.error('Failed to save notes', err);
       const msg = isAxiosLikeError(err)
@@ -231,13 +232,13 @@ export default function ApplicationsPage() {
         : err instanceof Error
         ? err.message
         : 'Failed to save notes';
-      alert('Failed to save notes: ' + msg);
+      showToast.error('Failed to save notes: ' + msg);
     }
   };
 
   const bulkUpdateStatus = async (status: string) => {
     if (selectedApplications.length === 0) {
-      alert('Please select applications first');
+      showToast.warning('Please select applications first');
       return;
     }
 
@@ -254,7 +255,7 @@ export default function ApplicationsPage() {
       setApplications((prev) => prev.map((app) => (selectedApplications.includes(app._id) ? { ...app, status } : app)));
 
       setSelectedApplications([]);
-      alert(`${selectedApplications.length} applications updated to ${status} successfully`);
+      showToast.success(`${selectedApplications.length} applications updated to ${status} successfully`);
     } catch (err: unknown) {
       console.error('Bulk update failed', err);
       const msg = isAxiosLikeError(err)
@@ -262,7 +263,7 @@ export default function ApplicationsPage() {
         : err instanceof Error
         ? err.message
         : 'Failed to update applications';
-      alert('Failed to update applications: ' + msg);
+      showToast.error('Failed to update applications: ' + msg);
       // Refresh on error to ensure consistency
       fetchApplications();
     }
@@ -270,9 +271,9 @@ export default function ApplicationsPage() {
 
   const downloadResume = (resumeUrl: string, candidateName: string) => {
     if (!resumeUrl) {
-      alert('No resume available');
-      return;
-    }
+       showToast.warning('No resume available');
+       return;
+     }
 
     const link = document.createElement('a');
     link.href = resumeUrl;
@@ -697,7 +698,7 @@ function MessageModal({ isOpen, applicationId, onClose, applications }: MessageM
 
   const sendMessage = async () => {
     if (!subject.trim() || !message.trim()) {
-      alert('Please fill in both subject and message');
+      showToast.warning('Please fill in both subject and message');
       return;
     }
 
@@ -710,13 +711,13 @@ function MessageModal({ isOpen, applicationId, onClose, applications }: MessageM
         recipientEmail: application?.email,
       });
 
-      alert('Message sent successfully!');
+      showToast.success('Message sent successfully!');
       setMessage('');
       setSubject('');
       onClose();
     } catch (err) {
       console.error('Failed to send message:', err);
-      alert('Failed to send message');
+      showToast.error('Failed to send message');
     } finally {
       setSending(false);
     }

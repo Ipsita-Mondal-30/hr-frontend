@@ -444,7 +444,7 @@ export default function CandidateDashboard() {
             <div className="bg-white rounded-lg p-4 border">
               <h3 className="font-medium text-gray-900 mb-3">🎯 Top 5 Interview Questions</h3>
               <div className="space-y-2">
-                {interviewPrep.questions.slice(0, 5).map((question, index) => (
+                {(interviewPrep.questions || []).slice(0, 5).map((question, index) => (
                   <div key={index} className="flex items-start space-x-2">
                     <span className="text-purple-600 font-medium text-sm">{index + 1}.</span>
                     <p className="text-sm text-gray-700">{question}</p>
@@ -458,7 +458,7 @@ export default function CandidateDashboard() {
               <div className="bg-white rounded-lg p-4 border">
                 <h3 className="font-medium text-green-700 mb-2">💪 Your Strengths</h3>
                 <ul className="space-y-1">
-                  {interviewPrep.strengths.slice(0, 3).map((strength, index) => (
+                  {(interviewPrep.strengths || []).slice(0, 3).map((strength, index) => (
                     <li key={index} className="text-sm text-gray-700 flex items-center">
                       <span className="text-green-500 mr-2">✓</span>
                       {strength}
@@ -470,7 +470,7 @@ export default function CandidateDashboard() {
               <div className="bg-white rounded-lg p-4 border">
                 <h3 className="font-medium text-orange-700 mb-2">📈 Areas to Improve</h3>
                 <ul className="space-y-1">
-                  {interviewPrep.skillGaps.missing.slice(0, 3).map((gap, index) => (
+                  {(interviewPrep.skillGaps?.missing || []).slice(0, 3).map((gap, index) => (
                     <li key={index} className="text-sm text-gray-700 flex items-center">
                       <span className="text-orange-500 mr-2">→</span>
                       {gap}
@@ -484,7 +484,7 @@ export default function CandidateDashboard() {
             <div className="bg-white rounded-lg p-4 border">
               <h3 className="font-medium text-blue-700 mb-2">💡 Quick Prep Tips</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {interviewPrep.preparationTips.slice(0, 4).map((tip, index) => (
+                {(interviewPrep.preparationTips || []).slice(0, 4).map((tip, index) => (
                   <div key={index} className="text-sm text-gray-700 flex items-start">
                     <span className="text-blue-500 mr-2">•</span>
                     {tip}
@@ -551,7 +551,7 @@ export default function CandidateDashboard() {
               <div className="bg-white rounded-lg p-4 border">
                 <h3 className="font-medium text-green-700 mb-2">🌟 Key Strengths</h3>
                 <ul className="space-y-1">
-                  {profileAnalysis.strengths.slice(0, 3).map((strength, index) => (
+                  {(profileAnalysis.strengths || []).slice(0, 3).map((strength, index) => (
                     <li key={index} className="text-sm text-gray-700 flex items-center">
                       <span className="text-green-500 mr-2">✓</span>
                       {strength}
@@ -563,7 +563,7 @@ export default function CandidateDashboard() {
               <div className="bg-white rounded-lg p-4 border">
                 <h3 className="font-medium text-blue-700 mb-2">🎯 Recommendations</h3>
                 <ul className="space-y-1">
-                  {profileAnalysis.recommendations.slice(0, 3).map((rec, index) => (
+                  {(profileAnalysis.recommendations || []).slice(0, 3).map((rec, index) => (
                     <li key={index} className="text-sm text-gray-700 flex items-start">
                       <span className="text-blue-500 mr-2">→</span>
                       {rec}

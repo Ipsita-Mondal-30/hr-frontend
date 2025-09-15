@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
 import TokenHandler from '@/components/TokenHandler';
+import { showToast } from '@/lib/toast';
 
 export default function HRLayout({ children }: { children: ReactNode }) {
   const { user, loading, logout } = useAuth();
@@ -35,7 +36,7 @@ export default function HRLayout({ children }: { children: ReactNode }) {
       if (user.role !== 'hr' && user.role !== 'admin') {
         console.log('🚫 HR Layout - Access denied, user role:', user.role);
         // Show access denied message
-        alert('Access Denied: HR credentials required');
+        showToast.error('Access Denied: HR credentials required');
         router.push('/');
         return;
       }

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 interface CandidateProfile {
   name: string;
@@ -64,10 +65,10 @@ export default function CandidateProfilePage() {
       const res = await api.put('/candidate/profile', profile);
       setProfile((prev) => ({ ...prev, ...(res.data as Partial<CandidateProfile>) })); // Update with response that includes new completeness
       setEditing(false);
-      alert('Profile updated successfully!');
+      showToast.success('Profile updated successfully!');
     } catch (err) {
       console.error('Error saving profile:', err);
-      alert('Error saving profile');
+      showToast.error('Error saving profile');
     } finally {
       setSaving(false);
     }

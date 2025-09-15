@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
+import { showToast } from "@/lib/toast";
 
 interface DashboardData {
   totalJobs: number;
@@ -179,11 +180,11 @@ export default function HRDashboardPage() {
       // Refresh dashboard data
       const res = await api.get<DashboardData>("/admin/dashboard");
       setData(res.data);
-      alert('Sample data created successfully!');
+      showToast.success('Sample data created successfully!');
     } catch (err: unknown) {
       console.error('Error seeding data:', err);
       const msg = isAxiosError(err) ? ((err.response?.data as { error?: string })?.error || 'Failed to seed data') : 'Failed to seed data';
-      alert(msg);
+      showToast.error(msg);
     } finally {
       setSeeding(false);
     }
@@ -193,12 +194,12 @@ export default function HRDashboardPage() {
     try {
       const res = await api.get<{ jobsCount: number; applicationsCount: number; usersCount: number }>('/debug/data');
       console.log('Database data:', res.data);
-      alert(
+      showToast.info(
         `Database contains: ${res.data.jobsCount} jobs, ${res.data.applicationsCount} applications, ${res.data.usersCount} users`
       );
     } catch (err: unknown) {
       console.error('Error checking data:', err);
-      alert('Failed to check database data');
+      showToast.error('Failed to check database data');
     }
   };
 

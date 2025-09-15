@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 export default function CreateEmployee() {
   const router = useRouter();
@@ -28,7 +29,7 @@ export default function CreateEmployee() {
       router.push('/admin/employees');
     } catch (error) {
       console.error('Error creating employee:', error);
-      alert('Failed to create employee');
+      showToast.error('Failed to create employee');
     } finally {
       setLoading(false);
     }

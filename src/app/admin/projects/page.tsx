@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 interface Project {
   _id: string;
@@ -428,7 +429,7 @@ export default function AdminProjectsPage() {
                     onClick={() => {
                       // Handle project creation
                       setShowCreateModal(false);
-                      alert('Project creation functionality to be implemented');
+                      showToast.info('Project creation functionality to be implemented');
                     }}
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   >

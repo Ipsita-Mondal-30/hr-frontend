@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 interface Employee {
   _id: string;
@@ -62,7 +63,7 @@ export default function EmployeeDetailPage() {
       setEmployee(response.data);
     } catch (error) {
       console.error('Error fetching employee details:', error);
-      alert('Error loading employee details');
+      showToast.error('Error loading employee details');
     } finally {
       setLoading(false);
     }

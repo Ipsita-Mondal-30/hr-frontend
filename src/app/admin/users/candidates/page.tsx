@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 interface Application {
   _id: string;
@@ -78,11 +79,11 @@ export default function ViewCandidatesPage() {
         setSelectedCandidate(null);
       }
       
-      alert(`${candidateName} has been deleted successfully.`);
+      showToast.success(`${candidateName} has been deleted successfully.`);
       console.log(`✅ Successfully deleted candidate: ${candidateName}`);
     } catch (error) {
       console.error('Error deleting candidate:', error);
-      alert('Failed to delete candidate. Please try again.');
+      showToast.error('Failed to delete candidate. Please try again.');
     }
   };
 

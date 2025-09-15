@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 interface ApplicationLite {
   _id: string;
@@ -123,7 +124,7 @@ export default function InterviewsPage() {
       // Refresh both interviews and applications
       await Promise.all([fetchInterviews(), fetchApplications()]);
       setShowScheduleModal(false);
-      alert('Interview scheduled successfully!');
+      showToast.success('Interview scheduled successfully!');
     } catch (err: unknown) {
       console.error('Failed to schedule interview:', err);
       const msg = isAxiosError(err)
@@ -131,7 +132,7 @@ export default function InterviewsPage() {
           (err.response?.data as { error?: string; message?: string } | undefined)?.message ||
           'Failed to schedule interview'
         : 'Failed to schedule interview';
-      alert('Failed to schedule interview: ' + msg);
+      showToast.error('Failed to schedule interview: ' + msg);
     }
   };
 
@@ -142,10 +143,10 @@ export default function InterviewsPage() {
     try {
       await api.put(`/interviews/${interviewId}/status`, { status });
       setInterviews((prev) => prev.map((interview) => (interview._id === interviewId ? { ...interview, status } : interview)));
-      alert(`Interview status updated to ${status}`);
+      showToast.success(`Interview status updated to ${status}`);
     } catch (err) {
       console.error('Failed to update interview status:', err);
-      alert('Failed to update interview status');
+      showToast.error('Failed to update interview status');
     }
   };
 
@@ -159,7 +160,7 @@ export default function InterviewsPage() {
 
       await fetchInterviews(); // Refresh the interviews list
       setShowScorecardModal(false);
-      alert('Scorecard submitted successfully! AI-powered emails have been sent to the candidate and HR team.');
+      showToast.success('Scorecard submitted successfully! AI-powered emails have been sent to the candidate and HR team.');
     } catch (err: unknown) {
       console.error('❌ Failed to submit scorecard:', err);
       const msg = isAxiosError(err)
@@ -167,7 +168,7 @@ export default function InterviewsPage() {
           (err.response?.data as { error?: string; message?: string } | undefined)?.message ||
           'Unknown error'
         : 'Unknown error';
-      alert(`Failed to submit scorecard: ${msg}`);
+      showToast.error(`Failed to submit scorecard: ${msg}`);
     }
   };
 
@@ -521,7 +522,7 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: S
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.applicationId || !formData.scheduledAt) {
-      alert('Please select an application and date/time');
+      showToast.warning('Please select an application and date/time');
       return;
     }
     onSchedule(formData);

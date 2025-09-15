@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 interface PayrollRecord {
   _id: string;
@@ -66,7 +67,7 @@ export default function EmployeePayrollDetailPage() {
       setPayroll(response.data as PayrollRecord);
     } catch (error) {
       console.error('Error fetching payroll details:', error);
-      alert('Error loading payroll details');
+      showToast.error('Error loading payroll details');
     } finally {
       setLoading(false);
     }

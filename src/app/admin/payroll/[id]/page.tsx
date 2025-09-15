@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 interface PayrollRecord {
   _id: string;
@@ -67,7 +68,7 @@ export default function AdminPayrollDetailPage() {
       setPayroll(response.data);
     } catch (error) {
       console.error('Error fetching payroll details:', error);
-      alert('Error loading payroll details');
+      showToast.error('Error loading payroll details');
     } finally {
       setLoading(false);
     }
@@ -85,7 +86,7 @@ export default function AdminPayrollDetailPage() {
       await fetchPayrollDetails();
     } catch (error) {
       console.error('Error approving payroll:', error);
-      alert('Error approving payroll');
+      showToast.error('Error approving payroll');
     } finally {
       setUpdating(false);
     }
@@ -99,7 +100,7 @@ export default function AdminPayrollDetailPage() {
       await fetchPayrollDetails();
     } catch (error) {
       console.error('Error marking payroll as paid:', error);
-      alert('Error marking payroll as paid');
+      showToast.error('Error marking payroll as paid');
     } finally {
       setUpdating(false);
     }

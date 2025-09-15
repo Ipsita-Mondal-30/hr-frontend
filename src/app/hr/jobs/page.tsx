@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 import { Job } from '@/types';
 
 export default function JobsPage() {
@@ -37,7 +38,7 @@ export default function JobsPage() {
       setJobs(res.data);
     } catch (err) {
       console.error('Failed to fetch jobs:', err);
-      alert('Failed to load jobs. Please try again.');
+      showToast.error('Failed to load jobs. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -64,21 +65,21 @@ export default function JobsPage() {
     
     // Validate required fields
     if (!form.title.trim()) {
-      alert('Job title is required');
-      return;
-    }
-    if (!form.description.trim()) {
-      alert('Job description is required');
-      return;
-    }
-    if (!form.department) {
-      alert('Please select a department');
-      return;
-    }
-    if (!form.role) {
-      alert('Please select a role');
-      return;
-    }
+       showToast.warning('Job title is required');
+       return;
+     }
+     if (!form.description.trim()) {
+       showToast.warning('Job description is required');
+       return;
+     }
+     if (!form.department) {
+       showToast.warning('Please select a department');
+       return;
+     }
+     if (!form.role) {
+       showToast.warning('Please select a role');
+       return;
+     }
     
     try {
       // Prepare form data with proper types
@@ -128,11 +129,11 @@ export default function JobsPage() {
         console.error('Response data:', axiosErr.response.data);
         console.error('Response status:', axiosErr.response.status);
         const errorMessage = axiosErr.response.data?.message || axiosErr.response.data?.error || JSON.stringify(axiosErr.response.data) || 'Unknown error';
-        alert(`Error saving job: ${errorMessage}`);
+        showToast.error(`Error saving job: ${errorMessage}`);
       } else {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         console.error('Network or other error:', errorMessage);
-        alert(`Error saving job: ${errorMessage || 'Please try again.'}`);
+        showToast.error(`Error saving job: ${errorMessage || 'Please try again.'}`);
       }
     }
   };

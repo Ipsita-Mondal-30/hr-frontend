@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 interface Job {
   _id: string;
@@ -80,11 +81,11 @@ export default function ViewHRUsersPage() {
         setSelectedHR(null);
       }
       
-      alert(`${hrName} has been deleted successfully.`);
+      showToast.success(`${hrName} has been deleted successfully.`);
       console.log(`✅ Successfully deleted HR user: ${hrName}`);
     } catch (error) {
       console.error('Error deleting HR user:', error);
-      alert('Failed to delete HR user. Please try again.');
+      showToast.error('Failed to delete HR user. Please try again.');
     }
   };
 

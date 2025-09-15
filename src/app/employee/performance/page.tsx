@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 interface OKRData {
   _id: string;
@@ -93,7 +94,7 @@ export default function EmployeePerformancePage() {
       await fetchPerformanceData();
     } catch (error) {
       console.error('Error updating key result:', error);
-      alert('Failed to update progress');
+      showToast.error('Failed to update progress');
     } finally {
       setUpdatingProgress(null);
     }
@@ -105,7 +106,7 @@ export default function EmployeePerformancePage() {
       await fetchPerformanceData();
     } catch (error) {
       console.error('Error generating AI insights:', error);
-      alert('Failed to generate AI insights');
+      showToast.error('Failed to generate AI insights');
     }
   };
 

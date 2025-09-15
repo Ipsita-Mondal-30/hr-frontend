@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 interface PendingHR {
   _id: string;
@@ -56,13 +57,13 @@ export default function HRVerification() {
       setSelectedHR(null);
       setVerificationNotes('');
       
-      alert(`HR ${approved ? 'approved' : 'rejected'} successfully`);
+      showToast.success(`HR ${approved ? 'approved' : 'rejected'} successfully`);
       
       // Also refresh the list to ensure consistency
       setTimeout(fetchPendingHRs, 1000);
     } catch (err) {
       console.error('Failed to verify HR:', err);
-      alert('Failed to process verification');
+      showToast.error('Failed to process verification');
       // Refresh on error to ensure consistency
       fetchPendingHRs();
     }
@@ -71,10 +72,10 @@ export default function HRVerification() {
   const sendVerificationEmail = async (hrId: string) => {
     try {
       await api.post(`/admin/users/${hrId}/send-verification-email`);
-      alert('Verification email sent successfully');
+      showToast.success('Verification email sent successfully');
     } catch (err) {
       console.error('Failed to send verification email:', err);
-      alert('Failed to send verification email');
+      showToast.error('Failed to send verification email');
     }
   };
 

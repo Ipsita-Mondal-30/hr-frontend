@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 interface FeedbackData {
   _id: string;
@@ -106,7 +107,7 @@ export default function EmployeeFeedbackPage() {
       await fetchFeedback();
     } catch (error) {
       console.error('Error submitting response:', error);
-      alert('Failed to submit response');
+      showToast.error('Failed to submit response');
     } finally {
       setSubmittingResponse(false);
     }

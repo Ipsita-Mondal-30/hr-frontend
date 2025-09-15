@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 interface PendingJob {
   _id: string;
@@ -51,14 +52,14 @@ export default function PendingJobsPage() {
       
       // Check if it's an authentication error
       if (isAxiosLikeError(error) && error.response?.status === 401) {
-        alert('Authentication failed. Please log in again.');
+        showToast.error('Authentication failed. Please log in again.');
         window.location.href = '/login';
         return;
       }
       
       // Check if it's a forbidden error
       if (isAxiosLikeError(error) && error.response?.status === 403) {
-        alert('Access denied. Admin privileges required.');
+        showToast.error('Access denied. Admin privileges required.');
         window.location.href = '/';
         return;
       }
@@ -82,24 +83,24 @@ export default function PendingJobsPage() {
       setPendingJobs(prev => prev.filter(job => job._id !== jobId));
       setSelectedJob(null);
       
-      alert('Job approved successfully!');
+      showToast.success('Job approved successfully!');
     } catch (err) {
       console.error('Failed to approve job:', err);
       if (err instanceof Error) {
         if (isAxiosLikeError(err)) {
-          alert('Failed to approve job: ' + (err.response?.data?.error || err.message));
+          showToast.error('Failed to approve job: ' + (err.response?.data?.error || err.message));
         } else {
-          alert('Failed to approve job: ' + err.message);
+          showToast.error('Failed to approve job: ' + err.message);
         }
       } else {
-        alert('Failed to approve job: ' + String(err));
+        showToast.error('Failed to approve job: ' + String(err));
       }
     }
   };
 
   const rejectJob = async (jobId: string, reason: string) => {
     if (!reason.trim()) {
-      alert('Please provide a reason for rejection');
+      showToast.warning('Please provide a reason for rejection');
       return;
     }
 
@@ -117,17 +118,17 @@ export default function PendingJobsPage() {
       setSelectedJob(null);
       setRejectionReason('');
       
-      alert('Job rejected successfully!');
+      showToast.success('Job rejected successfully!');
     } catch (err) {
       console.error('Failed to reject job:', err);
       if (err instanceof Error) {
         if (isAxiosLikeError(err)) {
-          alert('Failed to reject job: ' + (err.response?.data?.error || err.message));
+          showToast.error('Failed to reject job: ' + (err.response?.data?.error || err.message));
         } else {
-          alert('Failed to reject job: ' + err.message);
+          showToast.error('Failed to reject job: ' + err.message);
         }
       } else {
-        alert('Failed to reject job: ' + String(err));
+        showToast.error('Failed to reject job: ' + String(err));
       }
     }
   };

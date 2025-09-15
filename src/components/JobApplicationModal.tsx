@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 interface Job {
   _id: string;
@@ -70,7 +71,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
       });
 
       console.log('✅ Application submitted successfully:', response.data);
-      alert('Application submitted successfully! You will receive a confirmation email shortly.');
+      showToast.success('Application submitted successfully! You will receive a confirmation email shortly.');
 
       // Trigger refresh of parent component data
       onSuccess();
@@ -87,7 +88,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
         : err instanceof Error
         ? err.message
         : 'Error submitting application';
-      alert(errorMessage);
+      showToast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }

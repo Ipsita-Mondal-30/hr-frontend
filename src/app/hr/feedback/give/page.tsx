@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 interface Employee {
   _id: string;
@@ -53,7 +54,7 @@ export default function GiveFeedbackPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEmployee) {
-      alert('Please select an employee');
+      showToast.warning('Please select an employee');
       return;
     }
 
@@ -64,11 +65,11 @@ export default function GiveFeedbackPage() {
         employee: selectedEmployee
       });
       
-      alert('Feedback submitted successfully!');
+      showToast.success('Feedback submitted successfully!');
       router.push('/hr/employees');
     } catch (error) {
       console.error('Error submitting feedback:', error);
-      alert('Error submitting feedback');
+      showToast.error('Error submitting feedback');
     } finally {
       setLoading(false);
     }

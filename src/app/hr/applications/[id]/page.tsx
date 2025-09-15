@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 interface ApplicationDetail {
   _id: string;
@@ -67,7 +68,7 @@ export default function ApplicationDetailPage() {
         setNotes(res.data.hrNotes || '');
       } catch (err) {
         console.error('Failed to fetch application:', err);
-        alert('Failed to load application details');
+        showToast.error('Failed to load application details');
         router.push('/hr/applications');
       } finally {
         setLoading(false);
@@ -87,10 +88,10 @@ export default function ApplicationDetailPage() {
     try {
       await api.put(`/applications/${application._id}/status`, { status: newStatus });
       setApplication((prev) => (prev ? { ...prev, status: newStatus } : null));
-      alert(`Status updated to ${newStatus}`);
+      showToast.success(`Status updated to ${newStatus}`);
     } catch (err) {
       console.error('Status update failed:', err);
-      alert('Failed to update status');
+      showToast.error('Failed to update status');
     }
   };
 
@@ -100,10 +101,10 @@ export default function ApplicationDetailPage() {
     try {
       await api.put(`/applications/${application._id}/notes`, { notes });
       setApplication((prev) => (prev ? { ...prev, hrNotes: notes } : prev));
-      alert('Notes saved successfully');
+      showToast.success('Notes saved successfully');
     } catch (err) {
       console.error('Failed to save notes:', err);
-      alert('Failed to save notes');
+      showToast.error('Failed to save notes');
     } finally {
       setSavingNotes(false);
     }
@@ -111,7 +112,7 @@ export default function ApplicationDetailPage() {
 
   const downloadResume = () => {
     if (!application?.resumeUrl) {
-      alert('No resume available');
+      showToast.warning('No resume available');
       return;
     }
     const link = document.createElement('a');
