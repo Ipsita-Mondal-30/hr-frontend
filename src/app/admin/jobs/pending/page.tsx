@@ -200,7 +200,7 @@ export default function PendingJobsPage() {
                       Pending Review
                     </span>
                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 capitalize">
-                      {job.employmentType.replace('-', ' ')}
+                      {job.employmentType?.replace('-', ' ') || 'Not specified'}
                     </span>
                   </div>
                 </div>
@@ -232,7 +232,7 @@ export default function PendingJobsPage() {
                     <div><strong>Company:</strong> {selectedJob.companyName}</div>
                     <div><strong>Department:</strong> {selectedJob.department?.name || 'No Department'}</div>
                     <div><strong>Location:</strong> {selectedJob.location}</div>
-                    <div><strong>Type:</strong> {selectedJob.employmentType.replace('-', ' ')}</div>
+                    <div><strong>Type:</strong> {selectedJob.employmentType?.replace('-', ' ') || 'Not specified'}</div>
                     {(selectedJob.minSalary || selectedJob.maxSalary) && (
                       <div>
                         <strong>Salary:</strong> 
