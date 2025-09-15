@@ -25,7 +25,7 @@ interface PendingJob {
   createdAt: string;
 }
 
-function isAxiosLikeError(error: unknown): error is { response?: { data?: { error?: string } } } {
+function isAxiosLikeError(error: unknown): error is { response?: { data?: { error?: string }; status?: number } } {
   return typeof error === 'object' && error !== null && 'response' in error;
 }
 
@@ -48,6 +48,21 @@ export default function PendingJobsPage() {
       setPendingJobs(data);
     } catch (error) {
       console.error('Error fetching pending jobs:', error);
+      
+      // Check if it's an authentication error
+      if (isAxiosLikeError(error) && error.response?.status === 401) {
+        alert('Authentication failed. Please log in again.');
+        window.location.href = '/login';
+        return;
+      }
+      
+      // Check if it's a forbidden error
+      if (isAxiosLikeError(error) && error.response?.status === 403) {
+        alert('Access denied. Admin privileges required.');
+        window.location.href = '/';
+        return;
+      }
+      
       setPendingJobs([]);
     } finally {
       setLoading(false);
