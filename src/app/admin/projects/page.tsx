@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { showToast } from '@/lib/toast';
@@ -38,6 +39,7 @@ interface Project {
 }
 
 export default function AdminProjectsPage() {
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -128,7 +130,7 @@ export default function AdminProjectsPage() {
             <option value="planning">Planning</option>
           </select>
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => router.push('/admin/projects/create')}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             Create Project
@@ -176,7 +178,7 @@ export default function AdminProjectsPage() {
             <div className="text-4xl mb-2">📊</div>
             <p className="mb-4">No projects found</p>
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => router.push('/admin/projects/create')}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               Create Your First Project
@@ -427,9 +429,9 @@ export default function AdminProjectsPage() {
                   </button>
                   <button
                     onClick={() => {
-                      // Handle project creation
+                      // Redirect to the create project page
                       setShowCreateModal(false);
-                      showToast.info('Project creation functionality to be implemented');
+                      router.push('/admin/projects/create');
                     }}
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   >

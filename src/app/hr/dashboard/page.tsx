@@ -104,26 +104,37 @@ export default function HRDashboardPage() {
             api.get<ApiFeedbackRes>("/feedback?limit=10"),
           ]);
 
+          // Process employee data
           const employeesArr =
             Array.isArray(employeesRes.data) ? employeesRes.data : employeesRes.data?.employees || [];
+          
+          // Filter out any employees without valid user data
+          const validEmployees = employeesArr.filter(emp => emp.user && emp.user.name);
+          
           const projectsArr =
             Array.isArray(projectsRes.data) ? projectsRes.data : projectsRes.data?.projects || [];
           const topPerformersArr =
             Array.isArray(topPerformersRes.data)
               ? topPerformersRes.data
               : topPerformersRes.data?.topPerformers || [];
+          
+          // Filter out any top performers without valid employee data
+          const validTopPerformers = topPerformersArr.filter(performer => 
+            performer.employee && performer.employee.user && performer.employee.user.name
+          );
+          
           const feedbackArr =
             Array.isArray(feedbackRes.data) ? feedbackRes.data : feedbackRes.data?.feedback || [];
 
           setEmployeeData({
-            totalEmployees: employeesArr.length,
+            totalEmployees: validEmployees.length,
             activeProjects: projectsArr.filter((p) => p.status === "active").length,
             completedProjects: projectsArr.filter((p) => p.status === "completed").length,
             averagePerformance:
-              employeesArr.length > 0
-                ? employeesArr.reduce((sum, emp) => sum + (emp.performanceScore || 0), 0) / employeesArr.length
+              validEmployees.length > 0
+                ? validEmployees.reduce((sum, emp) => sum + (emp.performanceScore || 0), 0) / validEmployees.length
                 : 0,
-            topPerformers: topPerformersArr,
+            topPerformers: validTopPerformers,
             recentFeedback: feedbackArr,
           });
         } catch (empErr: unknown) {

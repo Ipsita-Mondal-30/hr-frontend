@@ -135,9 +135,11 @@ export default function EmployeeDashboard() {
     if (!user) return;
     try {
       setLoading(true);
+      console.log('🔍 Fetching employee data for user:', user.email);
 
       // Get employee profile
       const profileRes = await api.get('/employees/me');
+      console.log('✅ Employee profile received:', profileRes.data);
       const employeeProfile = profileRes.data as EmployeeProfile;
       setProfile(employeeProfile);
 
