@@ -30,31 +30,42 @@ interface DashboardStats {
   achievements: number;
 }
 
+// Type guard for error with message property
+function isErrorWithMessage(error: unknown): error is { message: string } {
+  return typeof error === 'object' && error !== null && 'message' in error;
+}
+
 export default function EmployeeDashboard() {
   const { user } = useAuth();
   const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      // Set a timeout to prevent infinite loading
       const timeoutId = setTimeout(() => {
         if (loading) {
           console.warn('Dashboard loading timeout, setting default data');
           setLoading(false);
-          setError('Dashboard loading timeout');
+          // Not setting error as it is not used
         }
-      }, 10000); // 10 second timeout
+      }, 10000);
 
       try {
         setLoading(true);
-        setError(null);
 
-        // If no user after reasonable time, set default data
+        // Force token check similar to HR dashboard
+        try {
+          console.log("🔍 Employee Dashboard - Checking authentication...");
+          const authRes = await api.get("/auth/me");
+          console.log("🔐 Employee Dashboard - Current user:", authRes.data);
+        } catch (authErr) {
+          console.error("❌ Employee Dashboard - Auth check failed:", authErr);
+          if (typeof window !== 'undefined') window.location.href = '/login';
+          return;
+        }
+
         if (!user) {
-          console.log('No user found, setting default employee data');
           setEmployeeData({
             _id: 'default',
             user: {
@@ -64,7 +75,6 @@ export default function EmployeeDashboard() {
             position: 'Employee',
             hireDate: new Date().toISOString()
           });
-          
           setStats({
             totalProjects: 0,
             activeProjects: 0,
@@ -78,7 +88,6 @@ export default function EmployeeDashboard() {
           return;
         }
 
-        // Try to fetch employee profile with fallback
         try {
           const profileResponse = await api.get('/employees/profile');
           setEmployeeData(profileResponse.data);
@@ -95,7 +104,6 @@ export default function EmployeeDashboard() {
           });
         }
 
-        // Try to fetch dashboard stats with fallback
         try {
           const statsResponse = await api.get('/employees/dashboard/stats');
           setStats(statsResponse.data);
@@ -110,12 +118,9 @@ export default function EmployeeDashboard() {
             achievements: 0
           });
         }
-
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching dashboard data:', err);
-        setError('Failed to load dashboard data');
-        
-        // Set default data if everything fails
+        // fallback
         setEmployeeData({
           _id: 'fallback',
           user: {
@@ -125,7 +130,6 @@ export default function EmployeeDashboard() {
           position: 'Employee',
           hireDate: new Date().toISOString()
         });
-        
         setStats({
           totalProjects: 0,
           activeProjects: 0,
@@ -140,13 +144,22 @@ export default function EmployeeDashboard() {
       }
     };
 
-    // Add a small delay to allow auth context to load
-    const delayedFetch = setTimeout(() => {
-      fetchDashboardData();
-    }, 1000);
+    fetchDashboardData();
+  }, [user]);
 
-    return () => clearTimeout(delayedFetch);
-  }, [user, loading]);
+  // Token verification, redirect if invalid
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await api.get('/auth/me');
+        console.log("🔐 Employee Dashboard - Current User:", res.data);
+      } catch (err) {
+        console.error("❌ Employee Dashboard - Error fetching user:", err);
+        if (typeof window !== 'undefined') window.location.href = '/login';
+      }
+    };
+    fetchUser();
+  }, []);
 
   if (loading) {
     return (
@@ -197,9 +210,11 @@ export default function EmployeeDashboard() {
               </div>
             </div>
           </div>
+        </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <Briefcase className="w-8 h-8 text-blue-600" />

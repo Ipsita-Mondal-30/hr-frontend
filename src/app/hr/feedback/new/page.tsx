@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
@@ -22,7 +21,7 @@ export default function NewFeedbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const employeeId = searchParams.get('employee');
-  
+
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -35,30 +34,30 @@ export default function NewFeedbackPage() {
       teamwork: 5,
       leadership: 5,
       problemSolving: 5,
-      timeManagement: 5
+      timeManagement: 5,
     },
     isAnonymous: false,
-    tags: [] as string[]
+    tags: [] as string[],
   });
 
+  // Only use employeeId as dependency, define fetchEmployee inside useEffect
   useEffect(() => {
     if (employeeId) {
+      const fetchEmployee = async () => {
+        try {
+          const response = await api.get(`/hr/employees/${employeeId}`);
+          setEmployee(response.data);
+        } catch (error) {
+          console.error('Error fetching employee:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
       fetchEmployee();
     } else {
       setLoading(false);
     }
   }, [employeeId]);
-
-  const fetchEmployee = async () => {
-    try {
-      const response = await api.get(`/hr/employees/${employeeId}`);
-      setEmployee(response.data);
-    } catch (error) {
-      console.error('Error fetching employee:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,14 +65,13 @@ export default function NewFeedbackPage() {
       alert('No employee selected');
       return;
     }
-
     setSubmitting(true);
     try {
       await api.post('/feedback', {
         ...formData,
-        employee: employeeId
+        employee: employeeId,
       });
-      
+
       alert('Feedback submitted successfully!');
       router.push('/hr/employees');
     } catch (error) {
@@ -85,12 +83,12 @@ export default function NewFeedbackPage() {
   };
 
   const handleRatingChange = (category: string, value: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       ratings: {
         ...prev.ratings,
-        [category]: value
-      }
+        [category]: value,
+      },
     }));
   };
 
@@ -128,14 +126,13 @@ export default function NewFeedbackPage() {
           {employee.position || 'Unknown Position'} • {employee.department?.name || 'No Department'}
         </p>
       </div>
-
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Feedback Type */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Feedback Type</h3>
           <select
             value={formData.type}
-            onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
+            onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="performance">Performance Review</option>
@@ -143,7 +140,6 @@ export default function NewFeedbackPage() {
             <option value="general">General Feedback</option>
           </select>
         </div>
-
         {/* Ratings */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Performance Ratings</h3>
@@ -174,33 +170,30 @@ export default function NewFeedbackPage() {
             ))}
           </div>
         </div>
-
         {/* Feedback Content */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Detailed Feedback</h3>
           <textarea
             value={formData.content}
-            onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+            onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
             placeholder="Provide detailed feedback about the employee's performance, strengths, and areas for improvement..."
             rows={6}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
         </div>
-
         {/* Anonymous Option */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <label className="flex items-center">
             <input
               type="checkbox"
               checked={formData.isAnonymous}
-              onChange={(e) => setFormData(prev => ({ ...prev, isAnonymous: e.target.checked }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, isAnonymous: e.target.checked }))}
               className="mr-2"
             />
             <span className="text-sm text-gray-700">Submit this feedback anonymously</span>
           </label>
         </div>
-
         {/* Submit Button */}
         <div className="flex justify-end space-x-4">
           <button
