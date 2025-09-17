@@ -30,11 +30,6 @@ interface DashboardStats {
   achievements: number;
 }
 
-// Type guard for error with message property
-function isErrorWithMessage(error: unknown): error is { message: string } {
-  return typeof error === 'object' && error !== null && 'message' in error;
-}
-
 export default function EmployeeDashboard() {
   const { user } = useAuth();
   const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null);
@@ -47,7 +42,6 @@ export default function EmployeeDashboard() {
         if (loading) {
           console.warn('Dashboard loading timeout, setting default data');
           setLoading(false);
-          // Not setting error as it is not used
         }
       }, 10000);
 
@@ -145,7 +139,8 @@ export default function EmployeeDashboard() {
     };
 
     fetchDashboardData();
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]); // Removed loading from dependency array intentionally
 
   // Token verification, redirect if invalid
   useEffect(() => {
