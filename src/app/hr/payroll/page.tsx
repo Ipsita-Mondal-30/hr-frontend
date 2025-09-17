@@ -3,16 +3,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 
 interface Payroll {
   _id: string;
   employee: {
     _id: string;
-    user?: {
-      name?: string;
-      email?: string;
-    } | null;
+    user: {
+      name: string;
+      email: string;
+    };
   };
   month: number;
   year: number;
@@ -58,7 +57,7 @@ export default function PayrollManagement() {
       fetchPayrolls();
     } catch (error) {
       console.error('Error approving payroll:', error);
-      showToast.error('Failed to approve payroll');
+      alert('Failed to approve payroll');
     }
   };
 
@@ -68,7 +67,7 @@ export default function PayrollManagement() {
       fetchPayrolls();
     } catch (error) {
       console.error('Error marking payroll as paid:', error);
-      showToast.error('Failed to mark payroll as paid');
+      alert('Failed to mark payroll as paid');
     }
   };
 

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 
 interface Employee {
   _id: string;
@@ -65,7 +64,7 @@ export default function CreateProject() {
       router.push('/admin/projects');
     } catch (error) {
       console.error('Error creating project:', error);
-      showToast.error('Failed to create project');
+      alert('Failed to create project');
     } finally {
       setLoading(false);
     }

@@ -4,8 +4,6 @@ import { ReactNode, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
-import TokenHandler from '@/components/TokenHandler';
-import { showToast } from '@/lib/toast';
 
 export default function HRLayout({ children }: { children: ReactNode }) {
   const { user, loading, logout } = useAuth();
@@ -13,40 +11,22 @@ export default function HRLayout({ children }: { children: ReactNode }) {
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    console.log('🏢 HR Layout - Authorization check:', { user, loading, isAuthorized });
-    
-    // Check if there's a token in URL that needs processing
-    const urlParams = new URLSearchParams(window.location.search);
-    const hasToken = urlParams.get('token');
-    
     if (!loading) {
       if (!user) {
-        console.log('❌ HR Layout - No user found');
-        
-        if (!hasToken) {
-          console.log('❌ No token in URL, redirecting to home');
-          router.push('/');
-        }
-        // If there's a token, don't redirect - let TokenHandler process it
-        return;
-      }
-      
-      console.log('👤 HR Layout - User found:', { email: user.email, role: user.role });
-      
-      if (user.role !== 'hr' && user.role !== 'admin') {
-        console.log('🚫 HR Layout - Access denied, user role:', user.role);
-        // Show access denied message
-        showToast.error('Access Denied: HR credentials required');
         router.push('/');
         return;
       }
       
-      console.log('✅ HR Layout - Authorization successful, setting authorized to true');
+      if (user.role !== 'hr' && user.role !== 'admin') {
+        // Show access denied message
+        alert('Access Denied: HR credentials required');
+        router.push('/');
+        return;
+      }
+      
       setIsAuthorized(true);
-    } else {
-      console.log('⏳ HR Layout - Still loading, waiting...');
     }
-  }, [user, loading, router, isAuthorized]);
+  }, [user, loading, router]);
 
   if (loading) {
     return (
@@ -60,22 +40,6 @@ export default function HRLayout({ children }: { children: ReactNode }) {
   }
 
   if (!isAuthorized) {
-    // Check if there's a token in URL - if so, show loading instead of access denied
-    const urlParams = new URLSearchParams(window.location.search);
-    const hasToken = urlParams.get('token');
-    
-    if (hasToken) {
-      return (
-        <div className="flex items-center justify-center min-h-screen">
-          <TokenHandler />
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p>Processing authentication...</p>
-          </div>
-        </div>
-      );
-    }
-    
     return (
       <div className="flex items-center justify-center min-h-screen bg-red-50">
         <div className="text-center p-8 bg-white rounded-lg shadow-md">
@@ -95,7 +59,6 @@ export default function HRLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
-      <TokenHandler />
       <aside className="w-64 bg-gray-800 text-white p-6 space-y-4">
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-white">HR Panel</h1>

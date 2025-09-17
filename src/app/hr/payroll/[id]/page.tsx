@@ -1,19 +1,18 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 
 interface PayrollRecord {
   _id: string;
   employee: {
     _id: string;
     employeeId: string;
-    user?: {
-      name?: string;
-      email?: string;
-    } | null;
+    user: {
+      name: string;
+      email: string;
+    };
     position: string;
     department?: {
       name: string;
@@ -49,6 +48,7 @@ interface PayrollRecord {
     email: string;
   };
   approvedAt?: string;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -58,6 +58,8 @@ export default function HRPayrollDetailPage() {
   const router = useRouter();
   const [payroll, setPayroll] = useState<PayrollRecord | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notes, setNotes] = useState('');
+  const [savingNotes, setSavingNotes] = useState(false);
 
   const fetchPayrollDetails = useCallback(async () => {
     if (!params?.id) return;
@@ -65,13 +67,53 @@ export default function HRPayrollDetailPage() {
       setLoading(true);
       const response = await api.get<PayrollRecord>(`/hr/payroll/${params.id}`);
       setPayroll(response.data);
+      setNotes(response.data.notes || '');
     } catch (error) {
       console.error('Error fetching payroll details:', error);
-      showToast.error('Error loading payroll details');
+      alert('Error loading payroll details');
     } finally {
       setLoading(false);
     }
   }, [params?.id]);
+
+  const saveNotes = async () => {
+    if (!payroll) return;
+    setSavingNotes(true);
+    try {
+      await api.put(`/hr/payroll/${payroll._id}/notes`, { notes });
+      setPayroll(prev => prev ? { ...prev, notes } : prev);
+      alert('Notes saved successfully');
+    } catch (error) {
+      console.error('Error saving notes:', error);
+      alert('Failed to save notes');
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!payroll) return;
+    try {
+      await api.put(`/hr/payroll/${payroll._id}/approve`, { action: 'approve' });
+      fetchPayrollDetails();
+      alert('Payroll approved successfully');
+    } catch (error) {
+      console.error('Error approving payroll:', error);
+      alert('Failed to approve payroll');
+    }
+  };
+
+  const handleMarkPaid = async () => {
+    if (!payroll) return;
+    try {
+      await api.put(`/hr/payroll/${payroll._id}/mark-paid`);
+      fetchPayrollDetails();
+      alert('Payroll marked as paid successfully');
+    } catch (error) {
+      console.error('Error marking payroll as paid:', error);
+      alert('Failed to mark payroll as paid');
+    }
+  };
 
   useEffect(() => {
     fetchPayrollDetails();
@@ -137,13 +179,29 @@ export default function HRPayrollDetailPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Payroll Details</h1>
             <p className="text-gray-600">
-              {payroll.employee?.user?.name || 'No Name'} - {getMonthName(payroll.month)} {payroll.year}
+              {payroll.employee.user.name} - {getMonthName(payroll.month)} {payroll.year}
             </p>
           </div>
           <div className="flex items-center space-x-3">
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(payroll.status)}`}>
               {payroll.status.charAt(0).toUpperCase() + payroll.status.slice(1)}
             </span>
+            {payroll.status === 'draft' && (
+              <button
+                onClick={handleApprove}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                Approve
+              </button>
+            )}
+            {payroll.status === 'approved' && (
+              <button
+                onClick={handleMarkPaid}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Mark Paid
+              </button>
+            )}
             <button
               onClick={() => router.back()}
               className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
@@ -160,11 +218,11 @@ export default function HRPayrollDetailPage() {
             <div className="space-y-3">
               <div>
                 <label className="text-sm font-medium text-gray-500">Name</label>
-                <p className="text-gray-900">{payroll.employee?.user?.name || 'No Name'}</p>
+                <p className="text-gray-900">{payroll.employee.user.name}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Email</label>
-                <p className="text-gray-900">{payroll.employee?.user?.email || 'No Email'}</p>
+                <p className="text-gray-900">{payroll.employee.user.email}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Position</label>
@@ -284,6 +342,32 @@ export default function HRPayrollDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Notes Section */}
+        <div className="mt-6 bg-white p-6 rounded-lg shadow">
+          <h2 className="text-lg font-semibold mb-4">HR Notes</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Add notes about this payroll record
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={4}
+                placeholder="Add notes about this payroll, special considerations, etc..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <button
+              onClick={saveNotes}
+              disabled={savingNotes}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+            >
+              {savingNotes ? 'Saving...' : 'Save Notes'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

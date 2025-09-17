@@ -3,17 +3,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 
 interface PayrollRecord {
   _id: string;
   employee: {
     _id: string;
     employeeId: string;
-    user?: {
-      name?: string;
-      email?: string;
-    } | null;
+    user: {
+      name: string;
+      email: string;
+    };
     position: string;
     department?: {
       name: string;
@@ -68,7 +67,7 @@ export default function AdminPayrollDetailPage() {
       setPayroll(response.data);
     } catch (error) {
       console.error('Error fetching payroll details:', error);
-      showToast.error('Error loading payroll details');
+      alert('Error loading payroll details');
     } finally {
       setLoading(false);
     }
@@ -86,7 +85,7 @@ export default function AdminPayrollDetailPage() {
       await fetchPayrollDetails();
     } catch (error) {
       console.error('Error approving payroll:', error);
-      showToast.error('Error approving payroll');
+      alert('Error approving payroll');
     } finally {
       setUpdating(false);
     }
@@ -100,7 +99,7 @@ export default function AdminPayrollDetailPage() {
       await fetchPayrollDetails();
     } catch (error) {
       console.error('Error marking payroll as paid:', error);
-      showToast.error('Error marking payroll as paid');
+      alert('Error marking payroll as paid');
     } finally {
       setUpdating(false);
     }
@@ -166,7 +165,7 @@ export default function AdminPayrollDetailPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Payroll Details</h1>
             <p className="text-gray-600">
-              {payroll.employee?.user?.name || 'No Name'} - {getMonthName(payroll.month)} {payroll.year}
+              {payroll.employee.user.name} - {getMonthName(payroll.month)} {payroll.year}
             </p>
           </div>
           <div className="flex items-center space-x-3">
@@ -189,11 +188,11 @@ export default function AdminPayrollDetailPage() {
             <div className="space-y-3">
               <div>
                 <label className="text-sm font-medium text-gray-500">Name</label>
-                <p className="text-gray-900">{payroll.employee?.user?.name || 'No Name'}</p>
+                <p className="text-gray-900">{payroll.employee.user.name}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Email</label>
-                <p className="text-gray-900">{payroll.employee?.user?.email || 'No Email'}</p>
+                <p className="text-gray-900">{payroll.employee.user.email}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Position</label>

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Job } from '@/types';
-import { showToast } from '@/lib/toast';
 
 type ApplicationLite = {
   _id: string;
@@ -53,12 +52,12 @@ export default function SavedJobsPage() {
     try {
       await api.post('/candidate/apply', { jobId });
       setAppliedJobs((prev) => [...prev, jobId]);
-      showToast.success('Application submitted successfully!');
+      alert('Application submitted successfully!');
     } catch (err: unknown) {
       console.error('Error applying to job:', err);
       const e = err as { response?: { data?: { error?: string } } };
       const errorMessage = e.response?.data?.error || 'Error submitting application';
-      showToast.error(errorMessage);
+      alert(errorMessage);
     }
   };
 

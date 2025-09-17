@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 
 interface Employee {
   _id: string;
@@ -88,7 +87,7 @@ export default function CreatePayroll() {
       router.push('/hr/payroll');
     } catch (error) {
       console.error('Error creating payroll:', error);
-      showToast.error('Failed to create payroll');
+      alert('Failed to create payroll');
     } finally {
       setLoading(false);
     }

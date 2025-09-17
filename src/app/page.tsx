@@ -8,6 +8,20 @@ import { AboutSection } from '../components/AboutSection';
 import { ProcessSection } from '../components/ProcessSection';
 import { TestimonialsSection } from '../components/TestimonialsSection';
 import { CTASection } from '../components/CTASection';
+import { 
+  Clock, 
+  Users, 
+  BarChart3, 
+  Briefcase, 
+  Plus, 
+  FileText, 
+  Calendar, 
+  TrendingUp, 
+  Search, 
+  File, 
+  Bookmark, 
+  User 
+} from 'lucide-react';
 
 type UserRole = 'admin' | 'hr' | 'candidate' | 'user' | string;
 
@@ -77,24 +91,24 @@ function UserDashboard({ user }: { user: DashboardUser }) {
     switch (user.role) {
       case 'admin':
         return [
-          { title: 'Pending Job Approvals', href: '/admin/jobs/pending', icon: '⏳' },
-          { title: 'Manage Users', href: '/admin/users', icon: '👥' },
-          { title: 'System Analytics', href: '/admin/analytics', icon: '📊' },
-          { title: 'All Jobs', href: '/admin/jobs', icon: '💼' },
+          { title: 'Pending Job Approvals', href: '/admin/jobs/pending', icon: 'clock' },
+          { title: 'Manage Users', href: '/admin/users', icon: 'users' },
+          { title: 'System Analytics', href: '/admin/analytics', icon: 'bar-chart' },
+          { title: 'All Jobs', href: '/admin/jobs', icon: 'briefcase' },
         ];
       case 'hr':
         return [
-          { title: 'Post New Job', href: '/hr/jobs', icon: '➕' },
-          { title: 'Review Applications', href: '/hr/applications', icon: '📋' },
-          { title: 'Schedule Interviews', href: '/hr/interviews', icon: '📅' },
-          { title: 'HR Reports', href: '/hr/reports', icon: '📈' },
+          { title: 'Post New Job', href: '/hr/jobs', icon: 'plus' },
+          { title: 'Review Applications', href: '/hr/applications', icon: 'file-text' },
+          { title: 'Schedule Interviews', href: '/hr/interviews', icon: 'calendar' },
+          { title: 'HR Reports', href: '/hr/reports', icon: 'trending-up' },
         ];
       case 'candidate':
         return [
-          { title: 'Browse Jobs', href: '/candidate/jobs', icon: '🔍' },
-          { title: 'My Applications', href: '/candidate/applications', icon: '📄' },
-          { title: 'Saved Jobs', href: '/candidate/saved', icon: '💾' },
-          { title: 'Update Profile', href: '/candidate/profile', icon: '👤' },
+          { title: 'Browse Jobs', href: '/candidate/jobs', icon: 'search' },
+          { title: 'My Applications', href: '/candidate/applications', icon: 'file' },
+          { title: 'Saved Jobs', href: '/candidate/saved', icon: 'bookmark' },
+          { title: 'Update Profile', href: '/candidate/profile', icon: 'user' },
         ];
       default:
         return [];
@@ -131,7 +145,20 @@ function UserDashboard({ user }: { user: DashboardUser }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {getQuickActions().map((action, index) => (
             <Link key={index} href={action.href} className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
-              <div className="text-3xl mb-3">{action.icon}</div>
+              <div className="mb-3">
+                {action.icon === 'clock' && <Clock className="w-8 h-8 text-blue-600" />}
+                {action.icon === 'users' && <Users className="w-8 h-8 text-blue-600" />}
+                {action.icon === 'bar-chart' && <BarChart3 className="w-8 h-8 text-blue-600" />}
+                {action.icon === 'briefcase' && <Briefcase className="w-8 h-8 text-blue-600" />}
+                {action.icon === 'plus' && <Plus className="w-8 h-8 text-blue-600" />}
+                {action.icon === 'file-text' && <FileText className="w-8 h-8 text-blue-600" />}
+                {action.icon === 'calendar' && <Calendar className="w-8 h-8 text-blue-600" />}
+                {action.icon === 'trending-up' && <TrendingUp className="w-8 h-8 text-blue-600" />}
+                {action.icon === 'search' && <Search className="w-8 h-8 text-blue-600" />}
+                {action.icon === 'file' && <File className="w-8 h-8 text-blue-600" />}
+                {action.icon === 'bookmark' && <Bookmark className="w-8 h-8 text-blue-600" />}
+                {action.icon === 'user' && <User className="w-8 h-8 text-blue-600" />}
+              </div>
               <h3 className="font-medium text-gray-900">{action.title}</h3>
             </Link>
           ))}

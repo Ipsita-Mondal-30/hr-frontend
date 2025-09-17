@@ -1,102 +1,121 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useAuth } from '@/lib/AuthContext';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { getAuthToken, setAuthToken } from '@/lib/cookies';
+
+function isAxiosError(e: unknown): e is { response?: { data?: { error?: string; message?: string } } } {
+  return typeof e === 'object' && e !== null && 'response' in e;
+}
 
 export default function QuickTestPage() {
-  const [status, setStatus] = useState('Testing...');
-  const [applications, setApplications] = useState([]);
-  const [user, setUser] = useState(null);
+  const { user, loading, refreshUser } = useAuth();
+  const [testResult, setTestResult] = useState<string>('');
+  const router = useRouter();
 
-  useEffect(() => {
-    const runTest = async () => {
-      try {
-        // Step 1: Check current token
-        const currentToken = getAuthToken();
-        console.log('Current token:', currentToken ? 'Present' : 'Missing');
-        
-        if (!currentToken) {
-          setStatus('No token found. Using test token...');
-          
-          // For testing, let's create a test HR token
-          // This is a JWT token for an HR user that should work with the backend
-          const testToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NzY5YzY5YzI5YzY5YzI5YzY5YzI5YzYiLCJuYW1lIjoiSFIgVGVzdCBVc2VyIiwiZW1haWwiOiJocnRlc3RAY29tcGFueS5jb20iLCJyb2xlIjoiaHIiLCJpc1ZlcmlmaWVkIjp0cnVlLCJpYXQiOjE3NTc5MTEyMDAsImV4cCI6MTc1ODUxNjAwMH0.test-signature';
-          setAuthToken(testToken);
-          setStatus('Test token set. Testing API...');
-        }
-        
-        // Step 3: Test /auth/me
-        try {
-          const authResponse = await api.get('/auth/me');
-          setUser(authResponse.data);
-          console.log('Auth successful:', authResponse.data);
-          setStatus(`Authenticated as: ${authResponse.data.name} (${authResponse.data.role})`);
-        } catch (authError: any) {
-          console.error('Auth failed:', authError);
-          setStatus(`Auth failed: ${authError.response?.status} - ${authError.response?.data?.error}`);
-          return;
-        }
-        
-        // Step 4: Test applications API
-        try {
-          const appsResponse = await api.get('/applications?status=pending,reviewed,shortlisted');
-          setApplications(appsResponse.data);
-          setStatus(`Success! Found ${appsResponse.data.length} applications`);
-        } catch (appsError: any) {
-          console.error('Applications API failed:', appsError);
-          setStatus(`Applications API failed: ${appsError.response?.status} - ${appsError.response?.data?.error}`);
-        }
-        
-      } catch (error: any) {
-        console.error('Test failed:', error);
-        setStatus(`Test failed: ${error.message}`);
+  const quickLogin = async () => {
+    try {
+      setTestResult('Logging in...');
+      const response = await api.post('/auth/login', {
+        email: 'admin@company.com',
+        password: 'any',
+      });
+
+      if (response.data.success) {
+        localStorage.setItem('auth_token', response.data.token);
+        setTestResult('Login successful! Refreshing user data...');
+        await refreshUser();
+        setTestResult('User data refreshed! You should now be authenticated.');
       }
-    };
-    
-    runTest();
-  }, []);
+    } catch (error: unknown) {
+      const message = isAxiosError(error)
+        ? error.response?.data?.error || error.response?.data?.message || 'Admin login failed'
+        : error instanceof Error
+        ? error.message
+        : 'Admin login failed';
+      setTestResult('Admin login failed: ' + message);
+    }
+  };
+
+  const testHRAccess = () => {
+    router.push('/hr/dashboard');
+  };
+
+  if (loading) {
+    return <div className="p-8">Loading...</div>;
+  }
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Quick Authentication Test</h1>
-      
-      <div className="mb-4">
-        <strong>Status:</strong> {status}
-      </div>
-      
-      {user && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded">
-          <h2 className="font-semibold">User Info:</h2>
-          <p>Name: {(user as any).name}</p>
-          <p>Email: {(user as any).email}</p>
-          <p>Role: {(user as any).role}</p>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">Quick Test Page</h1>
+
+        <div className="bg-white p-6 rounded-lg shadow mb-6">
+          <h2 className="text-xl font-semibold mb-4">Current Auth Status</h2>
+          {user ? (
+            <div className="bg-green-50 p-4 rounded">
+              <p className="text-green-800">✅ Authenticated</p>
+              <p><strong>Name:</strong> {user.name}</p>
+              <p><strong>Role:</strong> {user.role}</p>
+            </div>
+          ) : (
+            <div className="bg-red-50 p-4 rounded">
+              <p className="text-red-800">❌ Not authenticated</p>
+            </div>
+          )}
         </div>
-      )}
-      
-      {applications.length > 0 && (
-        <div className="mb-4">
-          <h2 className="font-semibold mb-2">Applications ({applications.length}):</h2>
-          <div className="space-y-2">
-            {applications.slice(0, 3).map((app: any) => (
-              <div key={app._id} className="p-2 bg-gray-50 border rounded">
-                <p><strong>Name:</strong> {app.name}</p>
-                <p><strong>Email:</strong> {app.email}</p>
-                <p><strong>Status:</strong> {app.status}</p>
-                {app.job && <p><strong>Job:</strong> {app.job.title}</p>}
-              </div>
-            ))}
+
+        <div className="bg-white p-6 rounded-lg shadow mb-6">
+          <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+          <div className="space-y-4">
+            <button
+              onClick={quickLogin}
+              className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              🔑 Quick Login as Admin
+            </button>
+
+            <button
+              onClick={testHRAccess}
+              className="w-full bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
+              disabled={!user || user.role !== 'hr'}
+            >
+              🎯 Test HR Dashboard Access
+            </button>
+
+            <button
+              onClick={() => router.push('/admin/employees')}
+              className="w-full bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600"
+              disabled={!user || user.role !== 'admin'}
+            >
+              👥 View Admin Employees
+            </button>
+
+            <button onClick={refreshUser} className="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+              🔄 Refresh User Data
+            </button>
           </div>
         </div>
-      )}
-      
-      <div className="mt-4">
-        <button 
-          onClick={() => window.location.href = '/hr/interviews'}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Go to HR Interviews Page
-        </button>
+
+        {testResult && (
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-xl font-semibold mb-4">Test Result</h2>
+            <p className="bg-gray-100 p-4 rounded">{testResult}</p>
+          </div>
+        )}
+
+        <div className="mt-6 text-center">
+          <a href="/auth-debug" className="text-blue-500 hover:underline mr-4">
+            🔍 Auth Debug Page
+          </a>
+          <a href="/oauth-debug" className="text-blue-500 hover:underline mr-4">
+            🔗 OAuth Debug Page
+          </a>
+          <a href="/login" className="text-blue-500 hover:underline">
+            🏠 Back to Login
+          </a>
+        </div>
       </div>
     </div>
   );

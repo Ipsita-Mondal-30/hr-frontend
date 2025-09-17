@@ -5,6 +5,19 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { Application } from '@/types';
 import { useAuth } from '@/lib/AuthContext';
+import { 
+  FileText, 
+  Clock, 
+  CheckCircle, 
+  Save, 
+  Calendar, 
+  AlertTriangle, 
+  RefreshCw, 
+  Search, 
+  User, 
+  DollarSign,
+  Hand
+} from 'lucide-react';
 
 interface DashboardStats {
   totalApplications: number;
@@ -38,7 +51,7 @@ interface InterviewPrep {
   skillGaps: {
     missing: string[];
     recommended: string[];
-  } | string[];
+  };
   strengths: string[];
   preparationTips: string[];
   technicalTopics: string[];
@@ -250,7 +263,10 @@ export default function CandidateDashboard() {
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg p-6 text-white">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold mb-2">Welcome back, {user?.name}! 👋</h1>
+            <div className="flex items-center gap-2 mb-2">
+              <h1 className="text-2xl font-bold">Welcome back, {user?.name}!</h1>
+              <Hand className="w-6 h-6 text-yellow-300" />
+            </div>
             <p className="text-blue-100">
               Ready to find your next opportunity? Let&apos;s explore what&apos;s new for you.
             </p>
@@ -259,18 +275,19 @@ export default function CandidateDashboard() {
             onClick={refreshDashboard}
             className="px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-white text-sm transition-all"
           >
-            🔄 Refresh
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
           </button>
         </div>
       </div>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Total Applications" value={stats.totalApplications} icon="📋" color="bg-blue-50 text-blue-600" />
-        <StatCard title="Pending" value={stats.pendingApplications} icon="⏳" color="bg-yellow-50 text-yellow-600" />
-        <StatCard title="Shortlisted" value={stats.shortlistedApplications} icon="✅" color="bg-green-50 text-green-600" />
-        <StatCard title="Saved Jobs" value={stats.savedJobs} icon="💾" color="bg-purple-50 text-purple-600" />
-        <StatCard title="Interviews" value={stats.scheduledInterviews} icon="📅" color="bg-orange-50 text-orange-600" />
+        <StatCard title="Total Applications" value={stats.totalApplications} icon={<FileText className="w-5 h-5" />} color="bg-blue-50 text-blue-600" />
+        <StatCard title="Pending" value={stats.pendingApplications} icon={<Clock className="w-5 h-5" />} color="bg-yellow-50 text-yellow-600" />
+        <StatCard title="Shortlisted" value={stats.shortlistedApplications} icon={<CheckCircle className="w-5 h-5" />} color="bg-green-50 text-green-600" />
+        <StatCard title="Saved Jobs" value={stats.savedJobs} icon={<Save className="w-5 h-5" />} color="bg-purple-50 text-purple-600" />
+        <StatCard title="Interviews" value={stats.scheduledInterviews} icon={<Calendar className="w-5 h-5" />} color="bg-orange-50 text-orange-600" />
       </div>
 
       {/* Profile Completeness Alert */}
@@ -278,7 +295,7 @@ export default function CandidateDashboard() {
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="text-orange-600 text-2xl">⚠️</div>
+              <AlertTriangle className="w-6 h-6 text-orange-600" />
               <div>
                 <h3 className="font-medium text-orange-900">Complete Your Profile</h3>
                 <p className="text-sm text-orange-700">
@@ -444,7 +461,7 @@ export default function CandidateDashboard() {
             <div className="bg-white rounded-lg p-4 border">
               <h3 className="font-medium text-gray-900 mb-3">🎯 Top 5 Interview Questions</h3>
               <div className="space-y-2">
-                {(interviewPrep.questions || []).slice(0, 5).map((question, index) => (
+                {interviewPrep.questions.slice(0, 5).map((question, index) => (
                   <div key={index} className="flex items-start space-x-2">
                     <span className="text-purple-600 font-medium text-sm">{index + 1}.</span>
                     <p className="text-sm text-gray-700">{question}</p>
@@ -458,7 +475,7 @@ export default function CandidateDashboard() {
               <div className="bg-white rounded-lg p-4 border">
                 <h3 className="font-medium text-green-700 mb-2">💪 Your Strengths</h3>
                 <ul className="space-y-1">
-                  {(interviewPrep.strengths || []).slice(0, 3).map((strength, index) => (
+                  {interviewPrep.strengths.slice(0, 3).map((strength, index) => (
                     <li key={index} className="text-sm text-gray-700 flex items-center">
                       <span className="text-green-500 mr-2">✓</span>
                       {strength}
@@ -470,26 +487,12 @@ export default function CandidateDashboard() {
               <div className="bg-white rounded-lg p-4 border">
                 <h3 className="font-medium text-orange-700 mb-2">📈 Areas to Improve</h3>
                 <ul className="space-y-1">
-                  {(() => {
-                    // Handle both array and object formats for skillGaps
-                    const skillGaps = interviewPrep.skillGaps;
-                    let gapsToShow: string[] = [];
-                    
-                    if (Array.isArray(skillGaps)) {
-                      // If skillGaps is an array, use it directly
-                      gapsToShow = skillGaps;
-                    } else if (skillGaps && typeof skillGaps === 'object' && 'missing' in skillGaps) {
-                      // If skillGaps is an object with missing property
-                      gapsToShow = skillGaps.missing;
-                    }
-                    
-                    return (gapsToShow || []).slice(0, 3).map((gap, index) => (
-                      <li key={index} className="text-sm text-gray-700 flex items-center">
-                        <span className="text-orange-500 mr-2">→</span>
-                        {gap}
-                      </li>
-                    ));
-                  })()}
+                  {interviewPrep.skillGaps.missing.slice(0, 3).map((gap, index) => (
+                    <li key={index} className="text-sm text-gray-700 flex items-center">
+                      <span className="text-orange-500 mr-2">→</span>
+                      {gap}
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>
@@ -498,7 +501,7 @@ export default function CandidateDashboard() {
             <div className="bg-white rounded-lg p-4 border">
               <h3 className="font-medium text-blue-700 mb-2">💡 Quick Prep Tips</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {(interviewPrep.preparationTips || []).slice(0, 4).map((tip, index) => (
+                {interviewPrep.preparationTips.slice(0, 4).map((tip, index) => (
                   <div key={index} className="text-sm text-gray-700 flex items-start">
                     <span className="text-blue-500 mr-2">•</span>
                     {tip}
@@ -565,7 +568,7 @@ export default function CandidateDashboard() {
               <div className="bg-white rounded-lg p-4 border">
                 <h3 className="font-medium text-green-700 mb-2">🌟 Key Strengths</h3>
                 <ul className="space-y-1">
-                  {(profileAnalysis.strengths || []).slice(0, 3).map((strength, index) => (
+                  {profileAnalysis.strengths.slice(0, 3).map((strength, index) => (
                     <li key={index} className="text-sm text-gray-700 flex items-center">
                       <span className="text-green-500 mr-2">✓</span>
                       {strength}
@@ -577,7 +580,7 @@ export default function CandidateDashboard() {
               <div className="bg-white rounded-lg p-4 border">
                 <h3 className="font-medium text-blue-700 mb-2">🎯 Recommendations</h3>
                 <ul className="space-y-1">
-                  {(profileAnalysis.recommendations || []).slice(0, 3).map((rec, index) => (
+                  {profileAnalysis.recommendations.slice(0, 3).map((rec, index) => (
                     <li key={index} className="text-sm text-gray-700 flex items-start">
                       <span className="text-blue-500 mr-2">→</span>
                       {rec}
@@ -654,22 +657,22 @@ export default function CandidateDashboard() {
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <QuickActionCard title="Search Jobs" description="Find your next opportunity" icon="🔍" href="/candidate/jobs" />
-          <QuickActionCard title="Update Profile" description="Keep your profile current" icon="👤" href="/candidate/profile" />
-          <QuickActionCard title="Salary Research" description="Research market rates" icon="💰" href="/candidate/salary" />
-          <QuickActionCard title="Saved Jobs" description="Review saved opportunities" icon="💾" href="/candidate/saved" />
+          <QuickActionCard title="Search Jobs" description="Find your next opportunity" icon={<Search className="w-6 h-6" />} href="/candidate/jobs" />
+          <QuickActionCard title="Update Profile" description="Keep your profile current" icon={<User className="w-6 h-6" />} href="/candidate/profile" />
+          <QuickActionCard title="Salary Research" description="Research market rates" icon={<DollarSign className="w-6 h-6" />} href="/candidate/salary" />
+          <QuickActionCard title="Saved Jobs" description="Review saved opportunities" icon={<Save className="w-6 h-6" />} href="/candidate/saved" />
         </div>
       </div>
     </div>
   );
 }
 
-function StatCard({ title, value, icon, color }: { title: string; value: number; icon: string; color: string }) {
+function StatCard({ title, value, icon, color }: { title: string; value: number; icon: React.ReactNode; color: string }) {
   return (
     <div className="bg-white rounded-lg shadow-sm border p-4">
       <div className="flex items-center">
         <div className={`p-2 rounded-lg ${color} mr-3`}>
-          <span className="text-lg">{icon}</span>
+          {icon}
         </div>
         <div>
           <p className="text-sm font-medium text-gray-600">{title}</p>
@@ -688,7 +691,7 @@ function QuickActionCard({
 }: {
   title: string;
   description: string;
-  icon: string;
+  icon: React.ReactNode;
   href: string;
 }) {
   return (
@@ -697,7 +700,7 @@ function QuickActionCard({
       className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
     >
       <div className="text-center">
-        <div className="text-2xl mb-2">{icon}</div>
+        <div className="mb-2 flex justify-center text-gray-600">{icon}</div>
         <h3 className="font-medium text-gray-900 mb-1">{title}</h3>
         <p className="text-xs text-gray-600">{description}</p>
       </div>

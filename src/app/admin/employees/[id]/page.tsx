@@ -3,21 +3,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 
 interface Employee {
   _id: string;
   employeeId: string;
-  user?: {
-    name?: string;
-    email?: string;
-  } | null;
+  user: {
+    name: string;
+    email: string;
+  };
   position: string;
   department?: {
     name: string;
   };
   manager?: {
-    user?: { name?: string } | null;
+    user: { name: string };
     position: string;
   };
   performanceScore: number;
@@ -63,7 +62,7 @@ export default function EmployeeDetailPage() {
       setEmployee(response.data);
     } catch (error) {
       console.error('Error fetching employee details:', error);
-      showToast.error('Error loading employee details');
+      alert('Error loading employee details');
     } finally {
       setLoading(false);
     }
@@ -138,7 +137,7 @@ export default function EmployeeDetailPage() {
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{employee?.user?.name || 'No Name'}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{employee.user.name}</h1>
             <p className="text-gray-600">{employee.position} • {employee.department?.name || 'No Department'}</p>
             <p className="text-sm text-gray-500">Employee ID: {employee.employeeId}</p>
           </div>
@@ -191,7 +190,7 @@ export default function EmployeeDetailPage() {
               <div className="space-y-3">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Email</label>
-                  <p className="text-gray-900">{employee?.user?.email || 'No Email'}</p>
+                  <p className="text-gray-900">{employee.user.email}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Position</label>
@@ -204,7 +203,7 @@ export default function EmployeeDetailPage() {
                 <div>
                   <label className="text-sm font-medium text-gray-500">Manager</label>
                   <p className="text-gray-900">
-                    {employee.manager ? `${employee.manager?.user?.name || 'No Name'} (${employee.manager.position})` : 'No Manager'}
+                    {employee.manager ? `${employee.manager.user.name} (${employee.manager.position})` : 'No Manager'}
                   </p>
                 </div>
                 <div>

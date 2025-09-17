@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 
 interface AnalyticsData {
   summary: {
@@ -85,7 +84,7 @@ export default function HRReportsPage() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Failed to export data:', err);
-      showToast.error('Failed to export data');
+      alert('Failed to export data');
     }
   };
 

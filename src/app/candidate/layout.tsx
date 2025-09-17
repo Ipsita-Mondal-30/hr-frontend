@@ -5,6 +5,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
 import TokenHandler from '@/components/TokenHandler';
+import { 
+  Home, 
+  BarChart3, 
+  Search, 
+  FileText, 
+  Bookmark, 
+  User,
+  LogOut 
+} from 'lucide-react';
 
 interface NavigationItem {
   name: string;
@@ -33,12 +42,12 @@ export default function CandidateLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navigation: NavigationItem[] = [
-    { name: 'Back to Home', href: '/', icon: '🏠' },
-    { name: 'Dashboard', href: '/candidate/dashboard', icon: '📊' },
-    { name: 'Browse Jobs', href: '/candidate/jobs', icon: '🔍' },
-    { name: 'Applied Jobs', href: '/candidate/applications', icon: '📋' },
-    { name: 'Saved Jobs', href: '/candidate/saved', icon: '💾' },
-    { name: 'Profile', href: '/candidate/profile', icon: '💾' },
+    { name: 'Back to Home', href: '/', icon: 'home' },
+    { name: 'Dashboard', href: '/candidate/dashboard', icon: 'bar-chart' },
+    { name: 'Browse Jobs', href: '/candidate/jobs', icon: 'search' },
+    { name: 'Applied Jobs', href: '/candidate/applications', icon: 'file-text' },
+    { name: 'Saved Jobs', href: '/candidate/saved', icon: 'bookmark' },
+    { name: 'Profile', href: '/candidate/profile', icon: 'user' },
   ];
 
   return (
@@ -132,7 +141,14 @@ function CandidateSidebar({ navigation, pathname, user, logout }: CandidateSideb
                       : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
                       }`}
                   >
-                    <span className="text-lg">{item.icon}</span>
+                    <span className="w-5 h-5">
+                      {item.icon === 'home' && <Home className="w-5 h-5" />}
+                      {item.icon === 'bar-chart' && <BarChart3 className="w-5 h-5" />}
+                      {item.icon === 'search' && <Search className="w-5 h-5" />}
+                      {item.icon === 'file-text' && <FileText className="w-5 h-5" />}
+                      {item.icon === 'bookmark' && <Bookmark className="w-5 h-5" />}
+                      {item.icon === 'user' && <User className="w-5 h-5" />}
+                    </span>
                     {item.name}
                   </Link>
                 </li>
@@ -144,7 +160,7 @@ function CandidateSidebar({ navigation, pathname, user, logout }: CandidateSideb
               onClick={logout}
               className="group -mx-2 flex w-full gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-red-600"
             >
-              <span className="text-lg">🚪</span>
+              <LogOut className="w-5 h-5" />
               Sign out
             </button>
           </li>

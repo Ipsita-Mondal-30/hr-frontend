@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 import { Job } from '@/types';
 
 export default function JobsPage() {
@@ -38,7 +37,7 @@ export default function JobsPage() {
       setJobs(res.data);
     } catch (err) {
       console.error('Failed to fetch jobs:', err);
-      showToast.error('Failed to load jobs. Please try again.');
+      alert('Failed to load jobs. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -62,25 +61,6 @@ export default function JobsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate required fields
-    if (!form.title.trim()) {
-       showToast.warning('Job title is required');
-       return;
-     }
-     if (!form.description.trim()) {
-       showToast.warning('Job description is required');
-       return;
-     }
-     if (!form.department) {
-       showToast.warning('Please select a department');
-       return;
-     }
-     if (!form.role) {
-       showToast.warning('Please select a role');
-       return;
-     }
-    
     try {
       // Prepare form data with proper types
       const jobData = {
@@ -122,18 +102,15 @@ export default function JobsPage() {
       setEditingId(null);
       setFormVisible(false);
       fetchJobs();
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('❌ Error saving job:', err);
-      if (err && typeof err === 'object' && 'response' in err) {
-        const axiosErr = err as { response: { data?: { message?: string; error?: string; [key: string]: unknown }; status?: number } };
-        console.error('Response data:', axiosErr.response.data);
-        console.error('Response status:', axiosErr.response.status);
-        const errorMessage = axiosErr.response.data?.message || axiosErr.response.data?.error || JSON.stringify(axiosErr.response.data) || 'Unknown error';
-        showToast.error(`Error saving job: ${errorMessage}`);
+      if (err.response) {
+        console.error('Response data:', err.response.data);
+        console.error('Response status:', err.response.status);
+        alert(`Error saving job: ${err.response.data.message || err.response.data.error || 'Unknown error'}`);
       } else {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        console.error('Network or other error:', errorMessage);
-        showToast.error(`Error saving job: ${errorMessage || 'Please try again.'}`);
+        console.error('Network or other error:', err.message);
+        alert('Error saving job. Please try again.');
       }
     }
   };

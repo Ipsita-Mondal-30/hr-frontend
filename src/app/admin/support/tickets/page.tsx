@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
-import toast from '@/lib/toast';
 
 type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
 type TicketPriority = 'low' | 'medium' | 'high' | 'urgent';
@@ -68,7 +67,7 @@ export default function SupportTickets() {
     } catch (err: unknown) {
       const e = err as ApiError;
       console.error('Failed to fetch tickets:', e);
-      toast.error(e.response?.data?.error || e.response?.data?.message || 'Failed to fetch tickets');
+      alert(e.response?.data?.error || e.response?.data?.message || 'Failed to fetch tickets');
     } finally {
       setLoading(false);
     }
@@ -87,11 +86,11 @@ export default function SupportTickets() {
       if (selectedTicket?._id === ticketId) {
         setSelectedTicket({ ...selectedTicket, status });
       }
-      toast.success('Ticket status updated successfully');
+      alert('Ticket status updated successfully');
     } catch (err: unknown) {
       const e = err as ApiError;
       console.error('Failed to update ticket status:', e);
-      toast.error(e.response?.data?.error || e.response?.data?.message || 'Failed to update ticket status');
+      alert(e.response?.data?.error || e.response?.data?.message || 'Failed to update ticket status');
     }
   };
 
@@ -100,11 +99,11 @@ export default function SupportTickets() {
     try {
       await api.put(`/admin/support/tickets/${ticketId}/assign`, { adminId });
       await fetchTickets(); // refresh to get updated assignment info
-      toast.success('Ticket assigned successfully');
+      alert('Ticket assigned successfully');
     } catch (err: unknown) {
       const e = err as ApiError;
       console.error('Failed to assign ticket:', e);
-      toast.error(e.response?.data?.error || e.response?.data?.message || 'Failed to assign ticket');
+      alert(e.response?.data?.error || e.response?.data?.message || 'Failed to assign ticket');
     }
   };
 
@@ -122,11 +121,11 @@ export default function SupportTickets() {
         messages: [...selectedTicket.messages, reply],
       });
       setReplyMessage('');
-      toast.success('Reply sent successfully');
+      alert('Reply sent successfully');
     } catch (err: unknown) {
       const e = err as ApiError;
       console.error('Failed to send reply:', e);
-      toast.error(e.response?.data?.error || e.response?.data?.message || 'Failed to send reply');
+      alert(e.response?.data?.error || e.response?.data?.message || 'Failed to send reply');
     } finally {
       setSendingReply(false);
     }

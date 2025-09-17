@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import toast from '@/lib/toast';
 
 interface Role {
   _id: string;
@@ -47,7 +46,7 @@ export default function RoleManagement() {
       setDepartments(deptsRes.data);
     } catch (err: unknown) {
       console.error('Failed to fetch data:', err);
-      toast.error('Failed to fetch data');
+      alert('Failed to fetch data');
     } finally {
       setLoading(false);
     }
@@ -56,7 +55,7 @@ export default function RoleManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) {
-      toast.warning('Role title is required');
+      alert('Role title is required');
       return;
     }
 
@@ -73,12 +72,12 @@ export default function RoleManagement() {
         setRoles(roles.map(role => 
           role._id === editingRole._id ? res.data : role
         ));
-        toast.success('Role updated successfully');
+        alert('Role updated successfully');
       } else {
         // Create new role
         const res = await api.post('/admin/roles', submitData);
         setRoles([res.data, ...roles]);
-        toast.success('Role created successfully');
+        alert('Role created successfully');
       }
       
       setShowModal(false);
@@ -88,11 +87,11 @@ export default function RoleManagement() {
       console.error('Failed to save role:', err);
       if (typeof err === 'object' && err !== null && 'response' in err) {
         const error = err as { response?: { data?: { error?: string } } };
-        toast.error(error.response?.data?.error || 'Failed to save role');
+        alert(error.response?.data?.error || 'Failed to save role');
       } else if (err instanceof Error) {
-        toast.error(err.message);
+        alert(err.message);
       } else {
-        toast.error('Failed to save role');
+        alert('Failed to save role');
       }
     } finally {
       setSaving(false);
@@ -115,16 +114,16 @@ export default function RoleManagement() {
     try {
       await api.delete(`/admin/roles/${role._id}`);
       setRoles(roles.filter(r => r._id !== role._id));
-      toast.success('Role deleted successfully');
+      alert('Role deleted successfully');
     } catch (err: unknown) {
       console.error('Failed to delete role:', err);
       if (typeof err === 'object' && err !== null && 'response' in err) {
         const error = err as { response?: { data?: { error?: string } } };
-        toast.error(error.response?.data?.error || 'Failed to delete role');
+        alert(error.response?.data?.error || 'Failed to delete role');
       } else if (err instanceof Error) {
-        toast.error(err.message);
+        alert(err.message);
       } else {
-        toast.error('Failed to delete role');
+        alert('Failed to delete role');
       }
     }
   };

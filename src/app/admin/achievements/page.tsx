@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import toast from '@/lib/toast';
 
 interface Achievement {
   _id: string;
@@ -92,7 +91,7 @@ export default function AdminAchievementsPage() {
       fetchData();
     } catch (error) {
       console.error('Error creating achievement:', error);
-      toast.error('Failed to create achievement');
+      alert('Failed to create achievement');
     }
   };
 

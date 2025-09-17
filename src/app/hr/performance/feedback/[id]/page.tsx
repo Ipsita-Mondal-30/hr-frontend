@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 
 interface Employee {
   _id: string;
@@ -86,11 +85,11 @@ export default function GiveFeedbackPage() {
         ...formData,
       });
 
-      showToast.success('Feedback submitted successfully!');
+      alert('Feedback submitted successfully!');
       router.push('/hr/performance');
     } catch (error: unknown) {
       console.error('Error submitting feedback:', error);
-      showToast.error('Failed to submit feedback. Please try again.');
+      alert('Failed to submit feedback. Please try again.');
     } finally {
       setSubmitting(false);
     }

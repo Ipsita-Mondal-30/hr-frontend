@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
-import { showToast } from '@/lib/toast';
 
 interface User {
   _id: string;
@@ -52,7 +51,7 @@ export default function UsersManagement() {
       ));
     } catch (err: unknown) {
       console.error('Failed to update user status:', err);
-      showToast.error('Failed to update user status');
+      alert('Failed to update user status');
     }
   };
 
@@ -61,10 +60,10 @@ export default function UsersManagement() {
     
     try {
       await api.post(`/admin/users/${userId}/reset-password`);
-      showToast.success('Password reset email sent successfully');
+      alert('Password reset email sent successfully');
     } catch (err: unknown) {
       console.error('Failed to reset password:', err);
-      showToast.error('Failed to reset password');
+      alert('Failed to reset password');
     }
   };
 
@@ -74,16 +73,16 @@ export default function UsersManagement() {
       setUsers(users.map(user => 
         user._id === userId ? { ...user, isVerified: true } : user
       ));
-      showToast.success('HR account verified successfully');
+      alert('HR account verified successfully');
     } catch (err: unknown) {
       console.error('Failed to verify HR:', err);
-      showToast.error('Failed to verify HR account');
+      alert('Failed to verify HR account');
     }
   };
 
   const bulkAction = async (action: 'activate' | 'deactivate' | 'delete') => {
     if (selectedUsers.length === 0) {
-      showToast.warning('Please select users first');
+      alert('Please select users first');
       return;
     }
 
@@ -105,10 +104,10 @@ export default function UsersManagement() {
       }
       
       setSelectedUsers([]);
-      showToast.success(`Successfully ${action}d ${selectedUsers.length} users`);
+      alert(`Successfully ${action}d ${selectedUsers.length} users`);
     } catch (err: unknown) {
       console.error(`Failed to ${action} users:`, err);
-      showToast.error(`Failed to ${action} users`);
+      alert(`Failed to ${action} users`);
     }
   };
 

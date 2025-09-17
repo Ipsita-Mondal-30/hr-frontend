@@ -2,19 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 
 interface ApplicationLite {
   _id: string;
   name?: string;
   email?: string;
   phone?: string;
-  candidate?: {
-    _id: string;
-    name?: string;
-    email?: string;
-    phone?: string;
-  };
   job?: { title?: string; companyName?: string };
 }
 
@@ -110,11 +103,10 @@ export default function InterviewsPage() {
 
   const fetchApplications = async () => {
     try {
-      console.log('🔄 HR fetching shortlisted applications for interview scheduling...');
-      // Fetch only shortlisted applications for interview scheduling
+      console.log('🔄 HR fetching applications for interview scheduling...');
       const res = await api.get<ApplicationsApiRes>('/applications?status=shortlisted');
       const list = Array.isArray(res.data) ? res.data : res.data?.applications || [];
-      console.log(`📊 HR received ${list.length} shortlisted applications available for interviews`);
+      console.log(`📊 HR received ${list.length} shortlisted applications`);
       setApplications(list);
     } catch (err) {
       console.error('Failed to fetch applications:', err);
@@ -131,7 +123,7 @@ export default function InterviewsPage() {
       // Refresh both interviews and applications
       await Promise.all([fetchInterviews(), fetchApplications()]);
       setShowScheduleModal(false);
-      showToast.success('Interview scheduled successfully!');
+      alert('Interview scheduled successfully!');
     } catch (err: unknown) {
       console.error('Failed to schedule interview:', err);
       const msg = isAxiosError(err)
@@ -139,7 +131,7 @@ export default function InterviewsPage() {
           (err.response?.data as { error?: string; message?: string } | undefined)?.message ||
           'Failed to schedule interview'
         : 'Failed to schedule interview';
-      showToast.error('Failed to schedule interview: ' + msg);
+      alert('Failed to schedule interview: ' + msg);
     }
   };
 
@@ -150,10 +142,10 @@ export default function InterviewsPage() {
     try {
       await api.put(`/interviews/${interviewId}/status`, { status });
       setInterviews((prev) => prev.map((interview) => (interview._id === interviewId ? { ...interview, status } : interview)));
-      showToast.success(`Interview status updated to ${status}`);
+      alert(`Interview status updated to ${status}`);
     } catch (err) {
       console.error('Failed to update interview status:', err);
-      showToast.error('Failed to update interview status');
+      alert('Failed to update interview status');
     }
   };
 
@@ -167,7 +159,7 @@ export default function InterviewsPage() {
 
       await fetchInterviews(); // Refresh the interviews list
       setShowScorecardModal(false);
-      showToast.success('Scorecard submitted successfully! AI-powered emails have been sent to the candidate and HR team.');
+      alert('Scorecard submitted successfully! AI-powered emails have been sent to the candidate and HR team.');
     } catch (err: unknown) {
       console.error('❌ Failed to submit scorecard:', err);
       const msg = isAxiosError(err)
@@ -175,7 +167,7 @@ export default function InterviewsPage() {
           (err.response?.data as { error?: string; message?: string } | undefined)?.message ||
           'Unknown error'
         : 'Unknown error';
-      showToast.error(`Failed to submit scorecard: ${msg}`);
+      alert(`Failed to submit scorecard: ${msg}`);
     }
   };
 
@@ -422,7 +414,7 @@ function InterviewCard({
             <span className="text-2xl">{getTypeIcon(interview.type)}</span>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
-                {interview.application?.candidate?.name || interview.application?.name || 'Candidate Name Not Available'}
+                {interview.application?.name || 'Candidate Name Not Available'}
               </h3>
               <p className="text-gray-600">{interview.application?.job?.title || 'Job Title Not Available'}</p>
               <p className="text-sm text-gray-500">{interview.application?.job?.companyName || 'Company Not Available'}</p>
@@ -446,10 +438,10 @@ function InterviewCard({
                 <strong>Interviewer:</strong> {interview.interviewer?.name || 'Not Available'}
               </p>
               <p>
-                <strong>Email:</strong> {interview.application?.candidate?.email || interview.application?.email || 'Not Available'}
+                <strong>Email:</strong> {interview.application?.email || 'Not Available'}
               </p>
               <p>
-                <strong>Phone:</strong> {interview.application?.candidate?.phone || interview.application?.phone || 'Not Available'}
+                <strong>Phone:</strong> {interview.application?.phone || 'Not Available'}
               </p>
             </div>
           </div>
@@ -529,7 +521,7 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: S
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.applicationId || !formData.scheduledAt) {
-      showToast.warning('Please select an application and date/time');
+      alert('Please select an application and date/time');
       return;
     }
     onSchedule(formData);

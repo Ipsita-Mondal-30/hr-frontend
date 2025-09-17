@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 
 interface Employee {
   _id: string;
@@ -111,7 +110,7 @@ export default function EmployeesPage() {
       }
     } catch (err: unknown) {
       console.error('Error generating AI insights:', err);
-      showToast.error('Failed to generate AI insights');
+      alert('Failed to generate AI insights');
     } finally {
       setGeneratingInsights(null);
     }

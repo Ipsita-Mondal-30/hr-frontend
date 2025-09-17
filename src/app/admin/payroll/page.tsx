@@ -3,16 +3,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
-import { showToast } from '@/lib/toast';
 
 interface Payroll {
   _id: string;
   employee: {
     _id: string;
-    user?: {
-      name?: string;
-      email?: string;
-    } | null;
+    user: {
+      name: string;
+      email: string;
+    };
   };
   month: number;
   year: number;
@@ -91,7 +90,7 @@ export default function AdminPayrollManagement() {
       fetchData();
     } catch (error) {
       console.error('Error approving payroll:', error);
-      showToast.error('Failed to approve payroll');
+      alert('Failed to approve payroll');
     }
   };
 
@@ -285,8 +284,8 @@ export default function AdminPayrollManagement() {
                   <tr key={payroll._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{payroll.employee?.user?.name || 'No Name'}</div>
-                        <div className="text-sm text-gray-500">{payroll.employee?.user?.email || 'No Email'}</div>
+                        <div className="text-sm font-medium text-gray-900">{payroll.employee.user.name}</div>
+                        <div className="text-sm text-gray-500">{payroll.employee.user.email}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

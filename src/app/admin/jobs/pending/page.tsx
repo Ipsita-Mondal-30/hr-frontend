@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 
 interface PendingJob {
   _id: string;
@@ -14,19 +13,19 @@ interface PendingJob {
   minSalary?: number;
   maxSalary?: number;
   skills: string[];
-  createdBy?: {
+  createdBy: {
     _id: string;
     name: string;
     email: string;
     companyName?: string;
-  } | null;
-  department?: {
+  };
+  department: {
     name: string;
-  } | null;
+  };
   createdAt: string;
 }
 
-function isAxiosLikeError(error: unknown): error is { response?: { data?: { error?: string }; status?: number } } {
+function isAxiosLikeError(error: unknown): error is { response?: { data?: { error?: string } } } {
   return typeof error === 'object' && error !== null && 'response' in error;
 }
 
@@ -49,21 +48,6 @@ export default function PendingJobsPage() {
       setPendingJobs(data);
     } catch (error) {
       console.error('Error fetching pending jobs:', error);
-      
-      // Check if it's an authentication error
-      if (isAxiosLikeError(error) && error.response?.status === 401) {
-        showToast.error('Authentication failed. Please log in again.');
-        window.location.href = '/login';
-        return;
-      }
-      
-      // Check if it's a forbidden error
-      if (isAxiosLikeError(error) && error.response?.status === 403) {
-        showToast.error('Access denied. Admin privileges required.');
-        window.location.href = '/';
-        return;
-      }
-      
       setPendingJobs([]);
     } finally {
       setLoading(false);
@@ -83,24 +67,24 @@ export default function PendingJobsPage() {
       setPendingJobs(prev => prev.filter(job => job._id !== jobId));
       setSelectedJob(null);
       
-      showToast.success('Job approved successfully!');
+      alert('Job approved successfully!');
     } catch (err) {
       console.error('Failed to approve job:', err);
       if (err instanceof Error) {
         if (isAxiosLikeError(err)) {
-          showToast.error('Failed to approve job: ' + (err.response?.data?.error || err.message));
+          alert('Failed to approve job: ' + (err.response?.data?.error || err.message));
         } else {
-          showToast.error('Failed to approve job: ' + err.message);
+          alert('Failed to approve job: ' + err.message);
         }
       } else {
-        showToast.error('Failed to approve job: ' + String(err));
+        alert('Failed to approve job: ' + String(err));
       }
     }
   };
 
   const rejectJob = async (jobId: string, reason: string) => {
     if (!reason.trim()) {
-      showToast.warning('Please provide a reason for rejection');
+      alert('Please provide a reason for rejection');
       return;
     }
 
@@ -118,17 +102,17 @@ export default function PendingJobsPage() {
       setSelectedJob(null);
       setRejectionReason('');
       
-      showToast.success('Job rejected successfully!');
+      alert('Job rejected successfully!');
     } catch (err) {
       console.error('Failed to reject job:', err);
       if (err instanceof Error) {
         if (isAxiosLikeError(err)) {
-          showToast.error('Failed to reject job: ' + (err.response?.data?.error || err.message));
+          alert('Failed to reject job: ' + (err.response?.data?.error || err.message));
         } else {
-          showToast.error('Failed to reject job: ' + err.message);
+          alert('Failed to reject job: ' + err.message);
         }
       } else {
-        showToast.error('Failed to reject job: ' + String(err));
+        alert('Failed to reject job: ' + String(err));
       }
     }
   };
@@ -189,7 +173,7 @@ export default function PendingJobsPage() {
                     <div>
                       <h3 className="font-medium text-gray-900">{job.title}</h3>
                       <p className="text-sm text-gray-600">{job.companyName}</p>
-                      <p className="text-sm text-gray-500">by {job.createdBy?.name || 'Unknown User'}</p>
+                      <p className="text-sm text-gray-500">by {job.createdBy.name}</p>
                     </div>
                     <div className="text-xs text-gray-400">
                       {new Date(job.createdAt).toLocaleDateString()}
@@ -201,7 +185,7 @@ export default function PendingJobsPage() {
                       Pending Review
                     </span>
                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 capitalize">
-                      {job.employmentType?.replace('-', ' ') || 'Not specified'}
+                      {job.employmentType.replace('-', ' ')}
                     </span>
                   </div>
                 </div>
@@ -231,9 +215,9 @@ export default function PendingJobsPage() {
                   <div className="grid grid-cols-1 gap-3 text-sm">
                     <div><strong>Title:</strong> {selectedJob.title}</div>
                     <div><strong>Company:</strong> {selectedJob.companyName}</div>
-                    <div><strong>Department:</strong> {selectedJob.department?.name || 'No Department'}</div>
+                    <div><strong>Department:</strong> {selectedJob.department.name}</div>
                     <div><strong>Location:</strong> {selectedJob.location}</div>
-                    <div><strong>Type:</strong> {selectedJob.employmentType?.replace('-', ' ') || 'Not specified'}</div>
+                    <div><strong>Type:</strong> {selectedJob.employmentType.replace('-', ' ')}</div>
                     {(selectedJob.minSalary || selectedJob.maxSalary) && (
                       <div>
                         <strong>Salary:</strong> 
@@ -252,9 +236,9 @@ export default function PendingJobsPage() {
                 <div>
                   <h3 className="font-medium text-gray-900 mb-3">Posted By</h3>
                   <div className="grid grid-cols-1 gap-3 text-sm">
-                    <div><strong>HR Name:</strong> {selectedJob.createdBy?.name || 'Unknown User'}</div>
-                    <div><strong>Email:</strong> {selectedJob.createdBy?.email || 'No Email'}</div>
-                    {selectedJob.createdBy?.companyName && (
+                    <div><strong>HR Name:</strong> {selectedJob.createdBy.name}</div>
+                    <div><strong>Email:</strong> {selectedJob.createdBy.email}</div>
+                    {selectedJob.createdBy.companyName && (
                       <div><strong>Company:</strong> {selectedJob.createdBy.companyName}</div>
                     )}
                   </div>

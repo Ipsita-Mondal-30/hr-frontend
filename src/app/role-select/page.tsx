@@ -45,29 +45,6 @@ export default function RoleSelectPage() {
 
     try {
       const decoded = jwtDecode<DecodedJwt>(jwtFromQuery);
-      
-      // If user already has a role, redirect to appropriate dashboard
-      if (decoded.role && decoded.role !== null) {
-        console.log('User already has role:', decoded.role, 'redirecting to dashboard');
-        switch (decoded.role) {
-          case 'admin':
-            router.push('/admin/dashboard');
-            return;
-          case 'hr':
-            router.push('/hr/dashboard');
-            return;
-          case 'candidate':
-            router.push('/candidate/dashboard');
-            return;
-          case 'employee':
-            router.push('/employee/dashboard');
-            return;
-          default:
-            router.push('/');
-            return;
-        }
-      }
-      
       setUserInfo(decoded);
       setToken(jwtFromQuery);
       setAuthToken(jwtFromQuery);

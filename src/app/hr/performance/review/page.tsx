@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 
 interface Employee {
   _id: string;
@@ -59,7 +58,7 @@ export default function PerformanceReviewPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEmployee) {
-      showToast.warning('Please select an employee');
+      alert('Please select an employee');
       return;
     }
 
@@ -86,11 +85,11 @@ ${formData.managerComments}`,
         reviewPeriod: formData.reviewPeriod
       });
       
-      showToast.success('Performance review submitted successfully!');
+      alert('Performance review submitted successfully!');
       router.push('/hr/performance');
     } catch (error) {
       console.error('Error submitting review:', error);
-      showToast.error('Error submitting performance review');
+      alert('Error submitting performance review');
     } finally {
       setLoading(false);
     }

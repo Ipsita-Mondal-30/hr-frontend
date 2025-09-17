@@ -3,7 +3,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
+import { 
+  BarChart3, 
+  AlertTriangle, 
+  DollarSign, 
+  FileText, 
+  Target 
+} from 'lucide-react';
 
 interface Employee {
   _id: string;
@@ -115,7 +121,7 @@ export default function AdminEmployeesPage() {
       await fetchEmployees(); // Refresh to get updated insights
     } catch (error) {
       console.error('Error generating AI insights:', error);
-      showToast.error('Failed to generate AI insights');
+      alert('Failed to generate AI insights');
     }
   };
 
@@ -413,7 +419,7 @@ export default function AdminEmployeesPage() {
                 <h3 className="text-lg font-semibold mb-4">Current Projects</h3>
                 {employeeProjects.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    <div className="text-4xl mb-2">📊</div>
+                    <BarChart3 className="w-16 h-16 mx-auto mb-2 text-gray-400" />
                     <p>No projects assigned</p>
                     <Link href="/admin/projects/create" className="text-blue-600 hover:text-blue-800 text-sm">
                       Assign to a project →
@@ -475,7 +481,10 @@ export default function AdminEmployeesPage() {
                     {/* Attrition Risk */}
                     <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                       <h4 className="font-medium text-red-800 mb-2">
-                        ⚠️ Attrition Risk: {selectedEmployee.aiInsights.attritionRisk?.score || 0}%
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4" />
+                          Attrition Risk: {selectedEmployee.aiInsights.attritionRisk?.score || 0}%
+                        </div>
                       </h4>
                       <ul className="text-sm text-red-700 space-y-1">
                         {selectedEmployee.aiInsights.attritionRisk?.factors?.slice(0, 3).map((factor, index) => (
@@ -491,17 +500,21 @@ export default function AdminEmployeesPage() {
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="font-medium text-gray-900 mb-3">Admin Actions</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <button className="px-3 py-2 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200">
-                    📊 Assign Project
+                  <button className="px-3 py-2 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200 flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4" />
+                    Assign Project
                   </button>
-                  <button className="px-3 py-2 bg-green-100 text-green-700 rounded text-sm hover:bg-green-200">
-                    💰 Update Salary
+                  <button className="px-3 py-2 bg-green-100 text-green-700 rounded text-sm hover:bg-green-200 flex items-center gap-2">
+                    <DollarSign className="w-4 h-4" />
+                    Update Salary
                   </button>
-                  <button className="px-3 py-2 bg-purple-100 text-purple-700 rounded text-sm hover:bg-purple-200">
-                    📝 Give Feedback
+                  <button className="px-3 py-2 bg-purple-100 text-purple-700 rounded text-sm hover:bg-purple-200 flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Give Feedback
                   </button>
-                  <button className="px-3 py-2 bg-orange-100 text-orange-700 rounded text-sm hover:bg-orange-200">
-                    🎯 Set OKRs
+                  <button className="px-3 py-2 bg-orange-100 text-orange-700 rounded text-sm hover:bg-orange-200 flex items-center gap-2">
+                    <Target className="w-4 h-4" />
+                    Set OKRs
                   </button>
                 </div>
               </div>

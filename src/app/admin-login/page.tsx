@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import toast from '@/lib/toast';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('admin@company.com');
@@ -33,7 +32,7 @@ export default function AdminLoginPage() {
       
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('Login failed. Please try again.');
+      alert('Login failed. Please try again.');
     } finally {
       setLoading(false);
     }

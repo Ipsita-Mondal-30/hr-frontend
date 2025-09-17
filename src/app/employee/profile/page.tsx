@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 
 interface EmployeeProfile {
   _id: string;
@@ -67,10 +66,10 @@ export default function EmployeeProfilePage() {
       setSaving(true);
       await api.put(`/employees/${profile._id}`, profile);
       setEditing(false);
-      showToast.success('Profile updated successfully!');
+      alert('Profile updated successfully!');
     } catch (error) {
       console.error('Error saving profile:', error);
-      showToast.error('Error saving profile');
+      alert('Error saving profile');
     } finally {
       setSaving(false);
     }
@@ -84,7 +83,7 @@ export default function EmployeeProfilePage() {
     );
 
     if (skillExists) {
-      showToast.warning('Skill already exists');
+      alert('Skill already exists');
       return;
     }
 
@@ -459,7 +458,7 @@ export default function EmployeeProfilePage() {
                 </button>
                 <button
                   onClick={() => {
-                    showToast.info('Resume upload functionality will be implemented with file storage');
+                    alert('Resume upload functionality will be implemented with file storage');
                     setShowResumeModal(false);
                   }}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -509,11 +508,11 @@ export default function EmployeeProfilePage() {
                         requestType: 'general',
                         message: 'Feedback requested from employee profile',
                       });
-                      showToast.success('Feedback request submitted successfully!');
+                      alert('Feedback request submitted successfully!');
                       setShowFeedbackModal(false);
                     } catch {
                       // No variable used to avoid unused-var lint; optionally log a generic message
-                      showToast.error('Failed to submit feedback request');
+                      alert('Failed to submit feedback request');
                     }
                   }}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"

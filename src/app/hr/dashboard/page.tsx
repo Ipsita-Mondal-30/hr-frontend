@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
-import { showToast } from "@/lib/toast";
 
 interface DashboardData {
   totalJobs: number;
@@ -104,37 +103,26 @@ export default function HRDashboardPage() {
             api.get<ApiFeedbackRes>("/feedback?limit=10"),
           ]);
 
-          // Process employee data
           const employeesArr =
             Array.isArray(employeesRes.data) ? employeesRes.data : employeesRes.data?.employees || [];
-          
-          // Filter out any employees without valid user data
-          const validEmployees = employeesArr.filter(emp => emp.user && emp.user.name);
-          
           const projectsArr =
             Array.isArray(projectsRes.data) ? projectsRes.data : projectsRes.data?.projects || [];
           const topPerformersArr =
             Array.isArray(topPerformersRes.data)
               ? topPerformersRes.data
               : topPerformersRes.data?.topPerformers || [];
-          
-          // Filter out any top performers without valid employee data
-          const validTopPerformers = topPerformersArr.filter(performer => 
-            performer.employee && performer.employee.user && performer.employee.user.name
-          );
-          
           const feedbackArr =
             Array.isArray(feedbackRes.data) ? feedbackRes.data : feedbackRes.data?.feedback || [];
 
           setEmployeeData({
-            totalEmployees: validEmployees.length,
+            totalEmployees: employeesArr.length,
             activeProjects: projectsArr.filter((p) => p.status === "active").length,
             completedProjects: projectsArr.filter((p) => p.status === "completed").length,
             averagePerformance:
-              validEmployees.length > 0
-                ? validEmployees.reduce((sum, emp) => sum + (emp.performanceScore || 0), 0) / validEmployees.length
+              employeesArr.length > 0
+                ? employeesArr.reduce((sum, emp) => sum + (emp.performanceScore || 0), 0) / employeesArr.length
                 : 0,
-            topPerformers: validTopPerformers,
+            topPerformers: topPerformersArr,
             recentFeedback: feedbackArr,
           });
         } catch (empErr: unknown) {
@@ -191,11 +179,11 @@ export default function HRDashboardPage() {
       // Refresh dashboard data
       const res = await api.get<DashboardData>("/admin/dashboard");
       setData(res.data);
-      showToast.success('Sample data created successfully!');
+      alert('Sample data created successfully!');
     } catch (err: unknown) {
       console.error('Error seeding data:', err);
       const msg = isAxiosError(err) ? ((err.response?.data as { error?: string })?.error || 'Failed to seed data') : 'Failed to seed data';
-      showToast.error(msg);
+      alert(msg);
     } finally {
       setSeeding(false);
     }
@@ -205,12 +193,12 @@ export default function HRDashboardPage() {
     try {
       const res = await api.get<{ jobsCount: number; applicationsCount: number; usersCount: number }>('/debug/data');
       console.log('Database data:', res.data);
-      showToast.info(
+      alert(
         `Database contains: ${res.data.jobsCount} jobs, ${res.data.applicationsCount} applications, ${res.data.usersCount} users`
       );
     } catch (err: unknown) {
       console.error('Error checking data:', err);
-      showToast.error('Failed to check database data');
+      alert('Failed to check database data');
     }
   };
 

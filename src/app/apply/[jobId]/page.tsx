@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Job } from '@/types';
 import { useRouter } from 'next/navigation';
-import toast from '@/lib/toast';
 
 export default function ApplyPage() {
   const { jobId } = useParams();
@@ -47,7 +46,7 @@ export default function ApplyPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.resume) return toast.warning('Please upload your resume');
+    if (!form.resume) return alert('Please upload your resume');
 
     const data = new FormData();
     data.append('name', form.name);
@@ -60,11 +59,11 @@ export default function ApplyPage() {
     setSubmitting(true);
     try {
       await api.post('/applications', data);
-      toast.success('Application submitted successfully! You will receive feedback soon.');
+      alert('✅ Application submitted successfully! You will receive feedback soon.');
       router.push('/jobs');
     } catch (err) {
       console.error('Error submitting application:', err);
-      toast.error('Failed to submit. Please try again.');
+      alert('❌ Failed to submit. Please try again.');
     } finally {
       setSubmitting(false);
     }

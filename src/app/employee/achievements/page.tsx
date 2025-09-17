@@ -2,6 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
+import { 
+  Target, 
+  TrendingUp, 
+  Award, 
+  Users, 
+  Trophy,
+  Medal
+} from 'lucide-react';
 
 
 interface Achievement {
@@ -51,7 +59,7 @@ export default function EmployeeAchievementsPage() {
           description: 'Completed 10 project milestones ahead of schedule',
           type: 'milestone',
           date: '2024-08-15',
-          icon: '🎯',
+          icon: 'target',
           value: '10 milestones',
           project: 'Website Redesign'
         },
@@ -61,7 +69,7 @@ export default function EmployeeAchievementsPage() {
           description: 'Achieved 95% performance score for Q2 2024',
           type: 'performance',
           date: '2024-07-01',
-          icon: '📈',
+          icon: 'trending-up',
           value: '95%',
           badge: 'gold'
         },
@@ -71,7 +79,7 @@ export default function EmployeeAchievementsPage() {
           description: 'Mastered advanced React patterns and optimization techniques',
           type: 'skill',
           date: '2024-06-20',
-          icon: '⚛️',
+          icon: 'trending-up',
           value: 'Advanced Level'
         },
         {
@@ -80,7 +88,7 @@ export default function EmployeeAchievementsPage() {
           description: 'Received outstanding feedback for teamwork and collaboration',
           type: 'recognition',
           date: '2024-05-10',
-          icon: '🤝',
+          icon: 'users',
           value: '4.8/5 rating'
         },
         {
@@ -89,7 +97,7 @@ export default function EmployeeAchievementsPage() {
           description: 'Successfully obtained AWS Solutions Architect certification',
           type: 'certification',
           date: '2024-04-15',
-          icon: '🏆',
+          icon: 'trophy',
           value: 'Certified'
         }
       ];
@@ -175,13 +183,13 @@ export default function EmployeeAchievementsPage() {
   const getBadgeIcon = (badge?: string) => {
     switch (badge) {
       case 'gold':
-        return '🥇';
+        return <Medal className="w-6 h-6 text-yellow-500" />;
       case 'silver':
-        return '🥈';
+        return <Medal className="w-6 h-6 text-gray-400" />;
       case 'bronze':
-        return '🥉';
+        return <Medal className="w-6 h-6 text-amber-600" />;
       default:
-        return '🏅';
+        return <Award className="w-6 h-6 text-blue-500" />;
     }
   };
 
@@ -294,12 +302,15 @@ export default function EmployeeAchievementsPage() {
       {/* Achievements Timeline */}
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold">🎯 Achievements Timeline</h2>
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Target className="w-5 h-5" />
+            Achievements Timeline
+          </h2>
         </div>
         <div className="p-6">
           {filteredAchievements.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <div className="text-4xl mb-2">🎯</div>
+              <Target className="w-16 h-16 mx-auto mb-2 text-gray-400" />
               <p>No achievements found for the selected filter</p>
             </div>
           ) : (
@@ -309,8 +320,11 @@ export default function EmployeeAchievementsPage() {
                 .map((achievement) => (
                   <div key={achievement.id} className="flex items-start space-x-4">
                     <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-2xl">
-                        {achievement.icon}
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        {achievement.icon === 'target' && <Target className="w-6 h-6 text-blue-600" />}
+                        {achievement.icon === 'trending-up' && <TrendingUp className="w-6 h-6 text-blue-600" />}
+                        {achievement.icon === 'users' && <Users className="w-6 h-6 text-blue-600" />}
+                        {achievement.icon === 'trophy' && <Trophy className="w-6 h-6 text-blue-600" />}
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -404,12 +418,15 @@ export default function EmployeeAchievementsPage() {
       {/* Goals & Targets */}
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold">🎯 Next Milestones</h2>
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Target className="w-5 h-5" />
+            Next Milestones
+          </h2>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center p-6 border border-gray-200 rounded-lg">
-              <div className="text-3xl mb-2">🏆</div>
+              <Trophy className="w-12 h-12 mx-auto mb-2 text-yellow-500" />
               <h3 className="font-medium text-gray-900 mb-2">Senior Developer</h3>
               <p className="text-sm text-gray-600 mb-3">Target promotion level</p>
               <div className="w-full bg-gray-200 rounded-full h-2 mb-2">

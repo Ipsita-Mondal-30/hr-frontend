@@ -6,10 +6,10 @@ import Link from 'next/link';
 
 interface Employee {
   _id: string;
-  user?: {
-    name?: string;
-    email?: string;
-  } | null;
+  user: {
+    name: string;
+    email: string;
+  };
   position: string;
   performanceScore: number;
   stats: {
@@ -23,9 +23,9 @@ interface Employee {
 interface OKR {
   _id: string;
   employee: {
-    user?: {
-      name?: string;
-    } | null;
+    user: {
+      name: string;
+    };
   };
   objective: string;
   period: string;

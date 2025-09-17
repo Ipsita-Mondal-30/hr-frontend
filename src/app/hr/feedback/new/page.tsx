@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
+import { Star } from 'lucide-react';
 
 interface Employee {
   _id: string;
@@ -23,9 +23,9 @@ export default function NewFeedbackPage() {
   const searchParams = useSearchParams();
   const employeeId = searchParams.get('employee');
   
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [selectedEmployee, setSelectedEmployee] = useState(employeeId || '');
-  const [loading, setLoading] = useState(false);
+  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     type: 'performance',
     content: '',
@@ -42,40 +42,45 @@ export default function NewFeedbackPage() {
   });
 
   useEffect(() => {
-    fetchEmployees();
-  }, []);
+    if (employeeId) {
+      fetchEmployee();
+    } else {
+      setLoading(false);
+    }
+  }, [employeeId]);
 
-  const fetchEmployees = async () => {
+  const fetchEmployee = async () => {
     try {
-      const response = await api.get('/hr/employees');
-      setEmployees(response.data?.employees || response.data || []);
+      const response = await api.get(`/hr/employees/${employeeId}`);
+      setEmployee(response.data);
     } catch (error) {
-      console.error('Error fetching employees:', error);
-      showToast.error('Failed to fetch employees');
+      console.error('Error fetching employee:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedEmployee) {
-      showToast.warning('Please select an employee');
+    if (!employeeId) {
+      alert('No employee selected');
       return;
     }
 
-    setLoading(true);
+    setSubmitting(true);
     try {
       await api.post('/feedback', {
         ...formData,
-        employee: selectedEmployee
+        employee: employeeId
       });
       
-      showToast.success('Feedback submitted successfully!');
+      alert('Feedback submitted successfully!');
       router.push('/hr/employees');
     } catch (error) {
       console.error('Error submitting feedback:', error);
-      showToast.error('Error submitting feedback');
+      alert('Error submitting feedback');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -89,118 +94,131 @@ export default function NewFeedbackPage() {
     }));
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!employeeId || !employee) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-4xl mb-4">❌</div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Employee Not Found</h2>
+        <p className="text-gray-600 mb-4">Please select a valid employee to give feedback.</p>
+        <button
+          onClick={() => router.push('/hr/employees')}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+        >
+          Back to Employees
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">New Employee Feedback</h1>
-          <p className="text-gray-600">Provide constructive feedback to help employees grow</p>
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          Give Feedback to {employee.user?.name || 'Unknown Employee'}
+        </h1>
+        <p className="text-gray-600">
+          {employee.position || 'Unknown Position'} • {employee.department?.name || 'No Department'}
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Feedback Type */}
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Feedback Type</h3>
+          <select
+            value={formData.type}
+            onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="performance">Performance Review</option>
+            <option value="peer">Peer Feedback</option>
+            <option value="general">General Feedback</option>
+          </select>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Employee Selection */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">Select Employee</h2>
-            <select
-              value={selectedEmployee}
-              onChange={(e) => setSelectedEmployee(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select an employee</option>
-              {employees.map((employee) => (
-                <option key={employee._id} value={employee._id}>
-                  {employee.user?.name} - {employee.position}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Feedback Type */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">Feedback Type</h2>
-            <div className="grid grid-cols-3 gap-4">
-              {['performance', 'project', 'general'].map((type) => (
-                <div
-                  key={type}
-                  onClick={() => setFormData({ ...formData, type })}
-                  className={`p-4 border rounded-lg cursor-pointer text-center transition-colors ${formData.type === type ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}
-                >
-                  <div className="font-medium capitalize">{type}</div>
+        {/* Ratings */}
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Performance Ratings</h3>
+          <div className="space-y-4">
+            {Object.entries(formData.ratings).map(([category, rating]) => (
+              <div key={category} className="flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-700 capitalize">
+                  {category.replace(/([A-Z])/g, ' $1').trim()}
+                </label>
+                <div className="flex items-center space-x-2">
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => handleRatingChange(category, value)}
+                      className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
+                        rating >= value
+                          ? 'bg-yellow-400 border-yellow-400 text-white'
+                          : 'border-gray-300 text-gray-400'
+                      }`}
+                    >
+                      <Star size={16} fill={rating >= value ? 'currentColor' : 'none'} />
+                    </button>
+                  ))}
+                  <span className="text-sm text-gray-600 ml-2">{rating}/5</span>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Ratings */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">Performance Ratings</h2>
-            <div className="space-y-4">
-              {Object.entries(formData.ratings).map(([category, rating]) => (
-                <div key={category} className="space-y-2">
-                  <div className="flex justify-between">
-                    <label className="font-medium capitalize">{category.replace(/([A-Z])/g, ' $1')}</label>
-                    <span className="text-blue-600 font-medium">{rating}/10</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={rating}
-                    onChange={(e) => handleRatingChange(category, parseInt(e.target.value))}
-                    className="w-full"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Feedback Content */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">Feedback Details</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block font-medium mb-2">Detailed Feedback</label>
-                <textarea
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  rows={6}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Provide specific examples and constructive feedback..."
-                ></textarea>
               </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="anonymous"
-                  checked={formData.isAnonymous}
-                  onChange={(e) => setFormData({ ...formData, isAnonymous: e.target.checked })}
-                  className="mr-2"
-                />
-                <label htmlFor="anonymous">Submit anonymously</label>
-              </div>
-            </div>
+            ))}
           </div>
+        </div>
 
-          {/* Submit Button */}
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="px-4 py-2 mr-2 border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
-            >
-              {loading ? 'Submitting...' : 'Submit Feedback'}
-            </button>
-          </div>
-        </form>
-      </div>
+        {/* Feedback Content */}
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Detailed Feedback</h3>
+          <textarea
+            value={formData.content}
+            onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+            placeholder="Provide detailed feedback about the employee's performance, strengths, and areas for improvement..."
+            rows={6}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        {/* Anonymous Option */}
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={formData.isAnonymous}
+              onChange={(e) => setFormData(prev => ({ ...prev, isAnonymous: e.target.checked }))}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-700">Submit this feedback anonymously</span>
+          </label>
+        </div>
+
+        {/* Submit Button */}
+        <div className="flex justify-end space-x-4">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+          >
+            {submitting ? 'Submitting...' : 'Submit Feedback'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

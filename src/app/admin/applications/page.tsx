@@ -21,10 +21,8 @@ export default function ApplicationsPage() {
   useEffect(() => {
     const fetchApplications = async () => {
       try {
-        // Fetch all applications including shortlisted ones
         const res = await api.get('/applications');
         setApplications(res.data);
-        console.log(`📊 Admin received ${res.data.length} applications`);
       } catch (err) {
         console.error('Error fetching applications:', err);
       } finally {

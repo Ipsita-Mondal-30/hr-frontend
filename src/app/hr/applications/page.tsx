@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 import Link from 'next/link';
 
 interface Application {
@@ -172,9 +171,7 @@ export default function ApplicationsPage() {
 
   const fetchApplications = async () => {
     try {
-      console.log('🔄 HR fetching all applications...');
       const res = await api.get<Application[]>('/applications');
-      console.log(`📊 HR received ${res.data.length} applications`);
       setApplications(res.data);
     } catch (err) {
       console.error('Failed to fetch applications', err);
@@ -202,7 +199,7 @@ export default function ApplicationsPage() {
       setApplications((prev) => prev.map((app) => (app._id === id ? { ...app, status: newStatus } : app)));
 
       // Show success message
-      showToast.success(`Status updated to ${newStatus} successfully`);
+      alert(`Status updated to ${newStatus} successfully`);
     } catch (err: unknown) {
       console.error('Status update failed', err);
       const msg = isAxiosLikeError(err)
@@ -210,7 +207,7 @@ export default function ApplicationsPage() {
         : err instanceof Error
         ? err.message
         : 'Failed to update status';
-      showToast.error('Failed to update status: ' + msg);
+      alert('Failed to update status: ' + msg);
       // Refresh on error to ensure consistency
       fetchApplications();
     }
@@ -226,7 +223,7 @@ export default function ApplicationsPage() {
       setApplications((prev) => prev.map((app) => (app._id === id ? { ...app, hrNotes: notes } : app)));
 
       setNotesModal({ isOpen: false, applicationId: null });
-      showToast.success('Notes saved successfully');
+      alert('Notes saved successfully');
     } catch (err: unknown) {
       console.error('Failed to save notes', err);
       const msg = isAxiosLikeError(err)
@@ -234,13 +231,13 @@ export default function ApplicationsPage() {
         : err instanceof Error
         ? err.message
         : 'Failed to save notes';
-      showToast.error('Failed to save notes: ' + msg);
+      alert('Failed to save notes: ' + msg);
     }
   };
 
   const bulkUpdateStatus = async (status: string) => {
     if (selectedApplications.length === 0) {
-      showToast.warning('Please select applications first');
+      alert('Please select applications first');
       return;
     }
 
@@ -257,7 +254,7 @@ export default function ApplicationsPage() {
       setApplications((prev) => prev.map((app) => (selectedApplications.includes(app._id) ? { ...app, status } : app)));
 
       setSelectedApplications([]);
-      showToast.success(`${selectedApplications.length} applications updated to ${status} successfully`);
+      alert(`${selectedApplications.length} applications updated to ${status} successfully`);
     } catch (err: unknown) {
       console.error('Bulk update failed', err);
       const msg = isAxiosLikeError(err)
@@ -265,7 +262,7 @@ export default function ApplicationsPage() {
         : err instanceof Error
         ? err.message
         : 'Failed to update applications';
-      showToast.error('Failed to update applications: ' + msg);
+      alert('Failed to update applications: ' + msg);
       // Refresh on error to ensure consistency
       fetchApplications();
     }
@@ -273,9 +270,9 @@ export default function ApplicationsPage() {
 
   const downloadResume = (resumeUrl: string, candidateName: string) => {
     if (!resumeUrl) {
-       showToast.warning('No resume available');
-       return;
-     }
+      alert('No resume available');
+      return;
+    }
 
     const link = document.createElement('a');
     link.href = resumeUrl;
@@ -700,7 +697,7 @@ function MessageModal({ isOpen, applicationId, onClose, applications }: MessageM
 
   const sendMessage = async () => {
     if (!subject.trim() || !message.trim()) {
-      showToast.warning('Please fill in both subject and message');
+      alert('Please fill in both subject and message');
       return;
     }
 
@@ -713,13 +710,13 @@ function MessageModal({ isOpen, applicationId, onClose, applications }: MessageM
         recipientEmail: application?.email,
       });
 
-      showToast.success('Message sent successfully!');
+      alert('Message sent successfully!');
       setMessage('');
       setSubject('');
       onClose();
     } catch (err) {
       console.error('Failed to send message:', err);
-      showToast.error('Failed to send message');
+      alert('Failed to send message');
     } finally {
       setSending(false);
     }

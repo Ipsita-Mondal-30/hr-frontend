@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 
 interface Project {
   _id: string;
@@ -18,13 +17,13 @@ interface Project {
   actualHours: number;
   completionPercentage: number;
   projectManager: {
-    user?: { name?: string } | null;
+    user: { name: string };
     position: string;
   };
   teamMembers: Array<{
     employee: {
       _id: string;
-      user?: { name?: string } | null;
+      user: { name: string };
       position: string;
     };
     role: string;
@@ -45,6 +44,11 @@ export default function AdminProjectsPage() {
   const [filter, setFilter] = useState('all');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Redirect to create page immediately
+  useEffect(() => {
+    router.push('/admin/projects/create');
+  }, [router]);
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -130,7 +134,7 @@ export default function AdminProjectsPage() {
             <option value="planning">Planning</option>
           </select>
           <button
-            onClick={() => router.push('/admin/projects/create')}
+            onClick={() => setShowCreateModal(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             Create Project
@@ -178,7 +182,7 @@ export default function AdminProjectsPage() {
             <div className="text-4xl mb-2">📊</div>
             <p className="mb-4">No projects found</p>
             <button
-              onClick={() => router.push('/admin/projects/create')}
+              onClick={() => setShowCreateModal(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               Create Your First Project
@@ -210,7 +214,7 @@ export default function AdminProjectsPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                       <div>
                         <span className="text-gray-500">Project Manager:</span>
-                        <div className="font-medium">{project.projectManager?.user?.name || 'No Name'}</div>
+                        <div className="font-medium">{project.projectManager.user.name}</div>
                       </div>
                       <div>
                         <span className="text-gray-500">Team Size:</span>
@@ -344,10 +348,10 @@ export default function AdminProjectsPage() {
                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold">
-                          {(member.employee?.user?.name || 'N').charAt(0).toUpperCase()}
+                          {member.employee.user.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <h4 className="font-medium text-gray-900">{member.employee?.user?.name || 'No Name'}</h4>
+                          <h4 className="font-medium text-gray-900">{member.employee.user.name}</h4>
                           <p className="text-sm text-gray-600">{member.employee.position}</p>
                         </div>
                       </div>
@@ -429,9 +433,9 @@ export default function AdminProjectsPage() {
                   </button>
                   <button
                     onClick={() => {
-                      // Redirect to the create project page
+                      // Handle project creation
                       setShowCreateModal(false);
-                      router.push('/admin/projects/create');
+                      alert('Project creation functionality to be implemented');
                     }}
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   >

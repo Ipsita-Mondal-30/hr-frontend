@@ -19,7 +19,6 @@ export type User = {
   portfolioUrl?: string;
   education?: string;
   profileCompleteness?: number;
-  isVerified?: boolean;
 };
 
 type AuthContextType = {
@@ -61,27 +60,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUser = async () => {
     const token = getAuthToken();
-    console.log('🔍 AuthContext fetchUser - token:', token ? 'Present' : 'Missing');
-    console.log('🔍 AuthContext fetchUser - current URL:', window.location.href);
-    console.log('🔍 AuthContext fetchUser - current path:', window.location.pathname);
+    console.log('AuthContext token:', token ? 'Present' : 'Missing');
 
     // Always allow access to public pages without redirects
     const publicPages = ['/', '/debug', '/select-role', '/role-select', '/auth/callback', '/login'];
     const currentPath = window.location.pathname;
     
     if (!token) {
-      console.log('❌ No token found, user not authenticated');
+      console.log('No token found, user not authenticated');
       setUser(null);
       setLoading(false);
       return;
     }
 
     try {
-      console.log('🔄 Making API call to /auth/me with token');
       const res = await api.get('/auth/me');
       const userData = res.data;
-      console.log('✅ User data from token:', userData);
-      console.log('👤 User role:', userData.role);
+      console.log('User data from token:', userData);
       // If user is a candidate, fetch additional profile data including completeness
       if (userData.role === 'candidate') {
         try {
@@ -103,39 +98,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      // Handle role-based redirects
+      // Only redirect to role selection if user has no role and is on a protected page
       if (!userData.role) {
         console.log('User has no role, redirecting to role selection');
         window.location.href = `/role-select?token=${token}`;
-      } else {
-        // Auto-redirect authenticated users to their dashboard if they're on the home page
-        // But don't redirect if they're already on their correct dashboard path
-        const isOnCorrectDashboard = (
-          (userData.role === 'admin' && currentPath.startsWith('/admin')) ||
-          (userData.role === 'hr' && currentPath.startsWith('/hr')) ||
-          (userData.role === 'candidate' && currentPath.startsWith('/candidate')) ||
-          (userData.role === 'employee' && currentPath.startsWith('/employee'))
-        );
-        
-        if ((currentPath === '/' || currentPath === '/login') && !isOnCorrectDashboard) {
-          console.log('User authenticated with role, redirecting to dashboard:', userData.role);
-          switch (userData.role) {
-            case 'admin':
-              window.location.href = '/admin/dashboard';
-              break;
-            case 'hr':
-              window.location.href = '/hr/dashboard';
-              break;
-            case 'candidate':
-              window.location.href = '/candidate/dashboard';
-              break;
-            case 'employee':
-              window.location.href = '/employee/dashboard';
-              break;
-          }
-        } else if (isOnCorrectDashboard) {
-          console.log('User already on correct dashboard path, no redirect needed');
-        }
       }
     } catch (err) {
       console.error('Auth check failed:', err);

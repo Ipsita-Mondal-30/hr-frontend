@@ -1,7 +1,6 @@
 import axios from 'axios';
-import { getAuthToken } from './cookies';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://hr-system-x2uf.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
@@ -18,15 +17,20 @@ api.interceptors.request.use((config) => {
   const separator = config.url?.includes('?') ? '&' : '?';
   config.url = `${config.url}${separator}_t=${timestamp}`;
   
-  // Add auth token if available using the same cookie utility
-  const token = getAuthToken();
-  console.log('🔑 API Interceptor - Token from cookies:', token ? 'Found' : 'Not found');
+  // Add auth token if available
+  const token = localStorage.getItem('token') || 
+    localStorage.getItem('auth_token') || 
+    document.cookie
+      .split('; ')
+      .find(row => row.startsWith('auth_token='))
+      ?.split('=')[1] ||
+    document.cookie
+      .split('; ')
+      .find(row => row.startsWith('token='))
+      ?.split('=')[1];
     
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    console.log('✅ API Interceptor - Authorization header set');
-  } else {
-    console.log('❌ API Interceptor - No token available');
   }
   
   return config;

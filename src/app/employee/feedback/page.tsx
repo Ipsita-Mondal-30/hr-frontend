@@ -1,9 +1,17 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
+import { 
+  Monitor, 
+  MessageCircle, 
+  Users, 
+  Crown, 
+  Puzzle, 
+  Clock, 
+  BarChart3 
+} from 'lucide-react';
 
 interface FeedbackData {
   _id: string;
@@ -107,7 +115,7 @@ export default function EmployeeFeedbackPage() {
       await fetchFeedback();
     } catch (error) {
       console.error('Error submitting response:', error);
-      showToast.error('Failed to submit response');
+      alert('Failed to submit response');
     } finally {
       setSubmittingResponse(false);
     }
@@ -132,15 +140,15 @@ export default function EmployeeFeedbackPage() {
   };
 
   const getCategoryIcon = (category: string) => {
-    const icons: { [key: string]: string } = {
-      technical: '💻',
-      communication: '💬',
-      teamwork: '🤝',
-      leadership: '👑',
-      problemSolving: '🧩',
-      timeManagement: '⏰',
+    const iconMap: { [key: string]: React.ReactNode } = {
+      technical: <Monitor className="w-4 h-4" />,
+      communication: <MessageCircle className="w-4 h-4" />,
+      teamwork: <Users className="w-4 h-4" />,
+      leadership: <Crown className="w-4 h-4" />,
+      problemSolving: <Puzzle className="w-4 h-4" />,
+      timeManagement: <Clock className="w-4 h-4" />,
     };
-    return icons[category] || '📊';
+    return iconMap[category] || <BarChart3 className="w-4 h-4" />;
   };
 
   if (loading) {
@@ -256,7 +264,7 @@ export default function EmployeeFeedbackPage() {
 
         {feedback.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            <div className="text-4xl mb-2">💬</div>
+            <MessageCircle className="w-16 h-16 mx-auto mb-2 text-gray-400" />
             <p>No feedback found for the selected filter</p>
           </div>
         ) : (

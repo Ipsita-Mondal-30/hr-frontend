@@ -1,19 +1,18 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { showToast } from '@/lib/toast';
 
 interface PayrollRecord {
   _id: string;
   employee: {
     _id: string;
     employeeId: string;
-    user?: {
-      name?: string;
-      email?: string;
-    } | null;
+    user: {
+      name: string;
+      email: string;
+    };
     position: string;
     department?: {
       name: string;
@@ -67,7 +66,7 @@ export default function EmployeePayrollDetailPage() {
       setPayroll(response.data as PayrollRecord);
     } catch (error) {
       console.error('Error fetching payroll details:', error);
-      showToast.error('Error loading payroll details');
+      alert('Error loading payroll details');
     } finally {
       setLoading(false);
     }
@@ -170,7 +169,7 @@ export default function EmployeePayrollDetailPage() {
             <div className="space-y-3">
               <div>
                 <label className="text-sm font-medium text-gray-500">Name</label>
-                <p className="text-gray-900">{payroll.employee?.user?.name || 'No Name'}</p>
+                <p className="text-gray-900">{payroll.employee.user.name}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Employee ID</label>

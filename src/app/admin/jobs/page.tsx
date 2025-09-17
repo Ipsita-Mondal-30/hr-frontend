@@ -2,23 +2,22 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
-import toast from '@/lib/toast';
 
 interface Job {
   _id: string;
   title: string;
   companyName: string;
-  department?: { name: string } | null;
+  department: { name: string };
   location: string;
   type: string;
   status: 'active' | 'inactive' | 'pending' | 'rejected';
   salary?: { min: number; max: number; currency: string };
   applicationsCount: number;
   createdAt: string;
-  postedBy?: {
+  postedBy: {
     name: string;
     email: string;
-  } | null;
+  };
   isApproved: boolean;
   rejectionReason?: string;
 }
@@ -52,10 +51,10 @@ export default function AdminJobs() {
       setJobs(jobs.map(job =>
         job._id === jobId ? { ...job, status, rejectionReason: reason } : job
       ));
-      toast.success(`Job ${status} successfully`);
+      alert(`Job ${status} successfully`);
     } catch (err) {
       console.error('Failed to update job status:', err);
-      toast.error('Failed to update job status');
+      alert('Failed to update job status');
     }
   };
 
@@ -65,16 +64,16 @@ export default function AdminJobs() {
     try {
       await api.delete(`/admin/jobs/${jobId}`);
       setJobs(jobs.filter(job => job._id !== jobId));
-      toast.success('Job deleted successfully');
+      alert('Job deleted successfully');
     } catch (err) {
       console.error('Failed to delete job:', err);
-      toast.error('Failed to delete job');
+      alert('Failed to delete job');
     }
   };
 
   const bulkAction = async (action: 'approve' | 'reject' | 'delete') => {
     if (selectedJobs.length === 0) {
-      toast.warning('Please select jobs first');
+      alert('Please select jobs first');
       return;
     }
 
@@ -105,17 +104,17 @@ export default function AdminJobs() {
       }
 
       setSelectedJobs([]);
-      toast.success(`Successfully ${action}d ${selectedJobs.length} jobs`);
+      alert(`Successfully ${action}d ${selectedJobs.length} jobs`);
     } catch (err) {
       console.error(`Failed to ${action} jobs:`, err);
-      toast.error(`Failed to ${action} jobs`);
+      alert(`Failed to ${action} jobs`);
     }
   };
 
   const filteredJobs = jobs.filter(job =>
-    (job.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (job.companyName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (job.department?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
+    job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    job.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    job.department.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusColor = (status: Job['status']) => {
@@ -163,7 +162,7 @@ export default function AdminJobs() {
         </div>
         <div className="bg-white rounded-lg shadow-sm border p-4 text-center">
           <div className="text-2xl font-bold text-purple-600">
-            {jobs.reduce((sum, job) => sum + (job.applicationsCount || 0), 0)}
+            {jobs.reduce((sum, job) => sum + job.applicationsCount, 0)}
           </div>
           <div className="text-sm text-gray-600">Total Applications</div>
         </div>
@@ -279,11 +278,11 @@ export default function AdminJobs() {
                   <td className="px-6 py-4">
                     <div>
                       <div className="text-sm font-medium text-gray-900">{job.title}</div>
-                      <div className="text-sm text-gray-500">{job.department?.name || 'No Department'}</div>
+                      <div className="text-sm text-gray-500">{job.department.name}</div>
                       <div className="text-sm text-gray-500">{job.location} • {job.type}</div>
-                      {job.salary && job.salary.min && job.salary.max && (
+                      {job.salary && (
                         <div className="text-xs text-gray-400">
-                          {job.salary.currency || 'USD'} {job.salary.min.toLocaleString()} - {job.salary.max.toLocaleString()}
+                          {job.salary.currency} {job.salary.min.toLocaleString()} - {job.salary.max.toLocaleString()}
                         </div>
                       )}
                     </div>
@@ -291,8 +290,8 @@ export default function AdminJobs() {
                   <td className="px-6 py-4">
                     <div>
                       <div className="text-sm font-medium text-gray-900">{job.companyName}</div>
-                      <div className="text-sm text-gray-500">{job.postedBy?.name || 'Unknown User'}</div>
-                      <div className="text-xs text-gray-400">{job.postedBy?.email || 'No Email'}</div>
+                      <div className="text-sm text-gray-500">{job.postedBy.name}</div>
+                      <div className="text-xs text-gray-400">{job.postedBy.email}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -306,7 +305,7 @@ export default function AdminJobs() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
-                    {job.applicationsCount || 0}
+                    {job.applicationsCount}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {new Date(job.createdAt).toLocaleDateString()}
@@ -356,4 +355,3 @@ export default function AdminJobs() {
     </div>
   );
 }
-// Force deployment
