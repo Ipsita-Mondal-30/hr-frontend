@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
-import { DollarSign, TrendingUp, Target, Calendar } from 'lucide-react';
 
 interface PayrollRecord {
   _id: string;
@@ -150,8 +149,8 @@ export default function EmployeePayrollPage() {
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">💰</span>
                 </div>
               </div>
               <div className="ml-4">
@@ -169,7 +168,7 @@ export default function EmployeePayrollPage() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-white" />
+                  <span className="text-white text-sm font-bold">📊</span>
                 </div>
               </div>
               <div className="ml-4">
@@ -189,7 +188,7 @@ export default function EmployeePayrollPage() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
-                  <Target className="w-4 h-4 text-white" />
+                  <span className="text-white text-sm font-bold">🎯</span>
                 </div>
               </div>
               <div className="ml-4">
@@ -209,9 +208,7 @@ export default function EmployeePayrollPage() {
 
         {payrollRecords.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <DollarSign className="w-8 h-8 text-slate-400" />
-            </div>
+            <div className="text-4xl mb-4">💰</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Payroll Records</h3>
             <p className="text-gray-600">No payroll records found for {selectedYear}</p>
           </div>
