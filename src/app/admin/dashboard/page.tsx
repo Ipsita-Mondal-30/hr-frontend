@@ -3,6 +3,21 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
+import { 
+  Users, 
+  Briefcase, 
+  FileText, 
+  TrendingUp, 
+  Clock, 
+  CheckCircle, 
+  AlertCircle,
+  Building,
+  UserCheck,
+  Calendar,
+  BarChart3,
+  Activity,
+  ArrowUpRight
+} from 'lucide-react';
 
 interface Stats {
   jobsCount: number;
@@ -25,8 +40,8 @@ interface Stats {
     newJobs: number;
     newApplications: number;
   };
-  employeeCount?: number; // added
-  projectCount?: number;  // added
+  employeeCount?: number;
+  projectCount?: number;
 }
 
 interface RecentActivity {
@@ -48,9 +63,34 @@ export default function AdminDashboard() {
         api.get('/admin/recent-activity')
       ]);
       setStats(statsRes.data);
-      setRecentActivity(activityRes.data);
-    } catch (err) {
-      console.error('Error fetching admin data:', err);
+      setRecentActivity(activityRes.data || []);
+    } catch (error) {
+      console.error('Error fetching admin dashboard data:', error);
+      // Set default stats if API fails
+      setStats({
+        jobsCount: 0,
+        applicationsCount: 0,
+        hrCount: 0,
+        count: 0,
+        candidateCount: 0,
+        departmentsCount: 0,
+        rolesCount: 0,
+        avgMatchScore: '0',
+        activeJobs: 0,
+        pendingApplications: 0,
+        pendingHRVerifications: 0,
+        pendingJobApprovals: 0,
+        totalInterviews: 0,
+        upcomingInterviews: 0,
+        recentActivity: {
+          newCandidates: 0,
+          newHRs: 0,
+          newJobs: 0,
+          newApplications: 0
+        },
+        employeeCount: 0,
+        projectCount: 0
+      });
     } finally {
       setLoading(false);
     }
@@ -58,239 +98,222 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchData();
-
-    // Refresh data every 30 seconds
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded"></div>
-            ))}
-          </div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600 font-medium">Loading Dashboard</p>
         </div>
       </div>
     );
   }
 
-  const quickActions = [
-    { label: 'Manage Employees', href: '/admin/employees', count: stats?.employeeCount, color: 'bg-blue-500' },
-    { label: 'Create Project', href: '/admin/projects/create', count: undefined, color: 'bg-green-500' },
-    { label: 'Verify HR Accounts', href: '/admin/users/verification', count: stats?.pendingHRVerifications, color: 'bg-yellow-500' },
-    { label: 'View Projects', href: '/admin/projects', count: stats?.projectCount, color: 'bg-purple-500' },
-    { label: 'Approve Jobs', href: '/admin/jobs/pending', count: stats?.pendingJobApprovals, color: 'bg-orange-500' },
-    { label: 'Support Tickets', href: '/admin/support/tickets', count: 0, color: 'bg-red-500' }
-  ];
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600">Platform overview and management</p>
+    <div className="min-h-screen bg-slate-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
+          <p className="text-slate-600 mt-2">Comprehensive overview of your HR system</p>
         </div>
-        <div className="text-sm text-gray-500">
-          Last updated: {new Date().toLocaleString()}
-        </div>
-      </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatCard
-          label="Total Employees"
-          value={stats?.employeeCount || 0}
-          icon="👨‍💼"
-          trend="+3 new hires this month"
-          color="bg-blue-500"
-        />
-        <StatCard
-          label="Active Projects"
-          value={stats?.projectCount || 0}
-          icon="📊"
-          trend="+2 projects started"
-          color="bg-green-500"
-        />
-        <StatCard
-          label="HR Staff"
-          value={stats?.hrCount}
-          icon="👩‍💼"
-          trend="Managing operations"
-          color="bg-purple-500"
-        />
-        <StatCard
-          label="Candidates"
-          value={stats?.candidateCount}
-          icon="👤"
-          trend="+18% this month"
-          color="bg-orange-500"
-        />
-      </div>
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600">Total Users</p>
+                <p className="text-3xl font-bold text-slate-900">{stats?.count || 0}</p>
+                <p className="text-xs text-green-600 mt-1">All system users</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
 
-      {/* Employee Performance Overview */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Employee Performance Overview</h2>
-          <Link href="/admin/employees" className="text-blue-600 hover:text-blue-800 text-sm">
-            View All Employees →
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <StatCard
-            label="Active Employees"
-            value={stats?.employeeCount || 0}
-            icon="👥"
-            color="bg-blue-500"
-          />
-          <StatCard
-            label="Active Projects"
-            value={stats?.projectCount || 0}
-            icon="📊"
-            color="bg-green-500"
-          />
-          <StatCard
-            label="Total Applications"
-            value={stats?.applicationsCount || 0}
-            icon="📄"
-            color="bg-yellow-500"
-          />
-          <StatCard
-            label="HR Users"
-            value={stats?.hrCount || 0}
-            icon="👨‍💼"
-            color="bg-purple-500"
-          />
-        </div>
-      </div>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600">Active Jobs</p>
+                <p className="text-3xl font-bold text-slate-900">{stats?.activeJobs || 0}</p>
+                <p className="text-xs text-blue-600 mt-1">Currently open positions</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <Briefcase className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </div>
 
-      {/* System Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatCard label="Active Jobs" value={stats?.activeJobs || stats?.jobsCount} icon="💼" />
-        <StatCard label="Applications" value={stats?.applicationsCount} icon="📄" />
-        <StatCard label="Total Interviews" value={stats?.totalInterviews} icon="📅" />
-        <StatCard label="Upcoming Interviews" value={stats?.upcomingInterviews} icon="⏰" />
-      </div>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600">Applications</p>
+                <p className="text-3xl font-bold text-slate-900">{stats?.applicationsCount || 0}</p>
+                <p className="text-xs text-purple-600 mt-1">Total applications received</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <FileText className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+          </div>
 
-      {/* Additional Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatCard label="Departments" value={stats?.departmentsCount} icon="🏛️" />
-        <StatCard label="Job Roles" value={stats?.rolesCount} icon="📋" />
-        <StatCard label="Pending Applications" value={stats?.pendingApplications} icon="⏳" />
-        <StatCard label="Pending HR Verifications" value={stats?.pendingHRVerifications} icon="✅" />
-      </div>
-
-      {/* Quick Actions & Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="space-y-3">
-            {quickActions.map((action, index) => (
-              <Link
-                key={index}
-                href={action.href}
-                className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className={`w-3 h-3 rounded-full ${action.color}`}></div>
-                  <span className="font-medium text-gray-900">{action.label}</span>
-                </div>
-                {action.count !== undefined && action.count > 0 && (
-                  <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
-                    {action.count}
-                  </span>
-                )}
-              </Link>
-            ))}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600">Employees</p>
+                <p className="text-3xl font-bold text-slate-900">{stats?.employeeCount || 0}</p>
+                <p className="text-xs text-emerald-600 mt-1">Active employees</p>
+              </div>
+              <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
+                <UserCheck className="w-6 h-6 text-emerald-600" />
+              </div>
+            </div>
           </div>
         </div>
 
+        {/* Pending Actions */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <Link
+            href="/admin/jobs/pending"
+            className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition-all duration-200 group"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-slate-900 mb-1">Pending Job Approvals</h3>
+                <p className="text-2xl font-bold text-orange-600">{stats?.pendingJobApprovals || 0}</p>
+                <p className="text-sm text-slate-600">Jobs awaiting approval</p>
+              </div>
+              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center group-hover:bg-orange-200 transition-colors">
+                <Clock className="w-5 h-5 text-orange-600" />
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            href="/admin/users/verification"
+            className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition-all duration-200 group"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-slate-900 mb-1">HR Verifications</h3>
+                <p className="text-2xl font-bold text-red-600">{stats?.pendingHRVerifications || 0}</p>
+                <p className="text-sm text-slate-600">Pending HR approvals</p>
+              </div>
+              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 transition-colors">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            href="/admin/interviews"
+            className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition-all duration-200 group"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-slate-900 mb-1">Upcoming Interviews</h3>
+                <p className="text-2xl font-bold text-blue-600">{stats?.upcomingInterviews || 0}</p>
+                <p className="text-sm text-slate-600">Scheduled this week</p>
+              </div>
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                <Calendar className="w-5 h-5 text-blue-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Link
+            href="/admin/users"
+            className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition-all duration-200 group"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center group-hover:bg-slate-200 transition-colors">
+                <Users className="w-6 h-6 text-slate-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">Manage Users</h3>
+                <p className="text-sm text-slate-600">User administration</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            href="/admin/employees"
+            className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition-all duration-200 group"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
+                <UserCheck className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">Employees</h3>
+                <p className="text-sm text-slate-600">Employee management</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            href="/admin/projects"
+            className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition-all duration-200 group"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
+                <Briefcase className="w-6 h-6 text-indigo-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">Projects</h3>
+                <p className="text-sm text-slate-600">Project oversight</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            href="/admin/reports"
+            className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-slate-300 transition-all duration-200 group"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-violet-100 rounded-lg flex items-center justify-center group-hover:bg-violet-200 transition-colors">
+                <BarChart3 className="w-6 h-6 text-violet-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">Reports</h3>
+                <p className="text-sm text-slate-600">Analytics & insights</p>
+              </div>
+            </div>
+          </Link>
+        </div>
+
         {/* Recent Activity */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
-          <div className="space-y-3">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-slate-900">Recent Activity</h2>
+            <Activity className="w-5 h-5 text-slate-400" />
+          </div>
+          <div className="space-y-4">
             {recentActivity.length > 0 ? (
-              recentActivity.slice(0, 6).map((activity, index) => (
-                <div key={index} className="flex items-start space-x-3 text-sm">
-                  <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+              recentActivity.slice(0, 5).map((activity, index) => (
+                <div key={index} className="flex items-center space-x-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   <div className="flex-1">
-                    <p className="text-gray-900">{activity.message}</p>
-                    <p className="text-gray-500 text-xs">{new Date(activity.timestamp).toLocaleString()}</p>
+                    <p className="text-sm font-medium text-slate-900">{activity.message}</p>
+                    <p className="text-xs text-slate-500">{new Date(activity.timestamp).toLocaleString()}</p>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                <div className="text-4xl mb-2">📊</div>
-                <p>No recent activity</p>
+              <div className="text-center py-8">
+                <Activity className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-500">No recent activity</p>
               </div>
             )}
           </div>
         </div>
-      </div>
-
-      {/* Recent Activity Summary */}
-      {stats?.recentActivity && (
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">This Week&apos;s Activity</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{stats.recentActivity.newCandidates}</div>
-              <div className="text-sm text-gray-600">New Candidates</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{stats.recentActivity.newHRs}</div>
-              <div className="text-sm text-gray-600">New HR Users</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{stats.recentActivity.newJobs}</div>
-              <div className="text-sm text-gray-600">Jobs Posted</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{stats.recentActivity.newApplications}</div>
-              <div className="text-sm text-gray-600">Applications</div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  icon,
-  trend,
-  color = 'bg-gray-500'
-}: {
-  label: string;
-  value: number | string | undefined;
-  icon?: string;
-  trend?: string;
-  color?: string;
-}) {
-  return (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{label}</p>
-          <p className="text-2xl font-bold text-gray-900">{value || 0}</p>
-          {trend && (
-            <p className="text-xs text-green-600 mt-1">{trend}</p>
-          )}
-        </div>
-        {icon && (
-          <div className={`w-12 h-12 ${color} rounded-lg flex items-center justify-center text-white text-xl`}>
-            {icon}
-          </div>
-        )}
       </div>
     </div>
   );

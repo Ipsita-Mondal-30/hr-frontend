@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/AuthContext";
+import TokenHandler from "@/components/TokenHandler";
 
 export const metadata: Metadata = {
-  title: "HR Portal",
-  description: "Smart HR system with AI match scoring and insights",
+  title: "Talora - Professional HR Management System",
+  description: "Comprehensive HR management platform for modern organizations",
   icons: {
-    icon: "/talora.png", // <- your new favicon
-    shortcut: "/talora.png", // optional, for browsers that use shortcut icons
+    icon: "/talora.png",
+    shortcut: "/talora.png",
   },
 };
 
@@ -20,6 +21,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <AuthProvider>
+          <TokenHandler />
           {children}
         </AuthProvider>
       </body>
