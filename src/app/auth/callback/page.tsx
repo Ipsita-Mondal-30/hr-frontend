@@ -42,7 +42,7 @@ export default function AuthCallbackPage() {
         if (!decoded.role) {
           // Send token to select-role
           console.log('No role found, redirecting to select-role');
-          router.push(`/select-role?token=${token}`);
+          router.push(`/role-select?token=${token}`);
         } else {
           console.log('Role found:', decoded.role, 'redirecting to dashboard');
           switch (decoded.role) {
@@ -59,10 +59,11 @@ export default function AuthCallbackPage() {
               router.push('/employee/dashboard');
               break;
             default:
-              router.push('/');
+              console.log('Unknown role, redirecting to role selection');
+              router.push(`/role-select?token=${token}`);
           }
         }
-      }, 500); // Slightly longer delay for better reliability
+      }, 1000); // Longer delay for better reliability
       
     } catch (err) {
       console.error('Token decode error:', err);

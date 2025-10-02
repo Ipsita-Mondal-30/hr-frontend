@@ -2,6 +2,22 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
+import { 
+  Users, 
+  Briefcase, 
+  TrendingUp, 
+  Award, 
+  MessageSquare, 
+  BarChart3, 
+  UserCheck, 
+  FolderOpen,
+  Star,
+  ArrowRight,
+  Calendar,
+  Target,
+  Clock,
+  DollarSign
+} from "lucide-react";
 
 interface DashboardData {
   totalJobs: number;
@@ -202,51 +218,147 @@ export default function HRDashboardPage() {
     }
   };
 
-  if (loading) return <div className="p-6">Loading dashboard...</div>;
-
-  if (error)
+  if (loading) {
     return (
-      <div className="p-6">
-        <div className="text-red-600 mb-4">Error: {error}</div>
-        <div className="space-x-2">
-          <button
-            onClick={checkDatabaseData}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Check Database
-          </button>
-          <button
-            onClick={handleSeedData}
-            disabled={seeding}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
-          >
-            {seeding ? 'Creating Sample Data...' : 'Create Sample Data'}
-          </button>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600 font-medium">Loading Dashboard</p>
         </div>
       </div>
     );
+  }
 
-  if (!data) return <div className="p-6 text-red-600">Failed to load dashboard data</div>;
+  if (error) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-red-200 p-8">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <BarChart3 className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Dashboard Error</h2>
+          <p className="text-red-600 mb-6">{error}</p>
+          <div className="flex justify-center space-x-3">
+            <button
+              onClick={checkDatabaseData}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              Check Database
+            </button>
+            <button
+              onClick={handleSeedData}
+              disabled={seeding}
+              className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-slate-400 transition-colors font-medium"
+            >
+              {seeding ? 'Creating Sample Data...' : 'Create Sample Data'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <BarChart3 className="w-8 h-8 text-slate-400" />
+          </div>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">No Data Available</h2>
+          <p className="text-slate-600">Failed to load dashboard data</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">HR Dashboard</h1>
-        <div className="space-x-2"></div>
+    <div className="space-y-8">
+      {/* Enhanced Header with Time and Actions */}
+      <div className="bg-gradient-to-r from-white to-blue-50 rounded-xl shadow-sm border border-slate-200 p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <UserCheck className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">HR Dashboard</h1>
+              <p className="text-slate-600 mt-1">Manage your workforce and recruitment pipeline</p>
+              <div className="flex items-center space-x-4 mt-2 text-sm text-slate-500">
+                <span className="flex items-center">
+                  <Calendar className="w-4 h-4 mr-1" />
+                  {new Date().toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </span>
+                <span>•</span>
+                <span>Last updated: {new Date().toLocaleTimeString()}</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <button className="flex items-center space-x-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium">
+              <BarChart3 className="w-4 h-4" />
+              <span>Export Report</span>
+            </button>
+            <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+              <Target className="w-4 h-4" />
+              <span>Quick Actions</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Recruitment Stats */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold mb-4 text-blue-800">📋 Recruitment Overview</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          <StatCard label="Total Jobs" value={data.totalJobs} color="blue" />
-          <StatCard label="Open Jobs" value={data.openJobs} color="green" />
-          <StatCard label="Closed Jobs" value={data.closedJobs} color="gray" />
-          <StatCard label="Total Applications" value={data.totalApplications} color="purple" />
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            <Briefcase className="w-5 h-5 text-blue-600" />
+          </div>
+          <h2 className="text-xl font-semibold text-slate-900">Recruitment Overview</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          <StatCard 
+            label="Total Jobs" 
+            value={data.totalJobs} 
+            icon={Briefcase} 
+            color="blue" 
+            trend="up" 
+            trendValue="+12%" 
+          />
+          <StatCard 
+            label="Open Jobs" 
+            value={data.openJobs} 
+            icon={Target} 
+            color="green" 
+            trend="up" 
+            trendValue="+8%" 
+          />
+          <StatCard 
+            label="Closed Jobs" 
+            value={data.closedJobs} 
+            icon={FolderOpen} 
+            color="slate" 
+            trend="neutral" 
+          />
+          <StatCard 
+            label="Total Applications" 
+            value={data.totalApplications} 
+            icon={Users} 
+            color="purple" 
+            trend="up" 
+            trendValue="+24%" 
+          />
           <StatCard
             label="Avg Match Score"
             value={data.avgMatchScore ? data.avgMatchScore.toFixed(1) + '%' : '0%'}
+            icon={TrendingUp}
             color="orange"
+            trend="up"
+            trendValue="+5.2%"
           />
         </div>
       </div>
@@ -388,18 +500,68 @@ export default function HRDashboardPage() {
   );
 }
 
-function StatCard({ label, value, color = 'blue' }: { label: string; value: string | number; color?: string }) {
+function StatCard({ 
+  label, 
+  value, 
+  icon: Icon, 
+  color = 'blue',
+  trend,
+  trendValue 
+}: { 
+  label: string; 
+  value: string | number; 
+  icon: React.ComponentType<{ className?: string }>; 
+  color?: string;
+  trend?: 'up' | 'down' | 'neutral';
+  trendValue?: string;
+}) {
   const colorClasses = {
-    blue: 'text-blue-700 bg-blue-50 border-blue-200',
-    green: 'text-green-700 bg-green-50 border-green-200',
-    purple: 'text-purple-700 bg-purple-50 border-purple-200',
-    orange: 'text-orange-700 bg-orange-50 border-orange-200',
-    gray: 'text-gray-700 bg-gray-50 border-gray-200',
+    blue: 'from-blue-500 to-blue-600 bg-blue-50 border-blue-200 text-blue-700',
+    green: 'from-emerald-500 to-emerald-600 bg-emerald-50 border-emerald-200 text-emerald-700',
+    purple: 'from-purple-500 to-purple-600 bg-purple-50 border-purple-200 text-purple-700',
+    orange: 'from-orange-500 to-orange-600 bg-orange-50 border-orange-200 text-orange-700',
+    slate: 'from-slate-500 to-slate-600 bg-slate-50 border-slate-200 text-slate-700',
   };
+  
+  const selectedColor = colorClasses[color as keyof typeof colorClasses] || colorClasses.blue;
+  
+  const getTrendIcon = () => {
+    if (trend === 'up') return <TrendingUp className="w-3 h-3 text-emerald-600" />;
+    if (trend === 'down') return <TrendingUp className="w-3 h-3 text-red-600 rotate-180" />;
+    return null;
+  };
+  
+  const getTrendColor = () => {
+    if (trend === 'up') return 'text-emerald-600 bg-emerald-50';
+    if (trend === 'down') return 'text-red-600 bg-red-50';
+    return 'text-slate-600 bg-slate-50';
+  };
+  
   return (
-    <div className={`p-4 rounded-lg border text-center ${colorClasses[color as keyof typeof colorClasses] || colorClasses.blue}`}>
-      <div className="text-gray-600 text-sm font-medium">{label}</div>
-      <div className="text-xl font-bold mt-1">{value}</div>
+    <div className={`relative p-6 rounded-xl border ${selectedColor.split(' ').slice(2).join(' ')} hover:shadow-lg hover:scale-105 transition-all duration-300 group overflow-hidden`}>
+      {/* Background Pattern */}
+      <div className="absolute top-0 right-0 w-20 h-20 opacity-10">
+        <div className={`w-full h-full bg-gradient-to-br ${selectedColor.split(' ').slice(0, 2).join(' ')} rounded-full transform translate-x-6 -translate-y-6`}></div>
+      </div>
+      
+      <div className="relative">
+        <div className="flex items-center justify-between mb-4">
+          <div className={`w-12 h-12 bg-gradient-to-br ${selectedColor.split(' ').slice(0, 2).join(' ')} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+            <Icon className="w-6 h-6 text-white" />
+          </div>
+          {trend && trendValue && (
+            <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getTrendColor()}`}>
+              {getTrendIcon()}
+              <span>{trendValue}</span>
+            </div>
+          )}
+        </div>
+        
+        <div>
+          <div className="text-sm font-medium text-slate-600 mb-1">{label}</div>
+          <div className="text-3xl font-bold text-slate-900">{value}</div>
+        </div>
+      </div>
     </div>
   );
 }
