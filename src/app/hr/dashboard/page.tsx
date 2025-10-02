@@ -99,7 +99,7 @@ export default function HRDashboardPage() {
           const [employeesRes, projectsRes, topPerformersRes, feedbackRes] = await Promise.all([
             api.get<ApiEmployeesRes>("/employees?limit=1000"),
             api.get<ApiProjectsRes>("/projects?limit=1000"),
-            api.get<ApiTopPerformersRes>("/employees/top-performers?limit=5"),
+            api.get<ApiTopPerformersRes>("/admin/employees/top-performers?limit=5"),
             api.get<ApiFeedbackRes>("/feedback?limit=10"),
           ]);
 
