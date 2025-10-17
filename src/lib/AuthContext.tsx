@@ -54,14 +54,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(false);
     removeAuthToken();
     
-    // Clear any cached data
+    // Clear any cached data but preserve some settings
     if (typeof window !== 'undefined') {
-      localStorage.clear();
+      // Clear specific auth-related items instead of everything
+      localStorage.removeItem('dashboardCache');
+      localStorage.removeItem('userCache');
       sessionStorage.clear();
     }
     
-    // Redirect to login page
-    window.location.href = '/login';
+    // Redirect to home page (not login, to allow OAuth flow)
+    window.location.href = '/';
   };
 
   const updateUser = (userData: User) => {

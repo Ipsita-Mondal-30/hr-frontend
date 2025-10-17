@@ -7,7 +7,7 @@ interface Job {
   _id: string;
   title: string;
   companyName: string;
-  department: { name: string };
+  department?: { name: string } | null;
   location: string;
   type: string;
   status: 'active' | 'inactive' | 'pending' | 'rejected';
@@ -114,7 +114,7 @@ export default function AdminJobs() {
   const filteredJobs = jobs.filter(job =>
     job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     job.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.department.name.toLowerCase().includes(searchTerm.toLowerCase())
+    (job.department?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusColor = (status: Job['status']) => {
@@ -278,7 +278,7 @@ export default function AdminJobs() {
                   <td className="px-6 py-4">
                     <div>
                       <div className="text-sm font-medium text-gray-900">{job.title}</div>
-                      <div className="text-sm text-gray-500">{job.department.name}</div>
+                      <div className="text-sm text-gray-500">{job.department?.name || 'No Department'}</div>
                       <div className="text-sm text-gray-500">{job.location} • {job.type}</div>
                       {job.salary && (
                         <div className="text-xs text-gray-400">
