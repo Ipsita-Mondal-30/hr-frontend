@@ -1,4 +1,5 @@
-"use client";
+'use client';
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
@@ -6,17 +7,11 @@ import {
   Users, 
   Briefcase, 
   TrendingUp, 
-  Award, 
-  MessageSquare, 
   BarChart3, 
   UserCheck, 
   FolderOpen,
-  Star,
-  ArrowRight,
   Calendar,
   Target,
-  Clock,
-  DollarSign
 } from "lucide-react";
 
 interface DashboardData {
@@ -363,15 +358,20 @@ export default function HRDashboardPage() {
         </div>
       </div>
 
-      {/* Employee Performance Stats */}
+      {/* Employee Performance Stats - FIXED: Removed duplicate props */}
       {employeeData && (
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold mb-4 text-green-800">👥 Employee Performance Overview</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <StatCard label="Total Employees" value={employeeData.totalEmployees} color="blue" />
-            <StatCard label="Active Projects" value={employeeData.activeProjects} color="green" />
-            <StatCard label="Completed Projects" value={employeeData.completedProjects} color="purple" />
-            <StatCard label="Avg Performance" value={employeeData.averagePerformance.toFixed(1) + '%'} color="orange" />
+            <StatCard label="Total Employees" value={employeeData.totalEmployees} icon={Users} color="blue" />
+            <StatCard label="Active Projects" value={employeeData.activeProjects} icon={Target} color="green" />
+            <StatCard label="Completed Projects" value={employeeData.completedProjects} icon={FolderOpen} color="purple" />
+            <StatCard
+              label="Avg Performance" 
+              value={employeeData.averagePerformance.toFixed(1) + '%'} 
+              icon={TrendingUp}
+              color="orange" 
+            />
           </div>
         </div>
       )}
