@@ -9,7 +9,7 @@ interface DecodedToken {
   _id: string;
   name: string;
   email: string;
-  role?: 'admin' | 'hr' | 'candidate' | 'employee';
+  role?: 'admin' | 'hr' | 'candidate' | 'employee' | undefined;
 }
 
 export default function AuthCallbackPage() {
@@ -19,10 +19,10 @@ export default function AuthCallbackPage() {
     // Get token from URL manually to avoid useSearchParams issues
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
-    
+
     console.log('Auth callback received token:', token);
     console.log('Full URL:', window.location.href);
-    
+
     if (!token) {
       console.error('No token in callback URL');
       router.push('/');
@@ -33,7 +33,7 @@ export default function AuthCallbackPage() {
       // Set token in cookies immediately
       setAuthToken(token);
       console.log('Token set in cookies');
-      
+
       const decoded: DecodedToken = jwtDecode(token);
       console.log('Decoded token:', decoded);
 
@@ -41,10 +41,16 @@ export default function AuthCallbackPage() {
       setTimeout(() => {
         if (!decoded.role) {
           // Send token to select-role
-          console.log('No role found, redirecting to select-role');
+          console.log('No role found, redirecting to role-select');
           router.push(`/role-select?token=${token}`);
         } else {
           console.log('Role found:', decoded.role, 'redirecting to dashboard');
+          // Clear any cached data to prevent stale state
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('dashboardCache');
+            sessionStorage.removeItem('userCache');
+          }
+
           switch (decoded.role) {
             case 'admin':
               router.push('/admin/dashboard');
@@ -59,12 +65,12 @@ export default function AuthCallbackPage() {
               router.push('/employee/dashboard');
               break;
             default:
-              console.log('Unknown role, redirecting to role selection');
+              console.log('Unknown role:', decoded.role, 'redirecting to role selection');
               router.push(`/role-select?token=${token}`);
           }
         }
-      }, 1000); // Longer delay for better reliability
-      
+      }, 1500); // Longer delay for better reliability
+
     } catch (err) {
       console.error('Token decode error:', err);
       router.push('/');

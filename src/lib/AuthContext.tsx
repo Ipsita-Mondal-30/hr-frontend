@@ -43,15 +43,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
+      // Call backend logout endpoint
       await api.post('/auth/logout');
-    } catch (err) {
-      console.error('Logout error:', err);
-    } finally {
-      removeAuthToken();
-      setUser(null);
-      // Redirect to home page after logout
-      window.location.href = '/';
+    } catch (error) {
+      console.warn('Backend logout failed:', error);
     }
+    
+    // Clear frontend state and cookies
+    setUser(null);
+    setLoading(false);
+    removeAuthToken();
+    
+    // Clear any cached data
+    if (typeof window !== 'undefined') {
+      localStorage.clear();
+      sessionStorage.clear();
+    }
+    
+    // Redirect to login page
+    window.location.href = '/login';
   };
 
   const updateUser = (userData: User) => {

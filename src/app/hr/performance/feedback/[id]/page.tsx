@@ -47,7 +47,7 @@ export default function GiveFeedbackPage() {
     const fetchEmployee = async () => {
       try {
         console.log('🔍 Fetching employee data for feedback:', employeeId);
-        const response = await api.get<Employee>(`/employees/${employeeId}`);
+        const response = await api.get<Employee>(`/hr/employees/${employeeId}`);
         console.log('✅ Employee data received:', response.data);
         setEmployee(response.data);
       } catch (error: unknown) {
@@ -82,7 +82,10 @@ export default function GiveFeedbackPage() {
     try {
       await api.post(`/feedback`, {
         employee: employeeId,
-        ...formData,
+        content: formData.feedback,
+        ratings: formData.ratings,
+        type: formData.type,
+        isAnonymous: formData.isAnonymous,
       });
 
       alert('Feedback submitted successfully!');

@@ -36,6 +36,18 @@ export default function HRProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createFormData, setCreateFormData] = useState({
+    name: '',
+    description: '',
+    status: 'planning',
+    priority: 'medium',
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: '',
+    projectManagerId: '',
+    departmentId: '',
+    teamMembers: [] as string[]
+  });
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -53,6 +65,36 @@ export default function HRProjectsPage() {
       setLoading(false);
     }
   }, [filter]);
+
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.post('/projects', {
+        ...createFormData,
+        completionPercentage: 0,
+        teamMembers: []
+      });
+      
+      setShowCreateForm(false);
+      setCreateFormData({
+        name: '',
+        description: '',
+        status: 'planning',
+        priority: 'medium',
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: '',
+        projectManagerId: '',
+        departmentId: '',
+        teamMembers: []
+      });
+      
+      fetchProjects();
+      alert('Project created successfully!');
+    } catch (error) {
+      console.error('Error creating project:', error);
+      alert('Failed to create project. Please try again.');
+    }
+  };
 
   useEffect(() => {
     fetchProjects();
@@ -122,9 +164,13 @@ export default function HRProjectsPage() {
             <option value="on-hold">On Hold</option>
             <option value="planning">Planning</option>
           </select>
-          <div className="text-sm text-gray-600 bg-yellow-50 px-3 py-2 rounded border border-yellow-200">
-            📝 View Only - Projects managed by Admin
-          </div>
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <span className="text-lg">+</span>
+            <span>Create Project</span>
+          </button>
         </div>
       </div>
 
@@ -251,6 +297,101 @@ export default function HRProjectsPage() {
           </div>
         )}
       </div>
+
+      {/* Create Project Modal */}
+      {showCreateForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold">Create New Project</h2>
+                <button onClick={() => setShowCreateForm(false)} className="text-gray-400 hover:text-gray-600">
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleCreateProject} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Project Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={createFormData.name}
+                    onChange={(e) => setCreateFormData({...createFormData, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                  <select
+                    value={createFormData.priority}
+                    onChange={(e) => setCreateFormData({...createFormData, priority: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                <textarea
+                  required
+                  value={createFormData.description}
+                  onChange={(e) => setCreateFormData({...createFormData, description: e.target.value})}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={createFormData.startDate}
+                    onChange={(e) => setCreateFormData({...createFormData, startDate: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                  <input
+                    type="date"
+                    value={createFormData.endDate}
+                    onChange={(e) => setCreateFormData({...createFormData, endDate: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateForm(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Create Project
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Project Team Details Modal */}
       {selectedProject && (
