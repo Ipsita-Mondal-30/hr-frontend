@@ -2,7 +2,7 @@
 
 A modern, full-stack HR Management System built with Next.js, Node.js, and MongoDB. Talora provides a comprehensive platform for managing recruitment, employees, payroll, performance tracking, and more.
 
-![Talora Platform](hr-frontend/public/talora.png)
+
 
 ## 📋 Table of Contents
 
