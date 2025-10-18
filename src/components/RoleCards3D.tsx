@@ -7,7 +7,7 @@ const roleData = [
   {
     title: "Candidate (Job Seeker)",
     description: "Find your dream job with advanced search and tracking features",
-    icon: "",
+    icon: "🎯",
     color: "from-blue-500 to-blue-600",
     features: [
       "Create & manage profile with skills and resume",
@@ -19,12 +19,12 @@ const roleData = [
     ],
     ctaText: "Start Job Search",
     ctaLink: "/login",
-    bgImage: "https://images.unsplash.com/photo-1486312338219-ce68e2c6b84d?q=80&w=2560&auto=format&fit=crop"
+    bgImage: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&auto=format&fit=crop"
   },
   {
     title: "HR (Recruiter)",
     description: "Streamline your hiring process with powerful recruitment tools",
-    icon: "",
+    icon: "👔",
     color: "from-green-500 to-green-600",
     features: [
       "Post detailed job descriptions easily",
@@ -36,12 +36,12 @@ const roleData = [
     ],
     ctaText: "Post Jobs",
     ctaLink: "/login",
-    bgImage: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?q=80&w=2560&auto=format&fit=crop"
+    bgImage: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&auto=format&fit=crop"
   },
   {
     title: "Admin (Platform Owner)",
     description: "Complete platform control with advanced management features",
-    icon: "",
+    icon: "⚙️",
     color: "from-purple-500 to-purple-600",
     features: [
       "Manage entire platform ecosystem",
@@ -52,13 +52,13 @@ const roleData = [
       "Assign roles and permissions"
     ],
     ctaText: "Admin Panel",
-    ctaLink: "login",
-    bgImage: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2560&auto=format&fit=crop"
+    ctaLink: "/login",
+    bgImage: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop"
   },
   {
     title: "Employee (Support Staff)",
     description: "Provide internal support and maintain platform quality",
-    icon: "",
+    icon: "🤝",
     color: "from-orange-500 to-orange-600",
     features: [
       "Assist HR with job posting processes",
@@ -70,7 +70,7 @@ const roleData = [
     ],
     ctaText: "Support Center",
     ctaLink: "/login",
-    bgImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2560&auto=format&fit=crop"
+    bgImage: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&auto=format&fit=crop"
   }
 ];
 
@@ -87,7 +87,7 @@ export function RoleCards3D() {
               <span className="text-2xl">{role.icon}</span>
               {role.title}
             </CardItem>
-            
+
             <CardItem
               as="p"
               translateZ="60"
@@ -97,7 +97,7 @@ export function RoleCards3D() {
             </CardItem>
 
             <CardItem translateZ="100" className="w-full mb-4">
-              <div 
+              <div
                 className={`h-32 w-full bg-gradient-to-r ${role.color} rounded-xl relative overflow-hidden group-hover/card:shadow-xl transition-all duration-300`}
                 style={{
                   backgroundImage: `linear-gradient(135deg, rgba(0,0,0,0.1), rgba(0,0,0,0.3)), url(${role.bgImage})`,

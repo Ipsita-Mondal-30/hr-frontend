@@ -7,32 +7,32 @@ export function TestimonialsSection() {
   const testimonials = [
     {
       quote:
-        'Talora transformed our hiring process completely. The AI matching is incredibly accurate, and we&apos;ve reduced our time-to-hire by 60%. The platform is intuitive and our team adopted it seamlessly.',
+        'Talora transformed our hiring process completely. The AI matching is incredibly accurate, and we\'ve reduced our time-to-hire by 60%. The platform is intuitive and our team adopted it seamlessly.',
       author: 'Sarah Chen',
       position: 'Head of Talent Acquisition',
       company: 'TechFlow Solutions',
       image:
-        'https://images.unsplash.com/photo-1494790108755-2616b612b77c?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
+        'https://randomuser.me/api/portraits/women/44.jpg',
       rating: 5,
     },
     {
       quote:
-        'The analytics dashboard gives us insights we never had before. We can now predict hiring trends and make data-driven decisions. It&apos;s been a game-changer for our recruitment strategy.',
+        'The analytics dashboard gives us insights we never had before. We can now predict hiring trends and make data-driven decisions. It\'s been a game-changer for our recruitment strategy.',
       author: 'Marcus Rodriguez',
       position: 'VP of Human Resources',
       company: 'Innovation Labs',
       image:
-        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
+        'https://randomuser.me/api/portraits/men/32.jpg',
       rating: 5,
     },
     {
       quote:
-        'As a candidate, the experience was exceptional. The application process was smooth, communication was transparent, and I felt valued throughout. It&apos;s clear why companies choose Talora.',
+        'As a candidate, the experience was exceptional. The application process was smooth, communication was transparent, and I felt valued throughout. It\'s clear why companies choose Talora.',
       author: 'Emily Watson',
       position: 'Software Engineer',
       company: 'CloudTech Inc',
       image:
-        'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
+        'https://randomuser.me/api/portraits/women/68.jpg',
       rating: 5,
     },
   ];
@@ -118,22 +118,6 @@ export function TestimonialsSection() {
                 }`}
               />
             ))}
-          </div>
-        </div>
-
-        {/* Stats Section */}
-        <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="text-center p-8 bg-white/70 backdrop-blur-sm rounded-2xl border border-purple-100">
-            <div className="text-4xl font-bold text-purple-600 mb-2">500+</div>
-            <div className="text-gray-600 font-medium">Companies Trust Us</div>
-          </div>
-          <div className="text-center p-8 bg-white/70 backdrop-blur-sm rounded-2xl border border-cyan-100">
-            <div className="text-4xl font-bold text-cyan-600 mb-2">98%</div>
-            <div className="text-gray-600 font-medium">Client Satisfaction</div>
-          </div>
-          <div className="text-center p-8 bg-white/70 backdrop-blur-sm rounded-2xl border border-purple-100">
-            <div className="text-4xl font-bold text-purple-600 mb-2">10M+</div>
-            <div className="text-gray-600 font-medium">Successful Matches</div>
           </div>
         </div>
       </div>

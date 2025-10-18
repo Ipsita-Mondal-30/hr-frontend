@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 
 export function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(true);
 
   const images = [
     "https://images.unsplash.com/photo-1497032205916-ac775f0649ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
@@ -17,6 +18,19 @@ export function HeroSection() {
     }, 5000);
     return () => clearInterval(timer);
   }, [images.length]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 100) {
+        setShowScrollIndicator(false);
+      } else {
+        setShowScrollIndicator(true);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <section className="relative min-h-screen pt-20 pb-12 overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -160,7 +174,9 @@ export function HeroSection() {
       </div>
 
       {/* Scroll Indicator */}
-      <div className="absolute bottom-8 right-8 z-10">
+      <div className={`absolute bottom-8 right-8 z-10 transition-opacity duration-500 ${
+        showScrollIndicator ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}>
         <div className="flex flex-col items-center text-white/60 animate-bounce">
           <span className="text-xs mb-2 rotate-90 origin-center whitespace-nowrap">Scroll down</span>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
