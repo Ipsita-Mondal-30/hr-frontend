@@ -280,9 +280,9 @@ export default function AdminJobs() {
                       <div className="text-sm font-medium text-gray-900">{job.title}</div>
                       <div className="text-sm text-gray-500">{job.department?.name || 'No Department'}</div>
                       <div className="text-sm text-gray-500">{job.location} • {job.type}</div>
-                      {job.salary && (
+                      {job.salary && job.salary.min && job.salary.max && (
                         <div className="text-xs text-gray-400">
-                          {job.salary.currency} {job.salary.min.toLocaleString()} - {job.salary.max.toLocaleString()}
+                          {job.salary.currency || 'USD'} {job.salary.min.toLocaleString()} - {job.salary.max.toLocaleString()}
                         </div>
                       )}
                     </div>
