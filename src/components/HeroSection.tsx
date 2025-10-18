@@ -104,52 +104,40 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Right Content - Feature Cards */}
+          {/* Right Content - Video */}
           <div className="relative lg:block hidden">
-            <div className="relative z-10 space-y-6">
-              {/* Main Feature Card */}
-              <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-8 transform rotate-3 hover:rotate-0 transition-transform duration-500">
-                <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            <div className="relative z-10">
+              {/* Video Container */}
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 backdrop-blur-sm">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-auto rounded-2xl"
+                >
+                  <source src="https://cdn.pixabay.com/video/2022/12/15/143395-781894626_large.mp4" type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+                
+                {/* Video Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-purple-900/30 via-transparent to-transparent pointer-events-none"></div>
+                
+                {/* Play Icon Overlay (decorative) */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
                     </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-white font-semibold text-lg mb-2">AI-Powered Matching</h3>
-                    <p className="text-gray-300 text-sm">Smart algorithms connect the right talent with perfect opportunities instantly.</p>
                   </div>
                 </div>
               </div>
 
-              {/* Secondary Feature Card */}
-              <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-8 transform -rotate-2 hover:rotate-0 transition-transform duration-500 ml-8">
-                <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-white font-semibold text-lg mb-2">Analytics Dashboard</h3>
-                    <p className="text-gray-300 text-sm">Comprehensive insights and metrics to optimize your hiring strategy.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Third Feature Card */}
-              <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-6 transform rotate-1 hover:rotate-0 transition-transform duration-500 mr-8">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="text-white font-medium">Real-time Collaboration</h4>
-                    <p className="text-gray-300 text-xs">Seamless team workflows</p>
-                  </div>
-                </div>
+              {/* Video Caption */}
+              <div className="mt-4 text-center">
+                <p className="text-white/80 text-sm font-medium">
+                  See how we transform hiring
+                </p>
               </div>
             </div>
 
