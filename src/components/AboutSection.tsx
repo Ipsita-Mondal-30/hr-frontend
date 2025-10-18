@@ -1,4 +1,19 @@
+import { useState, useEffect, useRef } from 'react';
+
 export function AboutSection() {
+  const [videoError, setVideoError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    // Try to play the video when component mounts
+    if (videoRef.current) {
+      videoRef.current.play().catch((error) => {
+        console.error('Video autoplay failed:', error);
+        // Autoplay might be blocked, but video can still be played on user interaction
+      });
+    }
+  }, []);
+
   return (
     <section className="py-24 bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -60,17 +75,41 @@ export function AboutSection() {
           {/* Right Content - Video */}
           <div className="relative">
             {/* Video Container */}
-            <div className="relative rounded-3xl overflow-hidden shadow-2xl">
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-auto rounded-3xl"
-              >
-                <source src="https://cdn.pixabay.com/video/2023/04/28/160449-822499092_large.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-purple-900 to-indigo-900">
+              {!videoError ? (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="auto"
+                  className="w-full h-auto rounded-3xl"
+                  onError={() => {
+                    console.error('Video failed to load');
+                    setVideoError(true);
+                  }}
+                  onLoadedData={() => {
+                    console.log('Video loaded successfully');
+                  }}
+                >
+                  <source src="/Talora.mp4" type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                /* Fallback content if video fails */
+                <div className="aspect-video flex items-center justify-center p-12">
+                  <div className="text-white text-center">
+                    <svg className="w-24 h-24 mx-auto mb-6 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 className="text-2xl font-bold mb-2">Talora Platform</h3>
+                    <p className="text-lg text-purple-200">Transforming Recruitment</p>
+                    <p className="text-sm text-purple-300 mt-4">Where Talent Meets Opportunity</p>
+                  </div>
+                </div>
+              )}
 
               {/* Video Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 via-transparent to-transparent pointer-events-none rounded-3xl"></div>

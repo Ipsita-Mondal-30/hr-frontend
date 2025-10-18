@@ -104,47 +104,7 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Right Content - Video */}
-          <div className="relative lg:block hidden">
-            <div className="relative z-10">
-              {/* Video Container */}
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 backdrop-blur-sm">
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full h-auto rounded-2xl"
-                >
-                  <source src="https://cdn.pixabay.com/video/2022/12/15/143395-781894626_large.mp4" type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
-                
-                {/* Video Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-purple-900/30 via-transparent to-transparent pointer-events-none"></div>
-                
-                {/* Play Icon Overlay (decorative) */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
-                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
 
-              {/* Video Caption */}
-              <div className="mt-4 text-center">
-                <p className="text-white/80 text-sm font-medium">
-                  See how we transform hiring
-                </p>
-              </div>
-            </div>
-
-            {/* Floating Elements */}
-            <div className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-20 animate-pulse"></div>
-            <div className="absolute -bottom-8 -left-4 w-16 h-16 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full opacity-20 animate-ping"></div>
-          </div>
         </div>
       </div>
 
