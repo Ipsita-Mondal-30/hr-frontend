@@ -167,8 +167,7 @@ PORT=8080
 NODE_ENV=development
 
 # Database
-MONGODB_URI=mongodb://localhost:27017/hr-system
-# Or MongoDB Atlas: mongodb+srv://username:password@cluster.mongodb.net/hr-system
+MONGODB_URI=mongodb-url
 
 # JWT
 JWT_SECRET=your-super-secret-jwt-key-change-this
