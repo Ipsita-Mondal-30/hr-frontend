@@ -1,5 +1,3 @@
-import Image from 'next/image';
-
 export function AboutSection() {
   return (
     <section className="py-24 bg-gradient-to-b from-gray-50 to-white">
@@ -59,60 +57,42 @@ export function AboutSection() {
             </div>
           </div>
 
-          {/* Right Content - Team Images */}
+          {/* Right Content - Video */}
           <div className="relative">
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-6">
-                <div className="bg-gray-200 rounded-3xl h-48 overflow-hidden">
-                  <Image
-                    src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
-                    alt="Team member"
-                    width={500}
-                    height={384}
-                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
-                  />
-                </div>
-                <div className="bg-gray-200 rounded-3xl h-32 overflow-hidden">
-                  <Image
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
-                    alt="Team member"
-                    width={500}
-                    height={256}
-                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
-                  />
-                </div>
-              </div>
+            {/* Video Container */}
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-auto rounded-3xl"
+              >
+                <source src="https://cdn.pixabay.com/video/2023/04/28/160449-822499092_large.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
 
-              <div className="space-y-6 pt-12">
-                <div className="bg-gray-200 rounded-3xl h-32 overflow-hidden">
-                  <Image
-                    src="https://images.unsplash.com/photo-1494790108755-2616b612b77c?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
-                    alt="Team member"
-                    width={500}
-                    height={256}
-                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
-                  />
-                </div>
-                <div className="bg-gray-200 rounded-3xl h-48 overflow-hidden">
-                  <Image
-                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
-                    alt="Team member"
-                    width={500}
-                    height={384}
-                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
-                  />
+              {/* Video Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 via-transparent to-transparent pointer-events-none rounded-3xl"></div>
+
+              {/* Play Icon Overlay (decorative) */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+                <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                  <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
                 </div>
               </div>
             </div>
 
             {/* Floating Elements */}
-            <div className="absolute -top-6 -right-6 w-20 h-20 bg-purple-100 rounded-2xl rotate-12 flex items-center justify-center">
+            <div className="absolute -top-6 -right-6 w-20 h-20 bg-purple-100 rounded-2xl rotate-12 flex items-center justify-center shadow-lg">
               <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
             </div>
 
-            <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-yellow-100 rounded-2xl -rotate-12 flex items-center justify-center">
+            <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-yellow-100 rounded-2xl -rotate-12 flex items-center justify-center shadow-lg">
               <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
