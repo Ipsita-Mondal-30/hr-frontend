@@ -89,29 +89,34 @@ export default function RoleSelectPage() {
       }
 
       if (data.token) {
+        console.log('✅ New token received, updating cookies');
         setAuthToken(data.token);
       }
 
+      console.log('🔄 Refreshing user state...');
       await refreshUser();
+      
+      console.log('✅ Role set successfully, redirecting to dashboard');
 
+      // Redirect based on role
       setTimeout(() => {
         switch (role) {
           case 'admin':
-            router.push('/admin/dashboard');
+            window.location.href = '/admin/dashboard';
             break;
           case 'hr':
-            router.push('/hr/dashboard');
+            window.location.href = '/hr/dashboard';
             break;
           case 'candidate':
-            router.push('/candidate/dashboard');
+            window.location.href = '/candidate/dashboard';
             break;
           case 'employee':
-            router.push('/employee/dashboard');
+            window.location.href = '/employee/dashboard';
             break;
           default:
-            router.push('/');
+            window.location.href = '/';
         }
-      }, 1000);
+      }, 500);
     } catch (err: unknown) {
       console.error('❌ Error setting role:', err);
       let errorMessage = 'Failed to set role. ';

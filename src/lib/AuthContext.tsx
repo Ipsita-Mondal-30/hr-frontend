@@ -72,53 +72,64 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUser = async () => {
     const token = getAuthToken();
-    console.log('AuthContext token:', token ? 'Present' : 'Missing');
+    console.log('🔍 AuthContext fetchUser - token:', token ? 'Present (' + token.substring(0, 20) + '...)' : 'Missing');
 
     // Always allow access to public pages without redirects
     const publicPages = ['/', '/debug', '/select-role', '/role-select', '/auth/callback', '/login'];
     const currentPath = window.location.pathname;
     
     if (!token) {
-      console.log('No token found, user not authenticated');
+      console.log('❌ No token found, user not authenticated');
       setUser(null);
       setLoading(false);
       return;
     }
 
     try {
+      console.log('📡 Fetching user data from /auth/me...');
       const res = await api.get('/auth/me');
       const userData = res.data;
-      console.log('User data from token:', userData);
+      console.log('✅ User data received:', {
+        name: userData.name,
+        email: userData.email,
+        role: userData.role,
+        _id: userData._id
+      });
+      
       // If user is a candidate, fetch additional profile data including completeness
       if (userData.role === 'candidate') {
         try {
           const profileRes = await api.get('/candidate/dashboard-stats');
           const profileData = profileRes.data;
           userData.profileCompleteness = profileData.profileCompleteness || 0;
-          console.log('Profile completeness fetched:', userData.profileCompleteness);
+          console.log('📊 Profile completeness fetched:', userData.profileCompleteness);
         } catch (profileErr) {
-          console.error('Failed to fetch profile completeness:', profileErr);
+          console.error('⚠️ Failed to fetch profile completeness:', profileErr);
           userData.profileCompleteness = 0;
         }
       }
       
       setUser(userData);
+      console.log('✅ User state updated in AuthContext');
 
       // Don't redirect if we're already on a public page or role selection
       if (publicPages.some(page => currentPath.includes(page))) {
-        console.log('On public page, no redirect needed');
+        console.log('ℹ️ On public page, no redirect needed');
         return;
       }
 
       // Only redirect to role selection if user has no role and is on a protected page
       if (!userData.role) {
-        console.log('User has no role, redirecting to role selection');
+        console.log('⚠️ User has no role, redirecting to role selection');
         window.location.href = `/role-select?token=${token}`;
       }
-    } catch (err) {
-      console.error('Auth check failed:', err);
-      removeAuthToken();
-      setUser(null);
+    } catch (err: any) {
+      console.error('❌ Auth check failed:', err.response?.status, err.message);
+      if (err.response?.status === 401) {
+        console.log('🔄 Token invalid, clearing auth state');
+        removeAuthToken();
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }

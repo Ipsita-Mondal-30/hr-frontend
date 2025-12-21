@@ -5,14 +5,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
 import TokenHandler from '@/components/TokenHandler';
-import { 
-  Home, 
-  BarChart3, 
-  Search, 
-  FileText, 
-  Bookmark, 
+import {
+  Home,
+  BarChart3,
+  Search,
+  FileText,
+  Bookmark,
   User,
-  LogOut 
+  LogOut,
+  Video
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -46,6 +47,7 @@ export default function CandidateLayout({
     { name: 'Dashboard', href: '/candidate/dashboard', icon: 'bar-chart' },
     { name: 'Browse Jobs', href: '/candidate/jobs', icon: 'search' },
     { name: 'Applied Jobs', href: '/candidate/applications', icon: 'file-text' },
+    { name: 'Interview Prep', href: '/candidate/interview-prep', icon: 'video' },
     { name: 'Saved Jobs', href: '/candidate/saved', icon: 'bookmark' },
     { name: 'Profile', href: '/candidate/profile', icon: 'user' },
   ];
@@ -146,6 +148,11 @@ function CandidateSidebar({ navigation, pathname, user, logout }: CandidateSideb
                       {item.icon === 'bar-chart' && <BarChart3 className="w-5 h-5" />}
                       {item.icon === 'search' && <Search className="w-5 h-5" />}
                       {item.icon === 'file-text' && <FileText className="w-5 h-5" />}
+                      {item.icon === 'video' && (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      )}
                       {item.icon === 'bookmark' && <Bookmark className="w-5 h-5" />}
                       {item.icon === 'user' && <User className="w-5 h-5" />}
                     </span>

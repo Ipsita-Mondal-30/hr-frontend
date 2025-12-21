@@ -174,29 +174,184 @@ export default function ManageJobs() {
       </div>
 
       {formVisible && (
-        <form onSubmit={handleSubmit} className="mb-6 bg-white p-6 rounded-md shadow-md">
+        <form onSubmit={handleSubmit} className="mb-6 bg-white p-6 rounded-md shadow-md max-h-[80vh] overflow-y-auto">
           <h2 className="text-lg font-semibold mb-4">{editingId ? 'Edit Job' : 'Create Job'}</h2>
 
-          {/* Add other form fields here in similar fashion */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mb-4">
+              <label htmlFor="title" className="block mb-1 font-medium">Job Title *</label>
+              <input
+                id="title"
+                type="text"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                required
+                className="w-full border p-2 rounded"
+                placeholder="e.g., Senior Software Engineer"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="companyName" className="block mb-1 font-medium">Company Name *</label>
+              <input
+                id="companyName"
+                type="text"
+                value={form.companyName}
+                onChange={(e) => setForm({ ...form, companyName: e.target.value })}
+                required
+                className="w-full border p-2 rounded"
+                placeholder="e.g., TechCorp Inc."
+              />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="location" className="block mb-1 font-medium">Location</label>
+              <input
+                id="location"
+                type="text"
+                value={form.location}
+                onChange={(e) => setForm({ ...form, location: e.target.value })}
+                className="w-full border p-2 rounded"
+                placeholder="e.g., San Francisco, CA"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="employmentType" className="block mb-1 font-medium">Employment Type</label>
+              <select
+                id="employmentType"
+                value={form.employmentType}
+                onChange={(e) => setForm({ ...form, employmentType: e.target.value as any })}
+                className="w-full border p-2 rounded"
+              >
+                <option value="full-time">Full-time</option>
+                <option value="part-time">Part-time</option>
+                <option value="internship">Internship</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="experienceRequired" className="block mb-1 font-medium">Experience Required (years)</label>
+              <input
+                id="experienceRequired"
+                type="number"
+                value={form.experienceRequired}
+                onChange={(e) => setForm({ ...form, experienceRequired: e.target.value })}
+                className="w-full border p-2 rounded"
+                placeholder="e.g., 3"
+                min="0"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="companySize" className="block mb-1 font-medium">Company Size</label>
+              <select
+                id="companySize"
+                value={form.companySize}
+                onChange={(e) => setForm({ ...form, companySize: e.target.value })}
+                className="w-full border p-2 rounded"
+              >
+                <option value="">Select size</option>
+                <option value="1-10">1-10</option>
+                <option value="11-50">11-50</option>
+                <option value="51-200">51-200</option>
+                <option value="201-500">201-500</option>
+                <option value="500+">500+</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="minSalary" className="block mb-1 font-medium">Min Salary ($)</label>
+              <input
+                id="minSalary"
+                type="number"
+                value={form.minSalary}
+                onChange={(e) => setForm({ ...form, minSalary: e.target.value })}
+                className="w-full border p-2 rounded"
+                placeholder="e.g., 80000"
+                min="0"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="maxSalary" className="block mb-1 font-medium">Max Salary ($)</label>
+              <input
+                id="maxSalary"
+                type="number"
+                value={form.maxSalary}
+                onChange={(e) => setForm({ ...form, maxSalary: e.target.value })}
+                className="w-full border p-2 rounded"
+                placeholder="e.g., 120000"
+                min="0"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="status" className="block mb-1 font-medium">Status</label>
+              <select
+                id="status"
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value as 'open' | 'closed' })}
+                className="w-full border p-2 rounded"
+              >
+                <option value="open">Open</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+
+            <div className="mb-4 flex items-center">
+              <input
+                id="remote"
+                type="checkbox"
+                checked={form.remote}
+                onChange={(e) => setForm({ ...form, remote: e.target.checked })}
+                className="mr-2"
+              />
+              <label htmlFor="remote" className="font-medium">Remote Position</label>
+            </div>
+          </div>
+
           <div className="mb-4">
-            <label htmlFor="title" className="block mb-1 font-medium">Job Title</label>
-            <input
-              id="title"
-              type="text"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              required
+            <label htmlFor="description" className="block mb-1 font-medium">Job Description</label>
+            <textarea
+              id="description"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
               className="w-full border p-2 rounded"
+              rows={4}
+              placeholder="Describe the job role, responsibilities, and requirements..."
             />
           </div>
 
-          {/* Render other inputs similarly */}
+          <div className="mb-4">
+            <label htmlFor="skills" className="block mb-1 font-medium">Skills (comma-separated)</label>
+            <input
+              id="skills"
+              type="text"
+              value={form.skills}
+              onChange={(e) => setForm({ ...form, skills: e.target.value })}
+              className="w-full border p-2 rounded"
+              placeholder="e.g., JavaScript, React, Node.js"
+            />
+          </div>
 
-          <div className="flex space-x-4">
-            <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded">
-              {editingId ? 'Update' : 'Create'}
+          <div className="mb-4">
+            <label htmlFor="tags" className="block mb-1 font-medium">Tags (comma-separated)</label>
+            <input
+              id="tags"
+              type="text"
+              value={form.tags}
+              onChange={(e) => setForm({ ...form, tags: e.target.value })}
+              className="w-full border p-2 rounded"
+              placeholder="e.g., frontend, backend, full-stack"
+            />
+          </div>
+
+          <div className="flex space-x-4 mt-6">
+            <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+              {editingId ? 'Update Job' : 'Create Job'}
             </button>
-            <button type="button" onClick={resetForm} className="px-6 py-2 border rounded">
+            <button type="button" onClick={resetForm} className="px-6 py-2 border rounded hover:bg-gray-50">
               Cancel
             </button>
           </div>

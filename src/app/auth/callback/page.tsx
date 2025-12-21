@@ -42,7 +42,7 @@ export default function AuthCallbackPage() {
         if (!decoded.role) {
           // Send token to select-role
           console.log('No role found, redirecting to role-select');
-          router.push(`/role-select?token=${token}`);
+          window.location.href = `/role-select?token=${token}`;
         } else {
           console.log('Role found:', decoded.role, 'redirecting to dashboard');
           // Clear any cached data to prevent stale state
@@ -53,23 +53,23 @@ export default function AuthCallbackPage() {
 
           switch (decoded.role) {
             case 'admin':
-              router.push('/admin/dashboard');
+              window.location.href = '/admin/dashboard';
               break;
             case 'hr':
-              router.push('/hr/dashboard');
+              window.location.href = '/hr/dashboard';
               break;
             case 'candidate':
-              router.push('/candidate/dashboard');
+              window.location.href = '/candidate/dashboard';
               break;
             case 'employee':
-              router.push('/employee/dashboard');
+              window.location.href = '/employee/dashboard';
               break;
             default:
               console.log('Unknown role:', decoded.role, 'redirecting to role selection');
-              router.push(`/role-select?token=${token}`);
+              window.location.href = `/role-select?token=${token}`;
           }
         }
-      }, 1500); // Longer delay for better reliability
+      }, 1000); // Reduced delay since we're using window.location.href
 
     } catch (err) {
       console.error('Token decode error:', err);
