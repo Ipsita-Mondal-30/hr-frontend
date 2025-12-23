@@ -12,8 +12,7 @@ import {
   FileText,
   Bookmark,
   User,
-  LogOut,
-  Video
+  LogOut
 } from 'lucide-react';
 
 interface NavigationItem {
