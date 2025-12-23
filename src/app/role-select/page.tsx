@@ -6,7 +6,7 @@ import { jwtDecode } from 'jwt-decode';
 import { setAuthToken } from '@/lib/cookies';
 import { useAuth } from '@/lib/AuthContext';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://hr-system-x2uf.onrender.com';
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 interface DecodedJwt {
   name?: string;
