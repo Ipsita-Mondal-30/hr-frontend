@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
+import Webcam from 'react-webcam';
 
 // Type declarations for Web Speech API
 declare global {
@@ -67,6 +68,12 @@ interface FinalResults {
   improvementTips: string[];
 }
 
+interface BodyLanguageSignals {
+  eye_contact: 'high' | 'medium' | 'low';
+  movement: 'low' | 'medium' | 'high';
+  posture: 'stable' | 'unstable';
+}
+
 export default function VoiceInterviewPrepPage() {
   const { user } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -83,6 +90,16 @@ export default function VoiceInterviewPrepPage() {
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
+  const webcamRef = useRef<Webcam>(null);
+  const bodyLanguageIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [bodyLanguageSignals, setBodyLanguageSignals] = useState<BodyLanguageSignals | null>(null);
+  const [isCameraOn, setIsCameraOn] = useState(false);
+  const [studioLightOn, setStudioLightOn] = useState(false);
+  const movementTrackerRef = useRef<{ prevX: number; prevY: number; movements: number[] }>({
+    prevX: 0,
+    prevY: 0,
+    movements: []
+  });
 
   console.log('User:', user); // Prevent unused warning
 
@@ -90,7 +107,18 @@ export default function VoiceInterviewPrepPage() {
     fetchAllJobs();
     initializeSpeechRecognition();
     initializeSpeechSynthesis();
-  }, []);
+    
+    // Start body language detection when interview starts
+    if (interviewStarted) {
+      startBodyLanguageDetection();
+    } else {
+      stopBodyLanguageDetection();
+    }
+    
+    return () => {
+      stopBodyLanguageDetection();
+    };
+  }, [interviewStarted]);
 
   const fetchAllJobs = async () => {
     try {
@@ -132,15 +160,20 @@ export default function VoiceInterviewPrepPage() {
       setSelectedJob(job);
       setInterviewStarted(true);
       setQuestionCount(1);
+      // Camera will start automatically via useEffect
       
-      // Greet and ask first question
-      const greeting = `Hello! Welcome to the interview preparation for ${job.title}. Let's begin.`;
+      // Greet first
+      const greeting = `Hello! Welcome to the interview preparation for ${job.title}. I'll ask you a few questions, and you can answer them at your own pace. Let's begin.`;
       await speakText(greeting);
       
-      setTimeout(() => {
-        setCurrentQuestion(res.data.firstQuestion);
-        speakText(res.data.firstQuestion);
-      }, 2000);
+      // Wait a moment after greeting before asking first question (gives time to process)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Set and speak first question
+      setCurrentQuestion(res.data.firstQuestion);
+      await speakText(res.data.firstQuestion);
+      
+      // Question is now ready - user can click to answer
     } catch (error) {
       console.error('Failed to start interview:', error);
       alert('Failed to start interview');
@@ -197,11 +230,107 @@ export default function VoiceInterviewPrepPage() {
     recognitionRef.current.start();
   };
 
+  // Simple body language detection (client-side estimation)
+  const detectBodyLanguage = (): BodyLanguageSignals => {
+    // Simplified detection based on basic heuristics
+    // In a real implementation, you'd use pose detection libraries like MediaPipe or TensorFlow.js
+    
+    // Estimate eye contact (simplified - assumes user is looking at screen if camera is on)
+    // Low: frequent head movements, High: stable head position
+    const eyeContact: 'high' | 'medium' | 'low' = 
+      movementTrackerRef.current.movements.length > 0
+        ? movementTrackerRef.current.movements.slice(-10).reduce((a, b) => a + b, 0) / Math.min(10, movementTrackerRef.current.movements.length) > 15
+          ? 'low'
+          : movementTrackerRef.current.movements.slice(-10).reduce((a, b) => a + b, 0) / Math.min(10, movementTrackerRef.current.movements.length) > 8
+          ? 'medium'
+          : 'high'
+        : 'medium';
+    
+    // Estimate movement (based on head position changes)
+    const avgMovement = movementTrackerRef.current.movements.length > 0
+      ? movementTrackerRef.current.movements.slice(-10).reduce((a, b) => a + b, 0) / Math.min(10, movementTrackerRef.current.movements.length)
+      : 5;
+    const movement: 'low' | 'medium' | 'high' = 
+      avgMovement > 15 ? 'high' : avgMovement > 8 ? 'medium' : 'low';
+    
+    // Estimate posture (simplified - stable if low movement variance)
+    const movementVariance = movementTrackerRef.current.movements.length > 5
+      ? calculateVariance(movementTrackerRef.current.movements.slice(-10))
+      : 5;
+    const posture: 'stable' | 'unstable' = movementVariance > 20 ? 'unstable' : 'stable';
+    
+    return { eye_contact: eyeContact, movement, posture };
+  };
+
+  const calculateVariance = (values: number[]): number => {
+    if (values.length === 0) return 0;
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    const squareDiffs = values.map(value => Math.pow(value - avg, 2));
+    return squareDiffs.reduce((a, b) => a + b, 0) / values.length;
+  };
+
+  const startBodyLanguageDetection = () => {
+    // Clear any existing interval first
+    if (bodyLanguageIntervalRef.current) {
+      clearInterval(bodyLanguageIntervalRef.current);
+      bodyLanguageIntervalRef.current = null;
+    }
+    
+    setIsCameraOn(true);
+    // Reset movement tracker
+    movementTrackerRef.current = { prevX: 0, prevY: 0, movements: [] };
+    
+    // Simple periodic movement tracking (simplified - in real app use pose detection)
+    const interval = setInterval(() => {
+      if (webcamRef.current && webcamRef.current.video) {
+        const video = webcamRef.current.video;
+        // Estimate head position based on video center (simplified approach)
+        // In real implementation, use MediaPipe Face Mesh or similar
+        const centerX = video.videoWidth / 2;
+        const centerY = video.videoHeight / 2;
+        
+        if (movementTrackerRef.current.prevX > 0) {
+          const movement = Math.sqrt(
+            Math.pow(centerX - movementTrackerRef.current.prevX, 2) +
+            Math.pow(centerY - movementTrackerRef.current.prevY, 2)
+          );
+          movementTrackerRef.current.movements.push(movement);
+          // Keep only last 20 readings
+          if (movementTrackerRef.current.movements.length > 20) {
+            movementTrackerRef.current.movements.shift();
+          }
+        }
+        movementTrackerRef.current.prevX = centerX;
+        movementTrackerRef.current.prevY = centerY;
+        
+        // Update body language signals
+        setBodyLanguageSignals(detectBodyLanguage());
+      }
+    }, 500); // Check every 500ms
+    
+    // Store interval ID for cleanup
+    bodyLanguageIntervalRef.current = interval;
+  };
+
+  const stopBodyLanguageDetection = () => {
+    setIsCameraOn(false);
+    if (bodyLanguageIntervalRef.current) {
+      clearInterval(bodyLanguageIntervalRef.current);
+      bodyLanguageIntervalRef.current = null;
+    }
+    movementTrackerRef.current = { prevX: 0, prevY: 0, movements: [] };
+    setBodyLanguageSignals(null);
+  };
+
   const handleAnswer = async (transcript: string) => {
     setLoading(true);
     try {
+      // Get current body language signals
+      const bodyLanguage = bodyLanguageSignals || detectBodyLanguage();
+      
       const res = await api.post(`/voice-interview/answer/${sessionId}`, {
-        transcript
+        transcript,
+        bodyLanguage // Include body language signals
       });
 
       if (res.data.endInterview) {
@@ -210,10 +339,15 @@ export default function VoiceInterviewPrepPage() {
         setShowResults(true);
         await speakText(res.data.closingMessage || 'Thank you for completing the interview. Check your email for detailed feedback.');
       } else {
+        // Small pause before next question (feels more natural)
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
         // Next question
         setQuestionCount(prev => prev + 1);
         setCurrentQuestion(res.data.nextQuestion);
         await speakText(res.data.nextQuestion);
+        
+        // Question is now ready - user can click to answer
       }
     } catch (error) {
       console.error('Failed to process answer:', error);
@@ -290,6 +424,7 @@ export default function VoiceInterviewPrepPage() {
                 setSelectedJob(null);
                 setCurrentQuestion('');
                 setQuestionCount(0);
+                stopBodyLanguageDetection();
                 fetchAllJobs();
               }}
               className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
@@ -317,21 +452,72 @@ export default function VoiceInterviewPrepPage() {
               <p className="text-gray-600">{selectedJob.title} at {selectedJob.companyName}</p>
             </div>
 
-            <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg p-8 mb-8 min-h-[200px] flex items-center justify-center">
-              <div className="text-center">
-                {isSpeaking && (
-                  <div className="mb-4">
-                    <div className="w-20 h-20 bg-purple-600 rounded-full mx-auto flex items-center justify-center animate-pulse">
-                      <span className="text-4xl">🤖</span>
+            <div className="grid md:grid-cols-2 gap-4 mb-8">
+              {/* Question Display */}
+              <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg p-8 min-h-[200px] flex items-center justify-center">
+                <div className="text-center">
+                  {isSpeaking && (
+                    <div className="mb-4">
+                      <div className="w-20 h-20 bg-purple-600 rounded-full mx-auto flex items-center justify-center animate-pulse">
+                        <span className="text-4xl">🤖</span>
+                      </div>
+                      <p className="mt-4 text-purple-900 font-semibold">AI is speaking...</p>
                     </div>
-                    <p className="mt-4 text-purple-900 font-semibold">AI is speaking...</p>
+                  )}
+                  
+                  {!isSpeaking && currentQuestion && (
+                    <div>
+                      <div className="text-6xl mb-4">💬</div>
+                      <p className="text-xl text-gray-800 font-medium mb-6">{currentQuestion}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Camera Feed */}
+              <div className="bg-gray-900 rounded-lg overflow-hidden relative">
+                {isCameraOn ? (
+                  <div className="relative w-full" style={{ minHeight: '480px' }}>
+                    <Webcam
+                      ref={webcamRef}
+                      audio={false}
+                      videoConstraints={{
+                        width: 640,
+                        height: 480,
+                        facingMode: 'user'
+                      }}
+                      className={`w-full h-full object-cover ${studioLightOn ? 'brightness-150 contrast-125' : ''}`}
+                      mirrored={true}
+                    />
+                    {/* Studio Light Overlay */}
+                    {studioLightOn && (
+                      <div 
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          background: 'radial-gradient(circle at center, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 50%, transparent 70%)',
+                          mixBlendMode: 'screen'
+                        }}
+                      />
+                    )}
+                    {/* Studio Light Toggle Button */}
+                    <button
+                      onClick={() => setStudioLightOn(!studioLightOn)}
+                      className={`absolute top-4 right-4 z-10 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                        studioLightOn 
+                          ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/50' 
+                          : 'bg-gray-700 text-white hover:bg-gray-600'
+                      }`}
+                      title={studioLightOn ? 'Turn off studio light' : 'Turn on studio light for dark rooms'}
+                    >
+                      {studioLightOn ? '💡 Light On' : '💡 Light Off'}
+                    </button>
                   </div>
-                )}
-                
-                {!isSpeaking && currentQuestion && (
-                  <div>
-                    <div className="text-6xl mb-4">💬</div>
-                    <p className="text-xl text-gray-800 font-medium mb-6">{currentQuestion}</p>
+                ) : (
+                  <div className="w-full h-full min-h-[200px] flex items-center justify-center bg-gray-800">
+                    <div className="text-center text-gray-400">
+                      <div className="text-4xl mb-2">📹</div>
+                      <p className="text-sm">Camera will start automatically</p>
+                    </div>
                   </div>
                 )}
               </div>

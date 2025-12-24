@@ -434,13 +434,21 @@ export default function CandidateDashboard() {
             <h2 className="text-lg font-semibold text-gray-900">AI Interview Prep</h2>
             {loadingAI && <span className="text-sm text-gray-500">Loading...</span>}
           </div>
-          <button
-            onClick={fetchAIInterviewPrep}
-            className="text-sm text-purple-600 hover:text-purple-800"
-            disabled={loadingAI}
-          >
-            🔄 Refresh
-          </button>
+          <div className="flex items-center space-x-2">
+            <Link
+              href="/candidate/interview-prep"
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm transition-colors"
+            >
+              Start Practice Interview
+            </Link>
+            <button
+              onClick={fetchAIInterviewPrep}
+              className="text-sm text-purple-600 hover:text-purple-800"
+              disabled={loadingAI}
+            >
+              🔄 Refresh
+            </button>
+          </div>
         </div>
 
         {interviewPrep ? (
