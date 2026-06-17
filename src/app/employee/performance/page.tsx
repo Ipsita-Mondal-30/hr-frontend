@@ -29,8 +29,10 @@ interface OKRData {
   };
   aiInsights?: {
     achievabilityScore: number;
+    summary?: string;
     riskFactors: string[];
     recommendations: string[];
+    aiSource?: string;
     lastAnalyzed: string;
   };
 }
@@ -46,13 +48,32 @@ interface PerformanceMetrics {
   totalFeedbackReceived: number;
 }
 
+interface PerformanceReview {
+  _id: string;
+  title: string;
+  content: string;
+  reviewPeriod?: string;
+  overallRating?: number;
+  status: string;
+  createdAt: string;
+  ratings?: Record<string, number>;
+  aiSummary?: string;
+  reviewer?: { name: string; email?: string };
+  employeeResponse?: { content: string; respondedAt: string };
+}
+
 export default function EmployeePerformancePage() {
   const { user } = useAuth();
   const [okrs, setOKRs] = useState<OKRData[]>([]);
   const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
+  const [reviews, setReviews] = useState<PerformanceReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [updatingProgress, setUpdatingProgress] = useState<string | null>(null);
+  const [generatingInsightsId, setGeneratingInsightsId] = useState<string | null>(null);
+  const [krDrafts, setKrDrafts] = useState<Record<string, string>>({});
+  const [acknowledgingId, setAcknowledgingId] = useState<string | null>(null);
+  const [responseText, setResponseText] = useState<Record<string, string>>({});
 
   const fetchPerformanceData = useCallback(async () => {
     if (!user) return;
@@ -70,6 +91,10 @@ export default function EmployeePerformancePage() {
       // Get performance metrics
       const metricsRes = await api.get(`/employees/${employeeId}/performance`);
       setMetrics(metricsRes.data?.metrics || null);
+
+      // Get performance reviews
+      const reviewsRes = await api.get('/employees/me/feedback?type=performance-review');
+      setReviews(reviewsRes.data?.feedback || []);
     } catch (error) {
       console.error('Error fetching performance data:', error);
     } finally {
@@ -82,32 +107,68 @@ export default function EmployeePerformancePage() {
   }, [fetchPerformanceData]);
 
   const updateKeyResultProgress = async (okrId: string, krIndex: number, newValue: number) => {
+    const key = `${okrId}-${krIndex}`;
     try {
-      setUpdatingProgress(`${okrId}-${krIndex}`);
+      setUpdatingProgress(key);
 
-      await api.put(`/okrs/${okrId}/key-results/${krIndex}`, {
+      const response = await api.put(`/okrs/${okrId}/key-results/${krIndex}`, {
         currentValue: newValue,
       });
 
-      // Refresh OKRs
-      await fetchPerformanceData();
-    } catch (error) {
+      setOKRs((prev) =>
+        prev.map((o) => (o._id === okrId ? { ...o, ...response.data } : o))
+      );
+      setKrDrafts((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    } catch (error: unknown) {
       console.error('Error updating key result:', error);
-      alert('Failed to update progress');
+      const axiosError = error as { response?: { data?: { error?: string } } };
+      alert(axiosError.response?.data?.error || 'Failed to update progress');
     } finally {
       setUpdatingProgress(null);
     }
   };
 
+  const getKrDraftValue = (okrId: string, index: number, current: number) => {
+    const key = `${okrId}-${index}`;
+    return krDrafts[key] !== undefined ? krDrafts[key] : String(current);
+  };
+
   const generateAIInsights = async (okrId: string) => {
     try {
-      await api.post(`/okrs/${okrId}/ai-insights`);
-      await fetchPerformanceData();
-    } catch (error) {
+      setGeneratingInsightsId(okrId);
+      const response = await api.post(`/okrs/${okrId}/ai-insights`);
+      setOKRs((prev) =>
+        prev.map((o) => (o._id === okrId ? { ...o, ...response.data } : o))
+      );
+    } catch (error: unknown) {
       console.error('Error generating AI insights:', error);
-      alert('Failed to generate AI insights');
+      const axiosError = error as { response?: { data?: { error?: string } } };
+      alert(axiosError.response?.data?.error || 'Failed to generate AI insights');
+    } finally {
+      setGeneratingInsightsId(null);
     }
   };
+
+  const acknowledgeReview = async (reviewId: string) => {
+    try {
+      setAcknowledgingId(reviewId);
+      const content = responseText[reviewId]?.trim() || 'Thank you for the feedback. I have reviewed this performance evaluation.';
+      await api.post(`/feedback/${reviewId}/respond`, { content });
+      await fetchPerformanceData();
+    } catch (error) {
+      console.error('Error acknowledging review:', error);
+      alert('Failed to acknowledge review');
+    } finally {
+      setAcknowledgingId(null);
+    }
+  };
+
+  const formatRatingLabel = (key: string) =>
+    key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase());
 
   const getProgressColor = (progress: number) => {
     if (progress >= 80) return 'text-green-600 bg-green-100';
@@ -157,7 +218,7 @@ export default function EmployeePerformancePage() {
             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {[2024, 2023, 2022].map((year) => (
+            {[2026, 2025, 2024, 2023, 2022].map((year) => (
               <option key={year} value={year}>
                 {year}
               </option>
@@ -243,6 +304,107 @@ export default function EmployeePerformancePage() {
         </div>
       )}
 
+      {/* Performance Reviews */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold">Performance Reviews</h2>
+          <p className="text-sm text-gray-600">Reviews submitted by your manager or HR</p>
+        </div>
+
+        {reviews.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">
+            <div className="text-4xl mb-2">📋</div>
+            <p>No performance reviews yet</p>
+            <p className="text-sm mt-2">Reviews will appear here once your manager submits them.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {reviews.map((review) => (
+              <div key={review._id} className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">{review.title}</h3>
+                    <div className="flex items-center space-x-3 mt-1 text-sm text-gray-600">
+                      {review.reviewPeriod && <span>{review.reviewPeriod}</span>}
+                      {review.reviewer?.name && <span>by {review.reviewer.name}</span>}
+                      <span>{new Date(review.createdAt).toLocaleDateString()}</span>
+                      <span
+                        className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                          review.status === 'acknowledged'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}
+                      >
+                        {review.status}
+                      </span>
+                    </div>
+                  </div>
+                  {review.overallRating && (
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-green-600">{review.overallRating.toFixed(1)}/5</div>
+                      <div className="text-sm text-gray-500">Overall Rating</div>
+                    </div>
+                  )}
+                </div>
+
+                {review.ratings && Object.keys(review.ratings).length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    {Object.entries(review.ratings)
+                      .filter(([, value]) => value > 0)
+                      .map(([key, value]) => (
+                        <div key={key} className="bg-gray-50 rounded-lg p-3">
+                          <div className="text-xs text-gray-600">{formatRatingLabel(key)}</div>
+                          <div className="font-semibold text-gray-900">{value}/5</div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+
+                <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                  <pre className="whitespace-pre-wrap text-sm text-gray-800 font-sans">{review.content}</pre>
+                </div>
+
+                {review.aiSummary && (
+                  <div className="bg-purple-50 rounded-lg p-4 border border-purple-200 mb-4">
+                    <h5 className="font-medium text-purple-900 mb-1">AI Summary</h5>
+                    <p className="text-sm text-purple-800">{review.aiSummary}</p>
+                  </div>
+                )}
+
+                {review.employeeResponse ? (
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                    <h5 className="font-medium text-green-900 mb-1">Your Response</h5>
+                    <p className="text-sm text-green-800">{review.employeeResponse.content}</p>
+                    <p className="text-xs text-green-600 mt-1">
+                      {new Date(review.employeeResponse.respondedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <textarea
+                      value={responseText[review._id] || ''}
+                      onChange={(e) =>
+                        setResponseText((prev) => ({ ...prev, [review._id]: e.target.value }))
+                      }
+                      placeholder="Optional: Add your response or acknowledgment..."
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={() => acknowledgeReview(review._id)}
+                      disabled={acknowledgingId === review._id}
+                      className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {acknowledgingId === review._id ? 'Submitting...' : 'Acknowledge Review'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* OKRs Section */}
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
@@ -311,10 +473,25 @@ export default function EmployeePerformancePage() {
                             <div className="flex items-center space-x-2">
                               <input
                                 type="number"
-                                value={kr.currentValue}
+                                min={0}
+                                value={getKrDraftValue(okr._id, index, kr.currentValue)}
                                 onChange={(e) =>
-                                  updateKeyResultProgress(okr._id, index, parseFloat(e.target.value) || 0)
+                                  setKrDrafts((prev) => ({
+                                    ...prev,
+                                    [`${okr._id}-${index}`]: e.target.value,
+                                  }))
                                 }
+                                onBlur={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  if (!Number.isNaN(val) && val !== kr.currentValue) {
+                                    updateKeyResultProgress(okr._id, index, val);
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    (e.target as HTMLInputElement).blur();
+                                  }
+                                }}
                                 disabled={updatingProgress === `${okr._id}-${index}`}
                                 className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                               />
@@ -369,29 +546,54 @@ export default function EmployeePerformancePage() {
                   <div className="mt-4 bg-purple-50 rounded-lg p-4 border border-purple-200">
                     <div className="flex items-center justify-between mb-2">
                       <h5 className="font-medium text-purple-900">🤖 AI Insights</h5>
-                      <span className="text-sm text-purple-700">
-                        Achievability: {okr.aiInsights.achievabilityScore}%
-                      </span>
+                      <div className="text-right">
+                        <span className="text-sm text-purple-700 block">
+                          Achievability: {okr.aiInsights.achievabilityScore ?? 0}%
+                        </span>
+                        {okr.aiInsights.aiSource && (
+                          <span className="text-xs text-purple-500 capitalize">
+                            via {okr.aiInsights.aiSource}
+                          </span>
+                        )}
+                      </div>
                     </div>
+
+                    {okr.aiInsights.summary && (
+                      <p className="text-sm text-purple-800 mb-3">{okr.aiInsights.summary}</p>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <h6 className="font-medium text-purple-800 mb-1">Risk Factors:</h6>
+                        <h6 className="font-medium text-purple-800 mb-1">Risk Factors</h6>
                         <ul className="text-purple-700 space-y-1">
-                          {okr.aiInsights.riskFactors.map((factor, index) => (
-                            <li key={index}>• {factor}</li>
-                          ))}
+                          {(okr.aiInsights.riskFactors || []).length > 0 ? (
+                            okr.aiInsights.riskFactors.map((factor, idx) => (
+                              <li key={idx}>• {factor}</li>
+                            ))
+                          ) : (
+                            <li className="text-purple-500">No significant risks identified</li>
+                          )}
                         </ul>
                       </div>
                       <div>
-                        <h6 className="font-medium text-purple-800 mb-1">Recommendations:</h6>
+                        <h6 className="font-medium text-purple-800 mb-1">Recommendations</h6>
                         <ul className="text-purple-700 space-y-1">
-                          {okr.aiInsights.recommendations.map((rec, index) => (
-                            <li key={index}>• {rec}</li>
-                          ))}
+                          {(okr.aiInsights.recommendations || []).length > 0 ? (
+                            okr.aiInsights.recommendations.map((rec, idx) => (
+                              <li key={idx}>• {rec}</li>
+                            ))
+                          ) : (
+                            <li className="text-purple-500">Keep tracking progress weekly</li>
+                          )}
                         </ul>
                       </div>
                     </div>
+
+                    {okr.aiInsights.lastAnalyzed && (
+                      <p className="text-xs text-purple-500 mt-3">
+                        Last analyzed: {new Date(okr.aiInsights.lastAnalyzed).toLocaleString()}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -399,9 +601,10 @@ export default function EmployeePerformancePage() {
                 <div className="mt-4 flex space-x-3">
                   <button
                     onClick={() => generateAIInsights(okr._id)}
-                    className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                    disabled={generatingInsightsId === okr._id}
+                    className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 disabled:opacity-50"
                   >
-                    Generate AI Insights
+                    {generatingInsightsId === okr._id ? 'Generating...' : 'Generate AI Insights'}
                   </button>
                 </div>
               </div>

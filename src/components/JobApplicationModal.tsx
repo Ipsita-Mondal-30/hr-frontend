@@ -63,11 +63,8 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
         submitData.append('resume', resumeFile);
       }
 
-      const response = await api.post('/candidate/apply-with-resume', submitData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      // Let axios set multipart boundary automatically (do not set Content-Type manually)
+      const response = await api.post('/candidate/apply-with-resume', submitData);
 
       console.log('✅ Application submitted successfully:', response.data);
       alert('Application submitted successfully! You will receive a confirmation email shortly.');

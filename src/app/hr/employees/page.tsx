@@ -13,12 +13,23 @@ interface Employee {
   };
   position: string;
   department?: {
+    _id?: string;
     name: string;
+  };
+  manager?: {
+    _id?: string;
+    user?: { name: string };
+    position?: string;
   };
   performanceScore: number;
   projectContribution: number;
   status: string;
   hireDate: string;
+  resume?: {
+    fileName: string;
+    fileUrl: string;
+    uploadedAt: string;
+  };
   aiInsights?: {
     promotionReadiness?: {
       score: number;
@@ -52,6 +63,10 @@ export default function EmployeesPage() {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [showInsights, setShowInsights] = useState(false);
   const [generatingInsights, setGeneratingInsights] = useState<string | null>(null);
+  const [departments, setDepartments] = useState<Array<{ _id: string; name: string }>>([]);
+  const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
+  const [assignForm, setAssignForm] = useState({ departmentId: '', managerId: '' });
+  const [savingAssign, setSavingAssign] = useState(false);
 
   const fetchEmployees = useCallback(async () => {
     try {
@@ -78,6 +93,7 @@ export default function EmployeesPage() {
       }
 
       setEmployees(employeeList);
+      setAllEmployees(employeeList);
       setError(null);
     } catch (err: unknown) {
       console.error('Error fetching employees:', err);
@@ -93,6 +109,46 @@ export default function EmployeesPage() {
   useEffect(() => {
     fetchEmployees();
   }, [fetchEmployees]);
+
+  const openEmployeeProfile = async (employee: Employee) => {
+    try {
+      const [detailRes, deptRes] = await Promise.all([
+        api.get<Employee>(`/hr/employees/${employee._id}`),
+        api.get<Array<{ _id: string; name: string }>>('/admin/departments'),
+      ]);
+      setSelectedEmployee(detailRes.data);
+      setDepartments(Array.isArray(deptRes.data) ? deptRes.data : []);
+      setAssignForm({
+        departmentId: detailRes.data.department?._id || '',
+        managerId: detailRes.data.manager?._id || '',
+      });
+      setShowInsights(true);
+    } catch (error) {
+      console.error('Error loading employee profile:', error);
+      setSelectedEmployee(employee);
+      setShowInsights(true);
+    }
+  };
+
+  const saveAssignment = async () => {
+    if (!selectedEmployee) return;
+    try {
+      setSavingAssign(true);
+      await api.put(`/hr/employees/${selectedEmployee._id}`, {
+        departmentId: assignForm.departmentId || null,
+        managerId: assignForm.managerId || null,
+      });
+      const refreshed = await api.get<Employee>(`/hr/employees/${selectedEmployee._id}`);
+      setSelectedEmployee(refreshed.data);
+      await fetchEmployees();
+      alert('Department and manager updated');
+    } catch (error) {
+      console.error('Error saving assignment:', error);
+      alert('Failed to update assignment');
+    } finally {
+      setSavingAssign(false);
+    }
+  };
 
   const generateAIInsights = async (employeeId: string) => {
     try {
@@ -265,10 +321,7 @@ export default function EmployeesPage() {
                     {/* Actions */}
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => {
-                          setSelectedEmployee(employee);
-                          setShowInsights(true);
-                        }}
+                        onClick={() => openEmployeeProfile(employee)}
                         className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                       >
                         View Profile
@@ -323,6 +376,60 @@ export default function EmployeesPage() {
                   <div className="text-sm text-purple-700">Hire Year</div>
                 </div>
               </div>
+
+              {/* Assignment (HR/Admin) */}
+              <div className="bg-gray-50 rounded-lg p-4 border">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Assign Department & Manager</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <select
+                    value={assignForm.departmentId}
+                    onChange={(e) => setAssignForm((p) => ({ ...p, departmentId: e.target.value }))}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="">No department</option>
+                    {departments.map((d) => (
+                      <option key={d._id} value={d._id}>{d.name}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={assignForm.managerId}
+                    onChange={(e) => setAssignForm((p) => ({ ...p, managerId: e.target.value }))}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="">No manager</option>
+                    {allEmployees
+                      .filter((e) => e._id !== selectedEmployee._id)
+                      .map((e) => (
+                        <option key={e._id} value={e._id}>
+                          {e.user?.name} — {e.position}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <button
+                  onClick={saveAssignment}
+                  disabled={savingAssign}
+                  className="mt-3 px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {savingAssign ? 'Saving...' : 'Save Assignment'}
+                </button>
+              </div>
+
+              {/* Resume */}
+              {selectedEmployee.resume?.fileUrl && (
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <h3 className="text-sm font-semibold text-blue-900 mb-1">Employee Resume</h3>
+                  <p className="text-sm text-blue-800">{selectedEmployee.resume.fileName}</p>
+                  <a
+                    href={selectedEmployee.resume.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    View / Download →
+                  </a>
+                </div>
+              )}
 
               {/* AI Insights */}
               {selectedEmployee.aiInsights && (
@@ -388,10 +495,10 @@ export default function EmployeesPage() {
               {/* Actions */}
               <div className="flex space-x-3 pt-4 border-t border-gray-200">
                 <Link
-                  href={`/hr/employees/${selectedEmployee._id}/profile`}
+                  href={`/admin/employees/${selectedEmployee._id}`}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
-                  View Full Profile
+                  Full Employee Profile
                 </Link>
                 <Link
                   href={`/hr/feedback/new?employee=${selectedEmployee._id}`}

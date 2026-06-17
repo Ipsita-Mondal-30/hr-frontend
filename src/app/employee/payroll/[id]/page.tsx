@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { downloadPayslip } from '@/lib/downloadPayslip';
 
 interface PayrollRecord {
   _id: string;
@@ -57,6 +58,7 @@ export default function EmployeePayrollDetailPage() {
   const router = useRouter();
   const [payroll, setPayroll] = useState<PayrollRecord | null>(null);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState<'plain' | 'stamped' | null>(null);
 
   const fetchPayrollDetails = useCallback(async () => {
     if (!params?.id) return;
@@ -112,6 +114,19 @@ export default function EmployeePayrollDetailPage() {
       'December',
     ];
     return months[month - 1];
+  };
+
+  const handleDownload = async (stamped: boolean) => {
+    if (!params?.id) return;
+    try {
+      setDownloading(stamped ? 'stamped' : 'plain');
+      await downloadPayslip(params.id, { stamped });
+    } catch (error) {
+      console.error('Error downloading payslip:', error);
+      alert('Failed to download payslip');
+    } finally {
+      setDownloading(null);
+    }
   };
 
   if (loading) {
@@ -316,15 +331,27 @@ export default function EmployeePayrollDetailPage() {
             </div>
           </div>
         </div>
-        <div className="mt-6 flex justify-center space-x-4">
-          <button onClick={() => window.print()} className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+        <div className="mt-6 flex flex-wrap justify-center gap-4">
+          {(payroll.status === 'approved' || payroll.status === 'paid') && (
+            <>
+              <button
+                onClick={() => handleDownload(false)}
+                disabled={downloading !== null}
+                className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+              >
+                {downloading === 'plain' ? 'Downloading...' : 'Download PDF'}
+              </button>
+              <button
+                onClick={() => handleDownload(true)}
+                disabled={downloading !== null}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                {downloading === 'stamped' ? 'Downloading...' : 'Download with Company Stamp'}
+              </button>
+            </>
+          )}
+          <button onClick={() => window.print()} className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
             Print Payslip
-          </button>
-          <button
-            onClick={() => window.open(`/api/employees/me/payroll/${params.id}/download`, '_blank')}
-            className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-          >
-            Download PDF
           </button>
         </div>
       </div>

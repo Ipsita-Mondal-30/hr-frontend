@@ -13,15 +13,22 @@ interface Employee {
   };
   position: string;
   department?: {
+    _id?: string;
     name: string;
   };
   manager?: {
+    _id?: string;
     user: { name: string };
     position: string;
   };
   performanceScore: number;
   projectContribution: number;
   hireDate: string;
+  resume?: {
+    fileName: string;
+    fileUrl: string;
+    uploadedAt: string;
+  };
   skills: Array<{
     name: string;
     level: string;
@@ -33,6 +40,17 @@ interface Employee {
     feedbackCount: number;
     avgRating: number;
   };
+}
+
+interface Department {
+  _id: string;
+  name: string;
+}
+
+interface ManagerOption {
+  _id: string;
+  user: { name: string };
+  position: string;
 }
 
 interface Project {
@@ -52,6 +70,11 @@ export default function EmployeeDetailPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'performance'>('overview');
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [managerOptions, setManagerOptions] = useState<ManagerOption[]>([]);
+  const [assignForm, setAssignForm] = useState({ departmentId: '', managerId: '' });
+  const [savingAssign, setSavingAssign] = useState(false);
 
   // Fetch Employee Details
   const fetchEmployeeDetails = useCallback(async () => {
@@ -86,6 +109,48 @@ export default function EmployeeDetailPage() {
       fetchEmployeeProjects();
     }
   }, [params.id, fetchEmployeeDetails, fetchEmployeeProjects]);
+
+  const loadAssignOptions = async () => {
+    try {
+      const [deptRes, empRes] = await Promise.all([
+        api.get('/admin/departments'),
+        api.get('/admin/employees'),
+      ]);
+      setDepartments(Array.isArray(deptRes.data) ? deptRes.data : []);
+      const emps = Array.isArray(empRes.data) ? empRes.data : empRes.data?.employees || [];
+      setManagerOptions(emps.filter((e: ManagerOption) => e._id !== params.id));
+    } catch (error) {
+      console.error('Error loading assign options:', error);
+    }
+  };
+
+  const openAssignModal = async () => {
+    await loadAssignOptions();
+    setAssignForm({
+      departmentId: employee?.department?._id || '',
+      managerId: employee?.manager?._id || '',
+    });
+    setShowAssignModal(true);
+  };
+
+  const saveAssignment = async () => {
+    if (!employee) return;
+    try {
+      setSavingAssign(true);
+      await api.put(`/admin/employees/${employee._id}`, {
+        departmentId: assignForm.departmentId || null,
+        managerId: assignForm.managerId || null,
+      });
+      await fetchEmployeeDetails();
+      setShowAssignModal(false);
+      alert('Department and manager updated successfully');
+    } catch (error) {
+      console.error('Error saving assignment:', error);
+      alert('Failed to update assignment');
+    } finally {
+      setSavingAssign(false);
+    }
+  };
 
   const getSkillLevelColor = (level: string) => {
     switch (level.toLowerCase()) {
@@ -143,10 +208,16 @@ export default function EmployeeDetailPage() {
           </div>
           <div className="flex items-center space-x-3">
             <button
-              onClick={() => router.push(`/admin/employees/${employee._id}/edit`)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              onClick={openAssignModal}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
             >
-              Edit Employee
+              Assign Dept / Manager
+            </button>
+            <button
+              onClick={() => router.push(`/hr/performance/employee/${employee._id}`)}
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+            >
+              Performance
             </button>
             <button
               onClick={() => router.back()}
@@ -203,7 +274,9 @@ export default function EmployeeDetailPage() {
                 <div>
                   <label className="text-sm font-medium text-gray-500">Manager</label>
                   <p className="text-gray-900">
-                    {employee.manager ? `${employee.manager.user.name} (${employee.manager.position})` : 'No Manager'}
+                    {employee.manager?.user?.name
+                      ? `${employee.manager.user.name}${employee.manager.position ? ` (${employee.manager.position})` : ''}`
+                      : 'No Manager'}
                   </p>
                 </div>
                 <div>
@@ -261,6 +334,29 @@ export default function EmployeeDetailPage() {
                   <div className="text-sm text-gray-600">Avg Rating</div>
                 </div>
               </div>
+            </div>
+
+            {/* Resume */}
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h2 className="text-lg font-semibold mb-4">Resume</h2>
+              {employee.resume?.fileUrl ? (
+                <div>
+                  <p className="text-gray-900 font-medium">{employee.resume.fileName}</p>
+                  <p className="text-sm text-gray-500 mb-3">
+                    Uploaded {new Date(employee.resume.uploadedAt).toLocaleDateString()}
+                  </p>
+                  <a
+                    href={employee.resume.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    View / Download Resume →
+                  </a>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No resume uploaded yet</p>
+              )}
             </div>
 
             {/* Skills */}
@@ -381,6 +477,59 @@ export default function EmployeeDetailPage() {
           </div>
         )}
       </div>
+
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold mb-4">Assign Department & Manager</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <select
+                  value={assignForm.departmentId}
+                  onChange={(e) => setAssignForm((p) => ({ ...p, departmentId: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">Not assigned</option>
+                  {departments.map((d) => (
+                    <option key={d._id} value={d._id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Manager</label>
+                <select
+                  value={assignForm.managerId}
+                  onChange={(e) => setAssignForm((p) => ({ ...p, managerId: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">Not assigned</option>
+                  {managerOptions.map((m) => (
+                    <option key={m._id} value={m._id}>
+                      {m.user?.name} — {m.position}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setShowAssignModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveAssignment}
+                  disabled={savingAssign}
+                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {savingAssign ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
+import { downloadPayslip } from '@/lib/downloadPayslip';
 
 interface PayrollRecord {
   _id: string;
@@ -55,7 +57,7 @@ export default function EmployeePayrollPage() {
 
     try {
       setLoading(true);
-      const response = await api.get(`/employee/payroll?year=${selectedYear}`);
+      const response = await api.get(`/employees/me/payroll?year=${selectedYear}`);
       const records: ApiPayrollRecord[] = response.data || [];
 
       // Transform month number to month name
@@ -98,9 +100,18 @@ export default function EmployeePayrollPage() {
     }
   };
 
-  const downloadPayslip = (recordId: string) => {
-    // In a real app, this would generate and download a PDF
-    window.open(`/api/employee/payroll/${recordId}/download`, '_blank');
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownload = async (recordId: string, stamped = false) => {
+    try {
+      setDownloadingId(`${recordId}-${stamped ? 'stamped' : 'plain'}`);
+      await downloadPayslip(recordId, { stamped });
+    } catch (error) {
+      console.error('Error downloading payslip:', error);
+      alert('Failed to download payslip');
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const currentYear = new Date().getFullYear();
@@ -267,19 +278,35 @@ export default function EmployeePayrollPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      <Link
+                        href={`/employee/payroll/${record._id}`}
+                        className="text-indigo-600 hover:text-indigo-900"
+                      >
+                        View
+                      </Link>
                       <button
                         onClick={() => setSelectedRecord(record)}
                         className="text-indigo-600 hover:text-indigo-900"
                       >
-                        View Details
+                        Quick View
                       </button>
-                      {record.status === 'paid' && (
-                        <button
-                          onClick={() => downloadPayslip(record._id)}
-                          className="text-green-600 hover:text-green-900"
-                        >
-                          Download
-                        </button>
+                      {(record.status === 'approved' || record.status === 'paid') && (
+                        <>
+                          <button
+                            onClick={() => handleDownload(record._id, false)}
+                            disabled={downloadingId === `${record._id}-plain`}
+                            className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                          >
+                            {downloadingId === `${record._id}-plain` ? 'Downloading...' : 'Download'}
+                          </button>
+                          <button
+                            onClick={() => handleDownload(record._id, true)}
+                            disabled={downloadingId === `${record._id}-stamped`}
+                            className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
+                          >
+                            {downloadingId === `${record._id}-stamped` ? 'Downloading...' : 'Official PDF'}
+                          </button>
+                        </>
                       )}
                     </td>
                   </tr>
@@ -383,20 +410,36 @@ export default function EmployeePayrollPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-3">
+              <div className="flex justify-end flex-wrap gap-3">
                 <button
                   onClick={() => setSelectedRecord(null)}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                 >
                   Close
                 </button>
-                {selectedRecord.status === 'paid' && (
-                  <button
-                    onClick={() => downloadPayslip(selectedRecord._id)}
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                  >
-                    Download Payslip
-                  </button>
+                <Link
+                  href={`/employee/payroll/${selectedRecord._id}`}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Full Details
+                </Link>
+                {(selectedRecord.status === 'approved' || selectedRecord.status === 'paid') && (
+                  <>
+                    <button
+                      onClick={() => handleDownload(selectedRecord._id, false)}
+                      disabled={downloadingId === `${selectedRecord._id}-plain`}
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                    >
+                      Download PDF
+                    </button>
+                    <button
+                      onClick={() => handleDownload(selectedRecord._id, true)}
+                      disabled={downloadingId === `${selectedRecord._id}-stamped`}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      Official PDF (Stamped)
+                    </button>
+                  </>
                 )}
               </div>
             </div>

@@ -4,6 +4,18 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
+import { downloadInterviewReport, type InterviewReport } from '@/lib/downloadInterviewReport';
+
+interface InterviewHistoryItem {
+  _id: string;
+  jobRole: string;
+  jobTitle?: string;
+  companyName?: string;
+  prepScore: number | null;
+  status: string;
+  completedAt: string;
+  emailSent?: boolean;
+}
 
 interface CandidateProfile {
   name: string;
@@ -44,6 +56,9 @@ export default function CandidateProfilePage() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newSkill, setNewSkill] = useState('');
+  const [interviewReports, setInterviewReports] = useState<InterviewHistoryItem[]>([]);
+  const [loadingReports, setLoadingReports] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -57,6 +72,35 @@ export default function CandidateProfilePage() {
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  const fetchInterviewReports = useCallback(async () => {
+    setLoadingReports(true);
+    try {
+      const res = await api.get('/voice-interview/history');
+      setInterviewReports(res.data.sessions || []);
+    } catch (err) {
+      console.error('Error fetching interview reports:', err);
+    } finally {
+      setLoadingReports(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchInterviewReports();
+  }, [fetchInterviewReports]);
+
+  const handleDownloadReport = async (sessionId: string) => {
+    setDownloadingId(sessionId);
+    try {
+      const res = await api.get(`/voice-interview/report/${sessionId}`);
+      const report = res.data.report as InterviewReport;
+      downloadInterviewReport(report, res.data.candidateName, res.data.companyName);
+    } catch {
+      alert('Could not download report. Please try again.');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -323,6 +367,85 @@ export default function CandidateProfilePage() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Interview Prep Reports */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Interview Prep Reports</h3>
+                <p className="text-sm text-gray-500">Download past voice interview feedback to attach to your resume</p>
+              </div>
+              <a
+                href="/candidate/interview-prep"
+                className="text-sm text-purple-600 hover:text-purple-800 font-medium"
+              >
+                Practice more →
+              </a>
+            </div>
+
+            {loadingReports ? (
+              <p className="text-gray-500 text-sm">Loading reports…</p>
+            ) : interviewReports.length === 0 ? (
+              <div className="text-center py-8 bg-gray-50 rounded-lg">
+                <div className="text-4xl mb-2">🎙️</div>
+                <p className="text-gray-600 text-sm">No interview reports yet</p>
+                <a
+                  href="/candidate/interview-prep"
+                  className="inline-block mt-3 text-sm text-purple-600 hover:text-purple-800 font-medium"
+                >
+                  Start your first voice interview prep
+                </a>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {interviewReports.map((report) => (
+                  <div
+                    key={report._id}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {report.jobTitle || report.jobRole}
+                        {report.companyName ? ` — ${report.companyName}` : ''}
+                      </p>
+                      <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                        {report.prepScore !== null && (
+                          <span className="font-semibold text-purple-600">{report.prepScore}/100</span>
+                        )}
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                            report.status === 'READY'
+                              ? 'bg-green-100 text-green-700'
+                              : report.status === 'NEEDS PRACTICE'
+                              ? 'bg-orange-100 text-orange-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}
+                        >
+                          {report.status}
+                        </span>
+                        {report.completedAt && (
+                          <span>
+                            {new Date(report.completedAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDownloadReport(report._id)}
+                      disabled={downloadingId === report._id}
+                      className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-50 whitespace-nowrap"
+                    >
+                      {downloadingId === report._id ? 'Downloading…' : '📥 Download'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Documents & Links */}

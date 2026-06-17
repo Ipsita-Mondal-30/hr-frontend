@@ -72,16 +72,27 @@ export interface Application {
   job?: {
       title: string;
       companyName: string;
-      department: { name: string };
+      department?: { name: string };
+      skills?: string[];
     };
   matchScore?: number;
   resumeUrl: string;
   matchInsights?: {
-    explanation: string;
-    matchingSkills: string[];
-    missingSkills: string[];
-    tags: string[];
+    matchScore?: number;
+    explanation?: string;
+    summary?: string;
+    matchingSkills?: string[];
+    missingSkills?: string[];
+    tags?: string[];
+    strengths?: string[];
+    improvements?: string[];
+    actionPlan?: string[];
+    resumeTips?: string[];
+    interviewTips?: string[];
+    analyzedAt?: string;
+    source?: string;
   };
+  createdAt?: string;
   status: string;
   candidate: { name: string; email: string };
   resume?: string;

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import api from '@/lib/api';
 import JobApplicationModal from '@/components/JobApplicationModal';
 import { Job } from '../../../types/index'
@@ -13,6 +14,7 @@ export default function JobsPage() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set());
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
 
   // Filters
   const [filters, setFilters] = useState({
@@ -27,7 +29,30 @@ export default function JobsPage() {
   useEffect(() => {
     fetchJobs();
     fetchSavedJobs();
+    fetchAppliedJobs();
   }, []);
+
+  const fetchAppliedJobs = async () => {
+    try {
+      const res = await api.get<any[]>('/candidate/applications');
+      const appliedJobIdsList = (res.data || [])
+        .map((app: any) => app.job?._id)
+        .filter(Boolean) as string[];
+      setAppliedJobIds(new Set(appliedJobIdsList));
+      console.log('📋 Applied jobs:', appliedJobIdsList);
+    } catch (err) {
+      console.error('Error fetching applied jobs:', err);
+    }
+  };
+
+  // Debug: Log when jobs change
+  useEffect(() => {
+    console.log('🔍 Jobs state updated:', {
+      totalJobs: jobs.length,
+      filteredJobs: filteredJobs.length,
+      jobs: jobs.map(j => ({ id: j._id, title: j.title, status: j.status, isApproved: j.isApproved }))
+    });
+  }, [jobs, filteredJobs]);
 
   const applyFilters = useCallback(() => {
     const filtered = jobs.filter((job) => {
@@ -75,10 +100,25 @@ export default function JobsPage() {
       console.log('🔍 Fetching jobs for candidates...');
       const res = await api.get<Job[]>('/jobs');
       const jobsData = res.data || [];
-      console.log(`📊 Found ${jobsData.length} jobs`);
+      console.log(`📊 Found ${jobsData.length} jobs from API`);
+      console.log('📋 Jobs data:', jobsData.map(j => ({ 
+        id: j._id, 
+        title: j.title, 
+        company: j.companyName,
+        status: j.status,
+        isApproved: j.isApproved 
+      })));
+      
+      if (jobsData.length === 0) {
+        console.warn('⚠️ No jobs returned from API');
+      }
+      
       setJobs(jobsData);
     } catch (err) {
-      console.error('Error fetching jobs:', err);
+      console.error('❌ Error fetching jobs:', err);
+      if (err instanceof Error) {
+        console.error('Error message:', err.message);
+      }
       setJobs([]);
     } finally {
       setLoading(false);
@@ -127,9 +167,13 @@ export default function JobsPage() {
   const handleApplicationSuccess = () => {
     console.log('✅ Application submitted successfully');
     setShowApplicationModal(false);
+    if (selectedJob) {
+      setAppliedJobIds(prev => new Set([...prev, selectedJob._id]));
+    }
     setSelectedJob(null);
     // Refresh saved jobs to update counts
     fetchSavedJobs();
+    fetchAppliedJobs(); // Refresh applied jobs list
   };
 
   if (loading) {
@@ -246,6 +290,7 @@ export default function JobsPage() {
               onApply={handleApply}
               onSave={handleSaveJob}
               isSaved={savedJobIds.has(job._id)}
+              isApplied={appliedJobIds.has(job._id)}
             />
           ))}
         </div>
@@ -272,11 +317,13 @@ function JobCard({
   onApply,
   onSave,
   isSaved,
+  isApplied,
 }: {
   job: Job;
   onApply: (job: Job) => void;
   onSave: (jobId: string) => void;
   isSaved: boolean;
+  isApplied: boolean;
 }) {
   const formatSalary = (min?: number, max?: number) => {
     if (!min && !max) return null;
@@ -321,28 +368,56 @@ function JobCard({
           )}
         </div>
       </div>
-      <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-        <div className="text-sm text-gray-500">
-          Posted {new Date(job.createdAt).toLocaleDateString()}
-          {job.experienceRequired && (
-            <span className="ml-3">• {job.experienceRequired}+ years experience</span>
-          )}
-        </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => onSave(job._id)}
-            className={`px-3 py-1 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 ${
-              isSaved ? 'bg-gray-200 text-gray-600' : ''
-            }`}
-          >
-            {isSaved ? '💾 Saved' : '💾 Save'}
-          </button>
-          <button
-            onClick={() => onApply(job)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
-          >
-            Apply Now
-          </button>
+      <div className="flex flex-col gap-3 pt-4 border-t border-gray-200">
+        {/* Applied Status Badge */}
+        {isApplied && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-800 font-medium">
+              <span className="mr-1">✓</span>
+              Applied
+            </span>
+            <Link 
+              href="/candidate/applications"
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              Track your application →
+            </Link>
+          </div>
+        )}
+        
+        <div className="flex justify-between items-center">
+          <div className="text-sm text-gray-500">
+            Posted {new Date(job.createdAt).toLocaleDateString()}
+            {job.experienceRequired && (
+              <span className="ml-3">• {job.experienceRequired}+ years experience</span>
+            )}
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => onSave(job._id)}
+              className={`px-3 py-1 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 ${
+                isSaved ? 'bg-gray-200 text-gray-600' : ''
+              }`}
+            >
+              {isSaved ? '💾 Saved' : '💾 Save'}
+            </button>
+            {isApplied ? (
+              <Link
+                href="/candidate/applications"
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 font-medium flex items-center gap-2"
+              >
+                <span>📊</span>
+                Track Application
+              </Link>
+            ) : (
+              <button
+                onClick={() => onApply(job)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 font-medium"
+              >
+                Apply Now
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

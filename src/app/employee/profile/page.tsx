@@ -28,6 +28,11 @@ interface EmployeeProfile {
     level: string;
     verified: boolean;
   }>;
+  resume?: {
+    fileName: string;
+    fileUrl: string;
+    uploadedAt: string;
+  };
   status: string;
 }
 
@@ -40,6 +45,13 @@ export default function EmployeeProfilePage() {
   const [newSkill, setNewSkill] = useState({ name: '', level: 'intermediate' });
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [showTrainingModal, setShowTrainingModal] = useState(false);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const [feedbackType, setFeedbackType] = useState('Performance Review');
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [trainingTopic, setTrainingTopic] = useState('');
+  const [trainingMessage, setTrainingMessage] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -64,21 +76,79 @@ export default function EmployeeProfilePage() {
 
     try {
       setSaving(true);
-      await api.put(`/employees/${profile._id}`, profile);
+      await api.put('/employees/me/skills', { skills: profile.skills });
       setEditing(false);
-      alert('Profile updated successfully!');
+      alert('Skills updated successfully!');
+      await fetchProfile();
     } catch (error) {
       console.error('Error saving profile:', error);
-      alert('Error saving profile');
+      alert('Error saving skills');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleResumeUpload = async () => {
+    if (!resumeFile) {
+      alert('Please select a resume file');
+      return;
+    }
+    try {
+      setUploadingResume(true);
+      const formData = new FormData();
+      formData.append('file', resumeFile);
+      await api.post('/employees/me/resume/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      alert('Resume uploaded successfully! HR and Admin have been notified.');
+      setShowResumeModal(false);
+      setResumeFile(null);
+      await fetchProfile();
+    } catch (error) {
+      console.error('Error uploading resume:', error);
+      alert('Failed to upload resume');
+    } finally {
+      setUploadingResume(false);
+    }
+  };
+
+  const submitFeedbackRequest = async () => {
+    try {
+      await api.post('/employees/me/request-feedback', {
+        requestType: feedbackType,
+        message: feedbackMessage.trim() || undefined,
+      });
+      alert('Feedback request sent to HR/Admin!');
+      setShowFeedbackModal(false);
+      setFeedbackMessage('');
+    } catch {
+      alert('Failed to submit feedback request');
+    }
+  };
+
+  const submitTrainingRequest = async () => {
+    if (!trainingTopic.trim()) {
+      alert('Please enter a training topic');
+      return;
+    }
+    try {
+      await api.post('/employees/me/request-training', {
+        topic: trainingTopic.trim(),
+        message: trainingMessage.trim() || undefined,
+      });
+      alert('Training request sent to HR/Admin!');
+      setShowTrainingModal(false);
+      setTrainingTopic('');
+      setTrainingMessage('');
+    } catch {
+      alert('Failed to submit training request');
     }
   };
 
   const addSkill = () => {
     if (!profile || !newSkill.name.trim()) return;
 
-    const skillExists = profile.skills.some(
+    const skillExists = (profile.skills || []).some(
       (skill) => skill.name.toLowerCase() === newSkill.name.toLowerCase()
     );
 
@@ -91,7 +161,7 @@ export default function EmployeeProfilePage() {
       prev
         ? {
             ...prev,
-            skills: [...prev.skills, { ...newSkill, verified: false }],
+            skills: [...(prev.skills || []), { ...newSkill, verified: false }],
           }
         : null
     );
@@ -106,7 +176,7 @@ export default function EmployeeProfilePage() {
       prev
         ? {
             ...prev,
-            skills: prev.skills.filter((skill) => skill.name !== skillName),
+            skills: (prev.skills || []).filter((skill) => skill.name !== skillName),
           }
         : null
     );
@@ -120,7 +190,7 @@ export default function EmployeeProfilePage() {
       profile.user.email,
       profile.position,
       profile.department?.name,
-      profile.skills.length > 0 ? 'skills' : '',
+      profile.skills?.length ? 'skills' : '',
       profile.hireDate,
       profile.employmentType,
     ];
@@ -237,8 +307,8 @@ export default function EmployeeProfilePage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Manager</label>
                 <p className="text-gray-900">
-                  {profile.manager
-                    ? `${profile.manager.user.name} (${profile.manager.position})`
+                  {profile.manager?.user?.name
+                    ? `${profile.manager.user.name}${profile.manager.position ? ` (${profile.manager.position})` : ''}`
                     : 'Not assigned'}
                 </p>
                 <p className="text-xs text-gray-500">Assigned by HR/Admin</p>
@@ -313,7 +383,7 @@ export default function EmployeeProfilePage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Skills & Competencies</h3>
 
             <div className="flex flex-wrap gap-2 mb-4">
-              {profile.skills.map((skill, index) => (
+              {(profile.skills || []).map((skill, index) => (
                 <span
                   key={index}
                   className={`px-3 py-1 rounded-full text-sm flex items-center ${
@@ -417,7 +487,7 @@ export default function EmployeeProfilePage() {
                 <div className="text-sm font-medium">Set Goals</div>
               </button>
               <button
-                onClick={() => (window.location.href = '/employee/learning')}
+                onClick={() => setShowTrainingModal(true)}
                 className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all text-center"
               >
                 <div className="text-2xl mb-2">📚</div>
@@ -432,6 +502,25 @@ export default function EmployeeProfilePage() {
               </button>
             </div>
           </div>
+
+          {/* Resume */}
+          {profile.resume?.fileUrl && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">My Resume</h3>
+              <p className="text-sm text-gray-600 mb-2">{profile.resume.fileName}</p>
+              <p className="text-xs text-gray-500 mb-3">
+                Uploaded {new Date(profile.resume.uploadedAt).toLocaleDateString()}
+              </p>
+              <a
+                href={profile.resume.fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                View / Download Resume →
+              </a>
+            </div>
+          )}
         </div>
       </div>
 
@@ -446,24 +535,26 @@ export default function EmployeeProfilePage() {
                 <input
                   type="file"
                   accept=".pdf,.doc,.docx"
+                  onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
               <div className="flex space-x-3">
                 <button
-                  onClick={() => setShowResumeModal(false)}
+                  onClick={() => {
+                    setShowResumeModal(false);
+                    setResumeFile(null);
+                  }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    alert('Resume upload functionality will be implemented with file storage');
-                    setShowResumeModal(false);
-                  }}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  onClick={handleResumeUpload}
+                  disabled={uploadingResume || !resumeFile}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                 >
-                  Upload
+                  {uploadingResume ? 'Uploading...' : 'Upload'}
                 </button>
               </div>
             </div>
@@ -479,7 +570,11 @@ export default function EmployeeProfilePage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Feedback Type</label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-md">
+                <select
+                  value={feedbackType}
+                  onChange={(e) => setFeedbackType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
                   <option>Performance Review</option>
                   <option>Project Feedback</option>
                   <option>Skill Assessment</option>
@@ -490,6 +585,8 @@ export default function EmployeeProfilePage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Message (Optional)</label>
                 <textarea
                   rows={3}
+                  value={feedbackMessage}
+                  onChange={(e) => setFeedbackMessage(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   placeholder="Any specific areas you'd like feedback on..."
                 />
@@ -502,19 +599,52 @@ export default function EmployeeProfilePage() {
                   Cancel
                 </button>
                 <button
-                  onClick={async () => {
-                    try {
-                      await api.post('/employees/me/request-feedback', {
-                        requestType: 'general',
-                        message: 'Feedback requested from employee profile',
-                      });
-                      alert('Feedback request submitted successfully!');
-                      setShowFeedbackModal(false);
-                    } catch {
-                      // No variable used to avoid unused-var lint; optionally log a generic message
-                      alert('Failed to submit feedback request');
-                    }
-                  }}
+                  onClick={submitFeedbackRequest}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Submit Request
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Training Request Modal */}
+      {showTrainingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Request Training</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Training Topic *</label>
+                <input
+                  type="text"
+                  value={trainingTopic}
+                  onChange={(e) => setTrainingTopic(e.target.value)}
+                  placeholder="e.g. Advanced React, AWS Certification"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Details (Optional)</label>
+                <textarea
+                  rows={3}
+                  value={trainingMessage}
+                  onChange={(e) => setTrainingMessage(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  placeholder="Why you need this training..."
+                />
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowTrainingModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitTrainingRequest}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   Submit Request

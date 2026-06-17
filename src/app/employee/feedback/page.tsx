@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
 import { 
@@ -174,6 +175,12 @@ export default function EmployeeFeedbackPage() {
           <p className="text-gray-600">View feedback from managers, peers, and team members</p>
         </div>
         <div className="flex items-center space-x-4">
+          <Link
+            href="/employee/feedback/request"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+          >
+            Request Feedback
+          </Link>
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}

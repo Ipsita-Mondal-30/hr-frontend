@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
+import { isProjectCompleted } from "@/lib/projectUtils";
 import { 
   Users, 
   Briefcase, 
@@ -127,8 +128,8 @@ export default function HRDashboardPage() {
 
           setEmployeeData({
             totalEmployees: employeesArr.length,
-            activeProjects: projectsArr.filter((p) => p.status === "active").length,
-            completedProjects: projectsArr.filter((p) => p.status === "completed").length,
+            activeProjects: projectsArr.filter((p) => p.status === "active" && !isProjectCompleted(p)).length,
+            completedProjects: projectsArr.filter((p) => isProjectCompleted(p)).length,
             averagePerformance:
               employeesArr.length > 0
                 ? employeesArr.reduce((sum, emp) => sum + (emp.performanceScore || 0), 0) / employeesArr.length

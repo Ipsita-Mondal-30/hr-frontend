@@ -32,10 +32,23 @@ function isApiError(error: unknown): error is { response: { data?: { message?: s
   );
 }
 
+interface Department {
+  _id: string;
+  name: string;
+}
+
+interface Role {
+  _id: string;
+  title: string;
+  departmentId?: string;
+}
+
 export default function ManageJobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [formVisible, setFormVisible] = useState<boolean>(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [form, setForm] = useState<JobForm>({
     title: '',
     description: '',
@@ -57,6 +70,8 @@ export default function ManageJobs() {
 
   useEffect(() => {
     fetchJobs();
+    fetchDepartments();
+    fetchRoles();
   }, []);
 
   async function fetchJobs() {
@@ -69,6 +84,24 @@ export default function ManageJobs() {
       alert('Failed to load jobs. Please try again.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchDepartments() {
+    try {
+      const res = await api.get<Department[]>('/departments');
+      setDepartments(res.data);
+    } catch (error) {
+      console.error('Failed to fetch departments:', error);
+    }
+  }
+
+  async function fetchRoles() {
+    try {
+      const res = await api.get<Role[]>('/admin/roles');
+      setRoles(res.data);
+    } catch (error) {
+      console.error('Failed to fetch roles:', error);
     }
   }
 
@@ -97,20 +130,28 @@ export default function ManageJobs() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    const jobPayload = {
+    const jobPayload: any = {
       ...form,
+      // Remove empty strings for optional fields - convert to undefined
+      department: form.department && form.department.trim() ? form.department : undefined,
+      role: form.role && form.role.trim() ? form.role : undefined,
       experienceRequired: form.experienceRequired ? Number(form.experienceRequired) : undefined,
       minSalary: form.minSalary ? Number(form.minSalary) : undefined,
       maxSalary: form.maxSalary ? Number(form.maxSalary) : undefined,
       skills: form.skills
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean),
+        ? form.skills.split(',').map((s) => s.trim()).filter(Boolean)
+        : [],
       tags: form.tags
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean),
+        ? form.tags.split(',').map((t) => t.trim()).filter(Boolean)
+        : [],
     };
+
+    // Remove undefined values to clean up payload
+    Object.keys(jobPayload).forEach(key => {
+      if (jobPayload[key] === undefined || jobPayload[key] === '') {
+        delete jobPayload[key];
+      }
+    });
 
     try {
       if (editingId) {
@@ -202,6 +243,48 @@ export default function ManageJobs() {
                 className="w-full border p-2 rounded"
                 placeholder="e.g., TechCorp Inc."
               />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="department" className="block mb-1 font-medium">Department</label>
+              <select
+                id="department"
+                value={form.department}
+                onChange={(e) => {
+                  setForm({ ...form, department: e.target.value, role: '' }); // Reset role when department changes
+                }}
+                className="w-full border p-2 rounded"
+              >
+                <option value="">Select Department (Optional)</option>
+                {departments.map((dept) => (
+                  <option key={dept._id} value={dept._id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="role" className="block mb-1 font-medium">Role</label>
+              <select
+                id="role"
+                value={form.role}
+                onChange={(e) => setForm({ ...form, role: e.target.value })}
+                className="w-full border p-2 rounded"
+                disabled={!form.department}
+              >
+                <option value="">Select Role (Optional)</option>
+                {roles
+                  .filter((role) => !form.department || role.departmentId === form.department)
+                  .map((role) => (
+                    <option key={role._id} value={role._id}>
+                      {role.title}
+                    </option>
+                  ))}
+              </select>
+              {!form.department && (
+                <p className="text-xs text-gray-500 mt-1">Select a department first to filter roles</p>
+              )}
             </div>
 
             <div className="mb-4">

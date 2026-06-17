@@ -18,7 +18,7 @@ interface Payroll {
   baseSalary: number;
   grossSalary: number;
   netSalary: number;
-  status: 'draft' | 'approved' | 'paid';
+  status: 'pending' | 'approved' | 'paid';
   createdAt: string;
 }
 
@@ -63,7 +63,7 @@ export default function PayrollManagement() {
 
   const handleMarkPaid = async (payrollId: string) => {
     try {
-      await api.put(`/hr/payroll/${payrollId}/mark-paid`);
+      await api.put(`/hr/payroll/${payrollId}/mark-paid`, {});
       fetchPayrolls();
     } catch (error) {
       console.error('Error marking payroll as paid:', error);
@@ -73,8 +73,8 @@ export default function PayrollManagement() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'draft':
-        return 'bg-gray-100 text-gray-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
       case 'approved':
         return 'bg-green-100 text-green-800';
       case 'paid':
@@ -160,7 +160,7 @@ export default function PayrollManagement() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Status</option>
-              <option value="draft">Draft</option>
+              <option value="pending">Pending</option>
               <option value="approved">Approved</option>
               <option value="paid">Paid</option>
             </select>
@@ -229,12 +229,12 @@ export default function PayrollManagement() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      {payroll.status === 'draft' && (
+                      {payroll.status === 'pending' && (
                         <button onClick={() => handleApprove(payroll._id)} className="text-green-600 hover:text-green-900">
                           Approve
                         </button>
                       )}
-                      {payroll.status === 'approved' && (
+                      {(payroll.status === 'approved' || payroll.status === 'pending') && (
                         <button onClick={() => handleMarkPaid(payroll._id)} className="text-blue-600 hover:text-blue-900">
                           Mark Paid
                         </button>

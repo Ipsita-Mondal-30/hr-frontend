@@ -1,69 +1,139 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import ProjectChat from '@/components/ProjectChat';
+import AdminMilestonePanel from '@/components/AdminMilestonePanel';
+import AdminWorkReviewPanel from '@/components/AdminWorkReviewPanel';
+import ProjectPerformanceOverview from '@/components/ProjectPerformanceOverview';
+import { isProjectCompleted, projectDisplayStatus } from '@/lib/projectUtils';
+
+interface ProjectUser {
+  name?: string;
+  email?: string;
+}
+
+interface ProjectEmployee {
+  _id?: string;
+  user?: ProjectUser | string;
+  position?: string;
+}
 
 interface Project {
   _id: string;
   name: string;
-  description: string;
+  description?: string;
   status: string;
   priority: string;
   startDate: string;
   endDate?: string;
-  estimatedHours: number;
-  actualHours: number;
-  completionPercentage: number;
-  projectManager: {
-    user: { name: string };
-    position: string;
-  };
-  teamMembers: Array<{
-    employee: {
-      _id: string;
-      user: { name: string };
-      position: string;
-    };
-    role: string;
-    contributionPercentage: number;
-    hoursWorked: number;
+  estimatedHours?: number;
+  actualHours?: number;
+  completionPercentage?: number;
+  projectManager?: ProjectEmployee | null;
+  teamMembers?: Array<{
+    employee?: ProjectEmployee | null;
+    role?: string;
+    contributionPercentage?: number;
+    hoursWorked?: number;
   }>;
-  department?: {
-    name: string;
-  };
-  budget: number;
-  actualCost: number;
+  department?: { name?: string } | string | null;
+  budget?: number;
+  actualCost?: number;
+}
+
+function managerName(pm: Project['projectManager']): string {
+  if (!pm) return 'Unassigned';
+  const user = pm.user;
+  if (user && typeof user === 'object' && user.name) return user.name;
+  return 'Unassigned';
+}
+
+function memberName(employee: ProjectEmployee | null | undefined): string {
+  if (!employee) return 'Unknown';
+  const user = employee.user;
+  if (user && typeof user === 'object' && user.name) return user.name;
+  return 'Unknown';
+}
+
+function formatMoney(value?: number): string {
+  return `$${(value ?? 0).toLocaleString()}`;
 }
 
 export default function AdminProjectsPage() {
-  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-
-  // Redirect to create page immediately
-  useEffect(() => {
-    router.push('/admin/projects/create');
-  }, [router]);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchProjects = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const params = new URLSearchParams();
       if (filter !== 'all') params.append('status', filter);
 
-      const response = await api.get(`/projects?${params.toString()}`);
-      setProjects(response.data?.projects || []);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
+      const response = await api.get(`/projects?${params.toString()}`, {
+        skipAuthRedirect: true,
+      });
+      const list = response.data?.projects;
+      setProjects(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.error('Error fetching projects:', err);
+      setProjects([]);
+      setError('Could not load projects. Make sure you are logged in and the backend is running.');
     } finally {
       setLoading(false);
     }
   }, [filter]);
+
+  const refreshProjectDetails = useCallback(async (projectId: string) => {
+    try {
+      const res = await api.get(`/projects/${projectId}`, { skipAuthRedirect: true });
+      const fresh = res.data.project as Project;
+      setSelectedProject(fresh);
+      setProjects((prev) => prev.map((p) => (p._id === projectId ? fresh : p)));
+    } catch (err) {
+      console.error('Error refreshing project:', err);
+    }
+  }, []);
+
+  const openProjectDetails = async (project: Project) => {
+    setSelectedProject(project);
+    await refreshProjectDetails(project._id);
+  };
+
+  const getAllTeamMembers = (project: Project) => {
+    const members: Array<{
+      employee?: ProjectEmployee | null;
+      role?: string;
+      contributionPercentage?: number;
+      hoursWorked?: number;
+      isManager?: boolean;
+    }> = [];
+
+    if (project.projectManager) {
+      members.push({
+        employee: project.projectManager,
+        role: 'project-manager',
+        contributionPercentage: 0,
+        hoursWorked: 0,
+        isManager: true,
+      });
+    }
+
+    (project.teamMembers ?? []).forEach((member) => {
+      const pmId = project.projectManager?._id;
+      const empId = member.employee?._id;
+      if (pmId && empId && pmId === empId) return;
+      members.push(member);
+    });
+
+    return members;
+  };
 
   useEffect(() => {
     fetchProjects();
@@ -99,6 +169,13 @@ export default function AdminProjectsPage() {
     }
   };
 
+  const avgProgress =
+    projects.length > 0
+      ? Math.round(
+          projects.reduce((sum, p) => sum + (p.completionPercentage ?? 0), 0) / projects.length
+        )
+      : 0;
+
   if (loading) {
     return (
       <div className="p-6">
@@ -116,7 +193,7 @@ export default function AdminProjectsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Project Management</h1>
           <p className="text-gray-600">Create, assign, and manage company projects</p>
@@ -133,16 +210,21 @@ export default function AdminProjectsPage() {
             <option value="on-hold">On Hold</option>
             <option value="planning">Planning</option>
           </select>
-          <button
-            onClick={() => setShowCreateModal(true)}
+          <Link
+            href="/admin/projects/create"
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             Create Project
-          </button>
+          </Link>
         </div>
       </div>
 
-      {/* Project Stats */}
+      {error && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 text-sm">
+          {error}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
           <div className="text-2xl font-bold text-blue-600">{projects.length}</div>
@@ -150,28 +232,22 @@ export default function AdminProjectsPage() {
         </div>
         <div className="bg-green-50 p-4 rounded-lg border border-green-200">
           <div className="text-2xl font-bold text-green-600">
-            {projects.filter((p) => p.status === 'active').length}
+            {projects.filter((p) => p.status === 'active' && !isProjectCompleted(p)).length}
           </div>
           <div className="text-sm text-green-700">Active Projects</div>
         </div>
         <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
           <div className="text-2xl font-bold text-purple-600">
-            {projects.filter((p) => p.status === 'completed').length}
+            {projects.filter((p) => isProjectCompleted(p)).length}
           </div>
           <div className="text-sm text-purple-700">Completed</div>
         </div>
         <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-          <div className="text-2xl font-bold text-orange-600">
-            {Math.round(
-              (projects.reduce((sum, p) => sum + p.completionPercentage, 0) / projects.length) || 0
-            )}
-            %
-          </div>
+          <div className="text-2xl font-bold text-orange-600">{avgProgress}%</div>
           <div className="text-sm text-orange-700">Avg Progress</div>
         </div>
       </div>
 
-      {/* Projects List */}
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold">Projects ({projects.length})</h2>
@@ -181,268 +257,302 @@ export default function AdminProjectsPage() {
           <div className="p-8 text-center text-gray-500">
             <div className="text-4xl mb-2">📊</div>
             <p className="mb-4">No projects found</p>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            <Link
+              href="/admin/projects/create"
+              className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               Create Your First Project
-            </button>
+            </Link>
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
-            {projects.map((project) => (
-              <div key={project._id} className="p-6 hover:bg-gray-50">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-lg font-medium text-gray-900">{project.name}</h3>
-                      <div
-                        className={`w-3 h-3 rounded-full ${getPriorityColor(project.priority)}`}
-                        title={`${project.priority} priority`}
-                      ></div>
-                      <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
-                          project.status
-                        )}`}
-                      >
-                        {project.status}
-                      </span>
-                    </div>
+            {projects.map((project) => {
+              const team = project.teamMembers ?? [];
+              const progress = project.completionPercentage ?? 0;
 
-                    <p className="text-gray-600 mb-3">{project.description}</p>
+              return (
+                <div key={project._id} className="p-6 hover:bg-gray-50">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <h3 className="text-lg font-medium text-gray-900">{project.name}</h3>
+                        <div
+                          className={`w-3 h-3 rounded-full ${getPriorityColor(project.priority || 'medium')}`}
+                          title={`${project.priority || 'medium'} priority`}
+                        />
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
+                            projectDisplayStatus(project)
+                          )}`}
+                        >
+                          {projectDisplayStatus(project)}
+                        </span>
+                      </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                      <div>
-                        <span className="text-gray-500">Project Manager:</span>
-                        <div className="font-medium">{project.projectManager.user.name}</div>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Team Size:</span>
-                        <div className="font-medium">{project.teamMembers.length} members</div>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Budget:</span>
-                        <div className="font-medium">${project.budget.toLocaleString()}</div>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Start Date:</span>
-                        <div className="font-medium">
-                          {new Date(project.startDate).toLocaleDateString()}
+                      <p className="text-gray-600 mb-3">{project.description || 'No description'}</p>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                        <div>
+                          <span className="text-gray-500">Project Manager:</span>
+                          <div className="font-medium">{managerName(project.projectManager)}</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Team Size:</span>
+                          <div className="font-medium">{team.length} members</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Budget:</span>
+                          <div className="font-medium">{formatMoney(project.budget)}</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Start Date:</span>
+                          <div className="font-medium">
+                            {project.startDate
+                              ? new Date(project.startDate).toLocaleDateString()
+                              : '—'}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Progress Bar */}
-                    <div className="mb-3">
-                      <div className="flex justify-between text-sm text-gray-600 mb-1">
-                        <span>Progress</span>
-                        <span>{project.completionPercentage}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${project.completionPercentage}%` }}
-                        ></div>
-                      </div>
-                    </div>
-
-                    {/* Team Members Preview */}
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-500">Team:</span>
-                      <div className="flex -space-x-2">
-                        {project.teamMembers.slice(0, 4).map((member, index) => (
+                      <div className="mb-3">
+                        <div className="flex justify-between text-sm text-gray-600 mb-1">
+                          <span>Progress</span>
+                          <span>{progress}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
-                            key={index}
-                            className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-xs font-medium text-blue-600 border-2 border-white"
-                            title={member.employee?.user?.name || 'Unknown'}
-                          >
-                            {(member.employee?.user?.name || 'U').charAt(0).toUpperCase()}
-                          </div>
-                        ))}
-                        {project.teamMembers.length > 4 && (
-                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-xs font-medium text-gray-600 border-2 border-white">
-                            +{project.teamMembers.length - 4}
-                          </div>
-                        )}
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="ml-4 flex flex-col space-y-2">
-                    <button
-                      onClick={() => setSelectedProject(project)}
-                      className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                    >
-                      View Details
-                    </button>
-                    <Link
-                      href={`/admin/projects/${project._id}/edit`}
-                      className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-center"
-                    >
-                      Edit
-                    </Link>
+                      {team.length > 0 && (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-500">Team:</span>
+                          <div className="flex -space-x-2">
+                            {team.slice(0, 4).map((member, index) => (
+                              <div
+                                key={index}
+                                className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-xs font-medium text-blue-600 border-2 border-white"
+                                title={memberName(member.employee)}
+                              >
+                                {memberName(member.employee).charAt(0).toUpperCase()}
+                              </div>
+                            ))}
+                            {team.length > 4 && (
+                              <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-xs font-medium text-gray-600 border-2 border-white">
+                                +{team.length - 4}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col space-y-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => openProjectDetails(project)}
+                        className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                      >
+                        View Details
+                      </button>
+                      <Link
+                        href={`/admin/projects/${project._id}/edit`}
+                        className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-center"
+                      >
+                        Edit
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Project Details Modal */}
-      {selectedProject && (
+      {selectedProject && (() => {
+        const team = getAllTeamMembers(selectedProject);
+        return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-xl font-semibold">{selectedProject.name}</h2>
-                  <p className="text-gray-600 mt-1">{selectedProject.description}</p>
+                  <p className="text-gray-600 mt-1">{selectedProject.description || 'No description'}</p>
                   <div className="flex items-center space-x-4 mt-2">
                     <span
                       className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
-                        selectedProject.status
+                        projectDisplayStatus(selectedProject)
                       )}`}
                     >
-                      {selectedProject.status}
+                      {projectDisplayStatus(selectedProject)}
                     </span>
-                    <span className="text-sm text-gray-500">
-                      Started: {new Date(selectedProject.startDate).toLocaleDateString()}
-                    </span>
+                    {isProjectCompleted(selectedProject) && (
+                      <span className="text-sm text-green-600 font-medium">✓ Completed</span>
+                    )}
+                    {selectedProject.startDate && (
+                      <span className="text-sm text-gray-500">
+                        Started: {new Date(selectedProject.startDate).toLocaleDateString()}
+                      </span>
+                    )}
                   </div>
                 </div>
-                <button onClick={() => setSelectedProject(null)} className="text-gray-400 hover:text-gray-600">
+                <button
+                  type="button"
+                  onClick={() => setSelectedProject(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
                   ✕
                 </button>
               </div>
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Project Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <div className="text-lg font-semibold text-blue-600">
-                    {selectedProject.completionPercentage}%
+                    {selectedProject.completionPercentage ?? 0}%
                   </div>
                   <div className="text-sm text-blue-700">Completion</div>
+                  <div className="mt-2 w-full bg-blue-200 rounded-full h-1.5">
+                    <div
+                      className="bg-blue-600 h-1.5 rounded-full transition-all"
+                      style={{ width: `${selectedProject.completionPercentage ?? 0}%` }}
+                    />
+                  </div>
                 </div>
                 <div className="bg-green-50 p-4 rounded-lg">
                   <div className="text-lg font-semibold text-green-600">
-                    ${selectedProject.budget.toLocaleString()}
+                    {formatMoney(selectedProject.budget)}
                   </div>
                   <div className="text-sm text-green-700">Budget</div>
                 </div>
                 <div className="bg-purple-50 p-4 rounded-lg">
                   <div className="text-lg font-semibold text-purple-600">
-                    {selectedProject.teamMembers.length}
+                    {team.length}
                   </div>
                   <div className="text-sm text-purple-700">Team Members</div>
                 </div>
               </div>
 
-              {/* Team Members */}
               <div>
                 <h3 className="text-lg font-semibold mb-4">Team Members</h3>
-                <div className="space-y-3">
-                  {selectedProject.teamMembers.map((member, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold">
-                          {member.employee.user.name.charAt(0).toUpperCase()}
+                {team.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No team members assigned.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {team.map((member, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                            member.isManager ? 'bg-indigo-100 text-indigo-600' : 'bg-blue-100 text-blue-600'
+                          }`}>
+                            {memberName(member.employee).charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-gray-900">
+                              {memberName(member.employee)}
+                              {member.isManager && (
+                                <span className="ml-2 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">PM</span>
+                              )}
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              {member.employee?.position || '—'}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-medium text-gray-900">{member.employee.user.name}</h4>
-                          <p className="text-sm text-gray-600">{member.employee.position}</p>
+                        <div className="text-right text-sm">
+                          <div className="font-medium capitalize">{(member.role || 'member').replace('-', ' ')}</div>
+                          <div className="text-xs text-gray-500">
+                            {member.contributionPercentage ?? 0}% • {member.hoursWorked ?? 0}h
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm font-medium">{member.role}</div>
-                        <div className="text-xs text-gray-500">
-                          {member.contributionPercentage}% • {member.hoursWorked}h
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <AdminWorkReviewPanel
+                projectId={selectedProject._id}
+                onReviewed={(project) => {
+                  if (project.completionPercentage !== undefined) {
+                    setSelectedProject((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            completionPercentage: project.completionPercentage,
+                            status:
+                              (project.completionPercentage ?? 0) >= 100
+                                ? 'completed'
+                                : prev.status,
+                          }
+                        : prev
+                    );
+                  }
+                  refreshProjectDetails(selectedProject._id);
+                }}
+              />
+
+              <ProjectPerformanceOverview projectId={selectedProject._id} />
+
+              <AdminMilestonePanel
+                projectId={selectedProject._id}
+                employees={team
+                  .map((member) => {
+                    const emp = member.employee;
+                    if (!emp) return null;
+                    if (typeof emp === 'string') return { _id: emp };
+                    return { _id: emp._id, user: emp.user };
+                  })
+                  .filter((e): e is { _id: string; user?: { name?: string } } => Boolean(e?._id))}
+                onCreated={() => refreshProjectDetails(selectedProject._id)}
+              />
+
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Team updates (live chat)</h3>
+                <ProjectChat
+                  projectId={selectedProject._id}
+                  projectName={selectedProject.name}
+                  isProjectManager
+                  onProjectUpdated={() => refreshProjectDetails(selectedProject._id)}
+                />
               </div>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
-      {/* Create Project Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Create New Project</h2>
-                <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600">
-                  ✕
-                </button>
-              </div>
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Create New Project</h2>
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
             </div>
-
-            <div className="p-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter project name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <textarea
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Project description"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                    <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="critical">Critical</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Budget</label>
-                    <input
-                      type="number"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    onClick={() => setShowCreateModal(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Handle project creation
-                      setShowCreateModal(false);
-                      alert('Project creation functionality to be implemented');
-                    }}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    Create Project
-                  </button>
-                </div>
-              </div>
+            <div className="p-6 text-center text-gray-600">
+              <p className="mb-4">Use the full create form for new projects.</p>
+              <Link
+                href="/admin/projects/create"
+                className="inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                onClick={() => setShowCreateModal(false)}
+              >
+                Go to Create Project
+              </Link>
             </div>
           </div>
         </div>

@@ -48,6 +48,7 @@ interface PayrollRecord {
     email: string;
   };
   approvedAt?: string;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -58,6 +59,8 @@ export default function AdminPayrollDetailPage() {
   const [payroll, setPayroll] = useState<PayrollRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [notes, setNotes] = useState('');
+  const [savingNotes, setSavingNotes] = useState(false);
 
   const fetchPayrollDetails = useCallback(async () => {
     if (!params?.id) return;
@@ -65,6 +68,7 @@ export default function AdminPayrollDetailPage() {
       setLoading(true);
       const response = await api.get(`/admin/payroll/${params.id}`);
       setPayroll(response.data);
+      setNotes(response.data.notes || '');
     } catch (error) {
       console.error('Error fetching payroll details:', error);
       alert('Error loading payroll details');
@@ -76,6 +80,21 @@ export default function AdminPayrollDetailPage() {
   useEffect(() => {
     fetchPayrollDetails();
   }, [fetchPayrollDetails]);
+
+  const saveNotes = async () => {
+    if (!payroll) return;
+    setSavingNotes(true);
+    try {
+      await api.put(`/admin/payroll/${payroll._id}/notes`, { notes });
+      setPayroll((prev) => (prev ? { ...prev, notes } : prev));
+      alert('Notes saved successfully');
+    } catch (error) {
+      console.error('Error saving notes:', error);
+      alert('Failed to save notes');
+    } finally {
+      setSavingNotes(false);
+    }
+  };
 
   const handleApprove = async () => {
     if (!payroll) return;
@@ -95,7 +114,7 @@ export default function AdminPayrollDetailPage() {
     if (!payroll) return;
     try {
       setUpdating(true);
-      await api.put(`/admin/payroll/${payroll._id}/mark-paid`);
+      await api.put(`/admin/payroll/${payroll._id}/mark-paid`, {});
       await fetchPayrollDetails();
     } catch (error) {
       console.error('Error marking payroll as paid:', error);
@@ -292,7 +311,7 @@ export default function AdminPayrollDetailPage() {
               {updating ? 'Approving...' : 'Approve'}
             </button>
           )}
-          {payroll.status === 'approved' && (
+          {(payroll.status === 'approved' || payroll.status === 'pending') && (
             <button
               onClick={handleMarkPaid}
               disabled={updating}
@@ -334,6 +353,24 @@ export default function AdminPayrollDetailPage() {
             </div>
           </div>
         )}
+
+        <div className="mt-6 bg-white p-6 rounded-lg shadow">
+          <h2 className="text-lg font-semibold mb-4">Payroll Notes</h2>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={4}
+            placeholder="Add notes about this payroll record..."
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={saveNotes}
+            disabled={savingNotes}
+            className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+          >
+            {savingNotes ? 'Saving...' : 'Save Notes'}
+          </button>
+        </div>
       </div>
     </div>
   );

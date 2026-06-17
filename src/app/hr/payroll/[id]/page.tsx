@@ -106,7 +106,7 @@ export default function HRPayrollDetailPage() {
   const handleMarkPaid = async () => {
     if (!payroll) return;
     try {
-      await api.put(`/hr/payroll/${payroll._id}/mark-paid`);
+      await api.put(`/hr/payroll/${payroll._id}/mark-paid`, {});
       fetchPayrollDetails();
       alert('Payroll marked as paid successfully');
     } catch (error) {
@@ -186,7 +186,7 @@ export default function HRPayrollDetailPage() {
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(payroll.status)}`}>
               {payroll.status.charAt(0).toUpperCase() + payroll.status.slice(1)}
             </span>
-            {payroll.status === 'draft' && (
+            {payroll.status === 'pending' && (
               <button
                 onClick={handleApprove}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
@@ -194,7 +194,7 @@ export default function HRPayrollDetailPage() {
                 Approve
               </button>
             )}
-            {payroll.status === 'approved' && (
+            {(payroll.status === 'approved' || payroll.status === 'pending') && (
               <button
                 onClick={handleMarkPaid}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"

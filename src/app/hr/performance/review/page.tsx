@@ -65,7 +65,9 @@ export default function PerformanceReviewPage() {
     setLoading(true);
     try {
       await api.post('/feedback', {
-        type: 'performance_review',
+        type: 'performance-review',
+        title: `Performance Review - ${formData.reviewPeriod}`,
+        status: 'submitted',
         employee: selectedEmployee,
         content: `Performance Review - ${formData.reviewPeriod}
 
@@ -87,9 +89,14 @@ ${formData.managerComments}`,
       
       alert('Performance review submitted successfully!');
       router.push('/hr/performance');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error submitting review:', error);
-      alert('Error submitting performance review');
+      const axiosError = error as { response?: { data?: { error?: string; message?: string } } };
+      const message =
+        axiosError.response?.data?.error ||
+        axiosError.response?.data?.message ||
+        'Error submitting performance review';
+      alert(message);
     } finally {
       setLoading(false);
     }

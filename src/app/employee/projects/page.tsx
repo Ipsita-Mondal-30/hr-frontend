@@ -1,8 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
+import ProjectChat from '@/components/ProjectChat';
+import ProjectWorkUpload from '@/components/ProjectWorkUpload';
+import ProjectPerformanceOverview from '@/components/ProjectPerformanceOverview';
+import { isProjectCompleted, projectDisplayStatus } from '@/lib/projectUtils';
 
 interface ProjectTimeline {
   _id: string;
@@ -14,11 +18,12 @@ interface ProjectTimeline {
   endDate?: string;
   completionPercentage: number;
   role: string;
+  isProjectManager?: boolean;
   contributionPercentage: number;
   hoursWorked: number;
-  projectManager: {
-    user: { name: string };
-    position: string;
+  projectManager?: {
+    user?: { name?: string };
+    position?: string;
   };
   milestones: Array<{
     _id: string;
@@ -29,6 +34,18 @@ interface ProjectTimeline {
     completedDate?: string;
     completionPercentage: number;
   }>;
+  canSubmitWork?: boolean;
+  performanceOverview?: {
+    contributionPercentage: number;
+    hoursWorked: number;
+    performanceRating: string;
+    performanceSummary: string;
+    milestonesCompleted: number;
+    milestonesTotal: number;
+    onTimeRate: number;
+    submissionsApproved: number;
+    submissionsPending: number;
+  };
 }
 
 export default function EmployeeProjectsPage() {
@@ -38,30 +55,41 @@ export default function EmployeeProjectsPage() {
   const [selectedProject, setSelectedProject] = useState<ProjectTimeline | null>(null);
   const [filter, setFilter] = useState('all');
 
-  useEffect(() => {
-    if (user) {
-      fetchProjects();
-    }
-  }, [user]);
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
-      // First get employee profile
-      const profileRes = await api.get('/employees/me');
+      const profileRes = await api.get('/employees/me', { skipAuthRedirect: true });
       const employeeId = profileRes.data._id;
-      
-      // Then get projects
-      const projectsRes = await api.get(`/employees/${employeeId}/projects`);
+      const projectsRes = await api.get(`/employees/${employeeId}/projects`, {
+        skipAuthRedirect: true,
+      });
       setProjects(projectsRes.data?.projects || []);
     } catch (error) {
       console.error('Error fetching projects:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const filteredProjects = projects.filter(project => {
+  useEffect(() => {
+    if (user) fetchProjects();
+  }, [user, fetchProjects]);
+
+  const refreshSelectedProject = useCallback(async () => {
+    await fetchProjects();
+    if (selectedProject) {
+      const profileRes = await api.get('/employees/me', { skipAuthRedirect: true });
+      const employeeId = profileRes.data._id;
+      const projectsRes = await api.get(`/employees/${employeeId}/projects`, { skipAuthRedirect: true });
+      const updated = (projectsRes.data?.projects || []).find(
+        (p: ProjectTimeline) => p._id === selectedProject._id
+      );
+      if (updated) setSelectedProject(updated);
+    }
+  }, [selectedProject, fetchProjects]);
+
+  const filteredProjects = projects.filter((project) => {
     if (filter === 'all') return true;
+    if (filter === 'completed') return isProjectCompleted(project);
     return project.status === filter;
   });
 
@@ -148,13 +176,13 @@ export default function EmployeeProjectsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
           <div className="text-2xl font-bold text-blue-600">
-            {projects.filter(p => p.status === 'active').length}
+            {projects.filter(p => !isProjectCompleted(p) && p.status === 'active').length}
           </div>
           <div className="text-sm text-blue-700">Active Projects</div>
         </div>
         <div className="bg-green-50 p-4 rounded-lg border border-green-200">
           <div className="text-2xl font-bold text-green-600">
-            {projects.filter(p => p.status === 'completed').length}
+            {projects.filter(p => isProjectCompleted(p)).length}
           </div>
           <div className="text-sm text-green-700">Completed Projects</div>
         </div>
@@ -192,8 +220,8 @@ export default function EmployeeProjectsPage() {
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="text-lg font-medium text-gray-900">{project.name}</h3>
                       <div className={`w-3 h-3 rounded-full ${getPriorityColor(project.priority)}`} title={`${project.priority} priority`}></div>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(project.status)}`}>
-                        {project.status}
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(projectDisplayStatus(project))}`}>
+                        {projectDisplayStatus(project)}
                       </span>
                     </div>
                     
@@ -214,7 +242,9 @@ export default function EmployeeProjectsPage() {
                       </div>
                       <div>
                         <span className="text-gray-500">Project Manager:</span>
-                        <div className="font-medium">{project.projectManager.user.name}</div>
+                        <div className="font-medium">
+                          {project.projectManager?.user?.name || 'Unassigned'}
+                        </div>
                       </div>
                     </div>
                     
@@ -258,9 +288,12 @@ export default function EmployeeProjectsPage() {
                   <h2 className="text-xl font-semibold">{selectedProject.name}</h2>
                   <p className="text-gray-600 mt-1">{selectedProject.description}</p>
                   <div className="flex items-center space-x-4 mt-2">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(selectedProject.status)}`}>
-                      {selectedProject.status}
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(projectDisplayStatus(selectedProject))}`}>
+                      {projectDisplayStatus(selectedProject)}
                     </span>
+                    {isProjectCompleted(selectedProject) && (
+                      <span className="text-sm text-green-600 font-medium">✓ Project Completed</span>
+                    )}
                     <span className="text-sm text-gray-500">
                       Started: {new Date(selectedProject.startDate).toLocaleDateString()}
                     </span>
@@ -284,11 +317,15 @@ export default function EmployeeProjectsPage() {
               {/* Project Overview */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="text-lg font-semibold text-blue-600">{selectedProject.contributionPercentage}%</div>
+                  <div className="text-lg font-semibold text-blue-600">
+                    {selectedProject.performanceOverview?.contributionPercentage ?? selectedProject.contributionPercentage}%
+                  </div>
                   <div className="text-sm text-blue-700">My Contribution</div>
                 </div>
                 <div className="bg-green-50 p-4 rounded-lg">
-                  <div className="text-lg font-semibold text-green-600">{selectedProject.hoursWorked}h</div>
+                  <div className="text-lg font-semibold text-green-600">
+                    {selectedProject.performanceOverview?.hoursWorked ?? selectedProject.hoursWorked}h
+                  </div>
                   <div className="text-sm text-green-700">Hours Worked</div>
                 </div>
                 <div className="bg-purple-50 p-4 rounded-lg">
@@ -297,59 +334,152 @@ export default function EmployeeProjectsPage() {
                 </div>
               </div>
 
+              {selectedProject.performanceOverview && (
+                <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-medium text-indigo-900">My Performance</h4>
+                    <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-800 capitalize">
+                      {selectedProject.performanceOverview.performanceRating.replace('-', ' ')}
+                    </span>
+                  </div>
+                  <p className="text-sm text-indigo-800">{selectedProject.performanceOverview.performanceSummary}</p>
+                  <div className="grid grid-cols-3 gap-3 mt-3 text-sm">
+                    <div>
+                      <span className="text-indigo-600 text-xs">Milestones</span>
+                      <div className="font-semibold">
+                        {selectedProject.performanceOverview.milestonesCompleted}/{selectedProject.performanceOverview.milestonesTotal}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-indigo-600 text-xs">On-time rate</span>
+                      <div className="font-semibold">{selectedProject.performanceOverview.onTimeRate}%</div>
+                    </div>
+                    <div>
+                      <span className="text-indigo-600 text-xs">Approved work</span>
+                      <div className="font-semibold">{selectedProject.performanceOverview.submissionsApproved}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <ProjectPerformanceOverview
+                projectId={selectedProject._id}
+                compact
+                employeeOnly
+                employeeName={user?.name}
+              />
+
+              <ProjectWorkUpload
+                projectId={selectedProject._id}
+                milestones={selectedProject.milestones || []}
+                canSubmitWork={selectedProject.canSubmitWork}
+                projectComplete={selectedProject.completionPercentage >= 100}
+                onSubmitted={refreshSelectedProject}
+              />
+
               {/* Milestones */}
               <div>
                 <h3 className="text-lg font-semibold mb-4">My Milestones</h3>
-                {selectedProject.milestones.length === 0 ? (
+                {(selectedProject.milestones?.length ?? 0) === 0 ? (
                   <p className="text-gray-500">No milestones assigned to you in this project.</p>
                 ) : (
                   <div className="space-y-3">
                     {selectedProject.milestones.map((milestone) => (
-                      <div key={milestone._id} className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900">{milestone.title}</h4>
-                            {milestone.description && (
-                              <p className="text-sm text-gray-600 mt-1">{milestone.description}</p>
-                            )}
-                            <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                              <span>Due: {new Date(milestone.dueDate).toLocaleDateString()}</span>
-                              {milestone.completedDate && (
-                                <span>Completed: {new Date(milestone.completedDate).toLocaleDateString()}</span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="ml-4 text-right">
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getMilestoneStatusColor(milestone.status)}`}>
-                              {milestone.status}
-                            </span>
-                            <div className="text-sm text-gray-600 mt-1">
-                              {milestone.completionPercentage}% complete
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Milestone Progress Bar */}
-                        <div className="mt-3">
-                          <div className="w-full bg-gray-200 rounded-full h-1.5">
-                            <div 
-                              className={`h-1.5 rounded-full transition-all duration-300 ${
-                                milestone.status === 'completed' ? 'bg-green-500' :
-                                milestone.status === 'in-progress' ? 'bg-blue-500' :
-                                milestone.status === 'overdue' ? 'bg-red-500' :
-                                'bg-gray-400'
-                              }`}
-                              style={{ width: `${milestone.completionPercentage}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      </div>
+                      <MilestoneRespondCard
+                        key={milestone._id}
+                        milestone={milestone}
+                        onUpdated={refreshSelectedProject}
+                      />
                     ))}
                   </div>
                 )}
               </div>
+
+              {/* Real-time chat with PM */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Updates chat</h3>
+                <ProjectChat
+                  projectId={selectedProject._id}
+                  projectName={selectedProject.name}
+                  isProjectManager={selectedProject.isProjectManager}
+                  onProjectUpdated={refreshSelectedProject}
+                />
+              </div>
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MilestoneRespondCard({
+  milestone,
+  onUpdated,
+}: {
+  milestone: ProjectTimeline['milestones'][0];
+  onUpdated: () => void;
+}) {
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+  const isComplete = milestone.status === 'completed';
+
+  const submit = async () => {
+    if (!note.trim()) {
+      alert('Add a brief update note for your PM');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await api.patch(`/projects/milestones/${milestone._id}/respond`, {
+        message: note.trim(),
+      });
+      setNote('');
+      onUpdated();
+    } catch (e: unknown) {
+      console.error(e);
+      const err = e as { response?: { data?: { error?: string } } };
+      alert(err.response?.data?.error || 'Failed to submit update');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="border border-gray-200 rounded-lg p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h4 className="font-medium text-gray-900">{milestone.title}</h4>
+          {milestone.description && (
+            <p className="text-sm text-gray-600 mt-1">{milestone.description}</p>
+          )}
+          <p className="text-sm text-gray-500 mt-1">
+            Due: {new Date(milestone.dueDate).toLocaleDateString()} · {milestone.status}
+          </p>
+        </div>
+        <span className="text-sm font-medium">{milestone.completionPercentage}%</span>
+      </div>
+      {!isComplete && (
+        <div className="mt-3 flex flex-wrap gap-2 items-end">
+          <div className="flex-1 min-w-[200px]">
+            <label className="text-xs text-gray-500">Quick note to PM (use Submit Work above for files)</label>
+            <input
+              type="text"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Status update…"
+              className="block w-full px-2 py-1 border rounded text-sm"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={saving}
+            className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50"
+          >
+            {saving ? 'Sending…' : 'Send note'}
+          </button>
         </div>
       )}
     </div>

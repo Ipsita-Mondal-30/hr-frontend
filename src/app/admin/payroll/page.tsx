@@ -18,7 +18,7 @@ interface Payroll {
   baseSalary: number;
   grossSalary: number;
   netSalary: number;
-  status: 'draft' | 'approved' | 'paid';
+  status: 'pending' | 'approved' | 'paid';
   createdAt: string;
 }
 
@@ -94,10 +94,20 @@ export default function AdminPayrollManagement() {
     }
   };
 
+  const handleMarkPaid = async (payrollId: string) => {
+    try {
+      await api.put(`/admin/payroll/${payrollId}/mark-paid`, {});
+      fetchData();
+    } catch (error) {
+      console.error('Error marking payroll as paid:', error);
+      alert('Failed to mark payroll as paid');
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'draft':
-        return 'bg-gray-100 text-gray-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
       case 'approved':
         return 'bg-green-100 text-green-800';
       case 'paid':
@@ -137,6 +147,9 @@ export default function AdminPayrollManagement() {
           <h1 className="text-2xl font-bold text-gray-900">Payroll Management</h1>
           <p className="text-gray-600">Oversee and approve employee payroll</p>
         </div>
+        <Link href="/admin/payroll/create" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+          Create Payroll
+        </Link>
       </div>
 
       {/* Stats Cards */}
@@ -241,7 +254,7 @@ export default function AdminPayrollManagement() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Status</option>
-              <option value="draft">Draft</option>
+              <option value="pending">Pending</option>
               <option value="approved">Approved</option>
               <option value="paid">Paid</option>
             </select>
@@ -284,8 +297,8 @@ export default function AdminPayrollManagement() {
                   <tr key={payroll._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{payroll.employee.user.name}</div>
-                        <div className="text-sm text-gray-500">{payroll.employee.user.email}</div>
+                        <div className="text-sm font-medium text-gray-900">{payroll.employee?.user?.name || 'No Name'}</div>
+                        <div className="text-sm text-gray-500">{payroll.employee?.user?.email || 'No Email'}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -308,9 +321,14 @@ export default function AdminPayrollManagement() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      {payroll.status === 'draft' && (
+                      {payroll.status === 'pending' && (
                         <button onClick={() => handleApprove(payroll._id)} className="text-green-600 hover:text-green-900">
                           Approve
+                        </button>
+                      )}
+                      {(payroll.status === 'approved' || payroll.status === 'pending') && (
+                        <button onClick={() => handleMarkPaid(payroll._id)} className="text-blue-600 hover:text-blue-900">
+                          Mark Paid
                         </button>
                       )}
                       <Link href={`/admin/payroll/${payroll._id}`} className="text-indigo-600 hover:text-indigo-900">

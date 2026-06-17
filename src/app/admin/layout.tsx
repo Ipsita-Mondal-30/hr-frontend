@@ -31,7 +31,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       items: [
         { href: '/admin/employees', label: 'View Employees' },
         { href: '/admin/employees/create', label: 'Add Employee' },
-        { href: '/admin/payroll', label: 'Payroll Management' }
+        { href: '/admin/payroll', label: 'Payroll Management' },
+        { href: '/admin/achievements', label: 'Achievements' }
       ]
     },
     {

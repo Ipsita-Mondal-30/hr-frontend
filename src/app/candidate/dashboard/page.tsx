@@ -16,7 +16,9 @@ import {
   Search, 
   User, 
   DollarSign,
-  Hand
+  Hand,
+  Bell,
+  X
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -46,18 +48,41 @@ interface Interview {
   };
 }
 
-interface InterviewPrep {
-  questions: string[];
-  skillGaps: {
-    missing: string[];
-    recommended: string[];
-  };
+interface RecentInterviewReport {
+  sessionId: string;
+  jobRole: string;
+  jobTitle?: string;
+  companyName?: string;
+  prepScore: number;
+  status: string;
+  completedAt: string;
+  summary?: string;
   strengths: string[];
-  preparationTips: string[];
-  technicalTopics: string[];
-  profileScore: number;
+  weaknesses: string[];
+  improvementTips: string[];
+}
+
+interface InterviewPrep {
+  hasRecentInterview: boolean;
+  recentInterview: RecentInterviewReport | null;
+  aiInsights: {
+    headline: string;
+    focusAreas: string[];
+    nextSteps: string[];
+    preparationTips: string[];
+  };
   targetRole: string;
   generatedAt: string;
+  source?: string;
+}
+
+interface RecommendedJob {
+  _id: string;
+  title: string;
+  companyName?: string;
+  location?: string;
+  matchScore: number;
+  matchReason: string;
 }
 
 interface ProfileAnalysis {
@@ -67,9 +92,20 @@ interface ProfileAnalysis {
   marketability: string;
   recommendations: string[];
   roleAlignment: string;
+  missingSkills?: string[];
+  skillCourses?: Array<{
+    skill: string;
+    courseTitle: string;
+    platform: string;
+    reason: string;
+  }>;
+  jobMarketTrends?: string;
+  recommendedJobs?: RecommendedJob[];
   profileCompleteness: number;
+  resumeAnalyzed?: boolean;
   lastUpdated: string;
   generatedAt: string;
+  source?: string;
 }
 
 type RecentJob = {
@@ -78,6 +114,8 @@ type RecentJob = {
   companyName?: string;
   location?: string;
   department?: { name?: string };
+  matchScore?: number;
+  matchReason?: string;
 };
 
 type NarrowedApplication = Application & { matchScore?: number };
@@ -100,6 +138,12 @@ export default function CandidateDashboard() {
   const [interviewPrep, setInterviewPrep] = useState<InterviewPrep | null>(null);
   const [profileAnalysis, setProfileAnalysis] = useState<ProfileAnalysis | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
+  const [loadingProfileAI, setLoadingProfileAI] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [profileAiError, setProfileAiError] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -171,71 +215,49 @@ export default function CandidateDashboard() {
   const fetchAIInterviewPrep = useCallback(async () => {
     try {
       setLoadingAI(true);
-      console.log('🤖 Fetching AI interview preparation...');
+      setAiError(null);
       const response = await api.get<InterviewPrep>('/candidate/interview-prep');
-      console.log('🤖 Interview prep response:', response.data);
       setInterviewPrep(response.data);
-      console.log('✅ AI interview prep loaded successfully');
     } catch (err: unknown) {
-      console.error('❌ Error fetching interview prep:', err);
-      const fallback: InterviewPrep = {
-        questions: [
-          'Tell me about your background and experience',
-          'What interests you about this role?',
-          'Describe a challenging project you worked on',
-          'How do you handle difficult situations?',
-          'Where do you see yourself in 5 years?',
-        ],
-        skillGaps: {
-          missing: ['System design', 'Advanced algorithms'],
-          recommended: ['Practice coding problems', 'Study system design'],
-        },
-        strengths: ['Technical foundation', 'Problem-solving skills', 'Learning mindset'],
-        preparationTips: [
-          'Review technical skills',
-          'Practice coding problems',
-          'Research the company',
-          'Prepare behavioral examples',
-        ],
-        technicalTopics: ['Programming fundamentals', 'Problem-solving', 'Best practices', 'Testing'],
-        profileScore: stats.profileCompleteness,
-        targetRole: 'Software Developer',
-        generatedAt: new Date().toISOString(),
-      };
-      setInterviewPrep(fallback);
+      console.error('Error fetching interview prep:', err);
+      setAiError('Could not load interview report. Make sure the backend is running.');
+      setInterviewPrep(null);
     } finally {
       setLoadingAI(false);
     }
-  }, [stats.profileCompleteness]);
+  }, []);
 
   const fetchProfileAnalysis = useCallback(async () => {
     try {
-      console.log('🔍 Fetching AI profile analysis...');
+      setLoadingProfileAI(true);
+      setProfileAiError(null);
       const response = await api.get<ProfileAnalysis>('/candidate/profile-analysis');
-      console.log('🔍 Profile analysis response:', response.data);
       setProfileAnalysis(response.data);
-      console.log('✅ AI profile analysis loaded successfully');
+      if (response.data.recommendedJobs?.length) {
+        setRecentJobs(response.data.recommendedJobs);
+      }
     } catch (err: unknown) {
-      console.error('❌ Error fetching profile analysis:', err);
-      // Fallback response
-      const fallback: ProfileAnalysis = {
-        overallScore: stats.profileCompleteness,
-        strengths: ['Professional background', 'Technical skills', 'Career focus'],
-        improvements: ['Complete profile information', 'Add portfolio projects', 'Enhance skill descriptions'],
-        marketability:
-          stats.profileCompleteness > 70 ? 'Strong potential' : 'Good foundation with room for growth',
-        recommendations: ['Complete your profile', 'Add work samples', 'Update your resume', 'Connect social profiles'],
-        roleAlignment: 'Developing alignment with target roles',
-        profileCompleteness: stats.profileCompleteness,
-        lastUpdated: new Date().toISOString(),
-        generatedAt: new Date().toISOString(),
-      };
-      setProfileAnalysis(fallback);
+      console.error('Error fetching profile analysis:', err);
+      setProfileAiError('Could not analyze profile. Upload your resume and try again.');
+      setProfileAnalysis(null);
+    } finally {
+      setLoadingProfileAI(false);
     }
-  }, [stats.profileCompleteness]);
+  }, []);
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const response = await api.get('/notifications?limit=10');
+      setNotifications(response.data.notifications || []);
+      setUnreadNotificationCount(response.data.unreadCount || 0);
+    } catch (err: unknown) {
+      console.error('Error fetching notifications:', err);
+    }
+  }, []);
 
   useEffect(() => {
     fetchDashboardData();
+    fetchNotifications();
     // Fetch AI data after a short delay to prioritize main dashboard data
     const timer = setTimeout(() => {
       fetchAIInterviewPrep();
@@ -243,11 +265,13 @@ export default function CandidateDashboard() {
     }, 1000);
 
     const interval = setInterval(fetchDashboardData, 30000);
+    const notificationInterval = setInterval(fetchNotifications, 60000); // Refresh notifications every minute
     return () => {
       clearTimeout(timer);
       clearInterval(interval);
+      clearInterval(notificationInterval);
     };
-  }, [fetchDashboardData, fetchAIInterviewPrep, fetchProfileAnalysis]);
+  }, [fetchDashboardData, fetchAIInterviewPrep, fetchProfileAnalysis, fetchNotifications]);
 
   const refreshDashboard = () => {
     fetchDashboardData();
@@ -271,15 +295,116 @@ export default function CandidateDashboard() {
               Ready to find your next opportunity? Let&apos;s explore what&apos;s new for you.
             </p>
           </div>
-          <button
-            onClick={refreshDashboard}
-            className="px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-white text-sm transition-all"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-2 text-white hover:text-blue-100 transition-colors"
+              title="Notifications"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadNotificationCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                  {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={refreshDashboard}
+              className="p-2 text-white hover:text-blue-100 transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Notifications Dropdown */}
+      {showNotifications && (
+        <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}>
+          <div className="absolute right-4 top-16 lg:right-6 lg:top-20 z-50 w-[calc(100vw-2rem)] max-w-md bg-white rounded-lg shadow-xl border border-gray-200 max-h-[500px] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-white">Notifications</h2>
+              <button
+                onClick={() => setShowNotifications(false)}
+                className="text-white hover:text-gray-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            {notifications.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Bell className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                <p>No notifications yet</p>
+              </div>
+            ) : (
+              <div className="overflow-y-auto max-h-[400px]">
+                <div className="divide-y divide-gray-100">
+                  {notifications.map((notif) => (
+                    <div
+                      key={notif._id}
+                      className={`p-4 cursor-pointer transition-colors ${
+                        notif.read
+                          ? 'hover:bg-gray-50'
+                          : 'bg-blue-50/50 hover:bg-blue-50'
+                      }`}
+                      onClick={async () => {
+                        if (!notif.read && notif.link) {
+                          try {
+                            await api.put(`/notifications/${notif._id}/read`);
+                            setNotifications(prev => 
+                              prev.map(n => n._id === notif._id ? { ...n, read: true } : n)
+                            );
+                            setUnreadNotificationCount(prev => Math.max(0, prev - 1));
+                            if (notif.link) window.location.href = notif.link;
+                          } catch (err) {
+                            console.error('Error marking notification as read:', err);
+                          }
+                        } else if (notif.link) {
+                          window.location.href = notif.link;
+                        }
+                      }}
+                    >
+                      <div className="flex items-start gap-3">
+                        {!notif.read && (
+                          <span className="mt-2 w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></span>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className={`font-medium text-sm ${notif.read ? 'text-gray-700' : 'text-gray-900'}`}>
+                            {notif.title}
+                          </h3>
+                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{notif.message}</p>
+                          <p className="text-xs text-gray-400 mt-2">
+                            {new Date(notif.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {notifications.length > 0 && (
+              <div className="border-t border-gray-200 p-3">
+                <button
+                  onClick={async () => {
+                    try {
+                      await api.put('/notifications/read-all');
+                      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                      setUnreadNotificationCount(0);
+                    } catch (err) {
+                      console.error('Error marking all as read:', err);
+                    }
+                  }}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium w-full text-center py-2 hover:bg-blue-50 rounded transition-colors"
+                >
+                  Mark all as read
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -432,7 +557,7 @@ export default function CandidateDashboard() {
           <div className="flex items-center space-x-2">
             <span className="text-2xl">🤖</span>
             <h2 className="text-lg font-semibold text-gray-900">AI Interview Prep</h2>
-            {loadingAI && <span className="text-sm text-gray-500">Loading...</span>}
+            {loadingAI && <span className="text-sm text-gray-500">Analyzing…</span>}
           </div>
           <div className="flex items-center space-x-2">
             <Link
@@ -451,74 +576,103 @@ export default function CandidateDashboard() {
           </div>
         </div>
 
-        {interviewPrep ? (
+        {aiError && (
+          <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+            {aiError}
+          </div>
+        )}
+
+        {interviewPrep?.hasRecentInterview && interviewPrep.recentInterview ? (
           <div className="space-y-4">
-            {/* Target Role & Score */}
-            <div className="flex items-center justify-between bg-white rounded-lg p-3 border">
-              <div>
-                <h3 className="font-medium text-gray-900">Target Role: {interviewPrep.targetRole}</h3>
-                <p className="text-sm text-gray-600">Profile Strength: {interviewPrep.profileScore}%</p>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-purple-600">{interviewPrep.profileScore}%</div>
-                <div className="text-xs text-gray-500">Match Score</div>
-              </div>
-            </div>
-
-            {/* Top Interview Questions */}
             <div className="bg-white rounded-lg p-4 border">
-              <h3 className="font-medium text-gray-900 mb-3">🎯 Top 5 Interview Questions</h3>
-              <div className="space-y-2">
-                {interviewPrep.questions.slice(0, 5).map((question, index) => (
-                  <div key={index} className="flex items-start space-x-2">
-                    <span className="text-purple-600 font-medium text-sm">{index + 1}.</span>
-                    <p className="text-sm text-gray-700">{question}</p>
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h3 className="font-semibold text-gray-900">
+                    Latest: {interviewPrep.recentInterview.jobTitle || interviewPrep.recentInterview.jobRole}
+                  </h3>
+                  {interviewPrep.recentInterview.companyName && (
+                    <p className="text-sm text-gray-600">{interviewPrep.recentInterview.companyName}</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {new Date(interviewPrep.recentInterview.completedAt).toLocaleDateString('en-GB')}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-purple-600">
+                    {interviewPrep.recentInterview.prepScore}/100
                   </div>
-                ))}
+                  <span
+                    className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-semibold ${
+                      interviewPrep.recentInterview.status === 'READY'
+                        ? 'bg-green-100 text-green-700'
+                        : interviewPrep.recentInterview.status === 'NEEDS PRACTICE'
+                        ? 'bg-orange-100 text-orange-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}
+                  >
+                    {interviewPrep.recentInterview.status}
+                  </span>
+                </div>
               </div>
+              {interviewPrep.aiInsights?.headline && (
+                <p className="text-sm text-gray-700 mt-2">{interviewPrep.aiInsights.headline}</p>
+              )}
+              {interviewPrep.recentInterview.summary && (
+                <p className="text-sm text-gray-600 mt-2 bg-purple-50 rounded p-3">
+                  {interviewPrep.recentInterview.summary}
+                </p>
+              )}
             </div>
 
-            {/* Skill Gap Analysis */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-white rounded-lg p-4 border">
-                <h3 className="font-medium text-green-700 mb-2">💪 Your Strengths</h3>
+                <h3 className="font-medium text-green-700 mb-2">✓ Interview Strengths</h3>
                 <ul className="space-y-1">
-                  {interviewPrep.strengths.slice(0, 3).map((strength, index) => (
-                    <li key={index} className="text-sm text-gray-700 flex items-center">
-                      <span className="text-green-500 mr-2">✓</span>
-                      {strength}
+                  {interviewPrep.recentInterview.strengths.slice(0, 4).map((s, i) => (
+                    <li key={i} className="text-sm text-gray-700 flex items-start">
+                      <span className="text-green-500 mr-2">✓</span>{s}
                     </li>
                   ))}
                 </ul>
               </div>
-
               <div className="bg-white rounded-lg p-4 border">
-                <h3 className="font-medium text-orange-700 mb-2">📈 Areas to Improve</h3>
+                <h3 className="font-medium text-orange-700 mb-2">→ Areas to Improve</h3>
                 <ul className="space-y-1">
-                  {interviewPrep.skillGaps.missing.slice(0, 3).map((gap, index) => (
-                    <li key={index} className="text-sm text-gray-700 flex items-center">
-                      <span className="text-orange-500 mr-2">→</span>
-                      {gap}
+                  {interviewPrep.recentInterview.weaknesses.slice(0, 4).map((w, i) => (
+                    <li key={i} className="text-sm text-gray-700 flex items-start">
+                      <span className="text-orange-500 mr-2">→</span>{w}
                     </li>
                   ))}
                 </ul>
               </div>
             </div>
 
-            {/* Quick Prep Tips */}
-            <div className="bg-white rounded-lg p-4 border">
-              <h3 className="font-medium text-blue-700 mb-2">💡 Quick Prep Tips</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {interviewPrep.preparationTips.slice(0, 4).map((tip, index) => (
-                  <div key={index} className="text-sm text-gray-700 flex items-start">
-                    <span className="text-blue-500 mr-2">•</span>
-                    {tip}
-                  </div>
-                ))}
+            {interviewPrep.aiInsights?.nextSteps?.length > 0 && (
+              <div className="bg-white rounded-lg p-4 border">
+                <h3 className="font-medium text-blue-700 mb-2">💡 AI Next Steps (Gemini)</h3>
+                <ul className="space-y-1">
+                  {interviewPrep.aiInsights.nextSteps.map((tip, i) => (
+                    <li key={i} className="text-sm text-gray-700">• {tip}</li>
+                  ))}
+                </ul>
               </div>
-            </div>
+            )}
           </div>
-        ) : (
+        ) : interviewPrep ? (
+          <div className="text-center py-8 bg-white rounded-lg border">
+            <div className="text-4xl mb-2">🎙️</div>
+            <p className="text-gray-600 mb-1">No voice interview completed yet</p>
+            <p className="text-sm text-gray-500 mb-4">
+              Complete a practice interview to see your AI-generated report here
+            </p>
+            <Link
+              href="/candidate/interview-prep"
+              className="inline-block px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+            >
+              Start Your First Interview
+            </Link>
+          </div>
+        ) : !loadingAI && !aiError ? (
           <div className="text-center py-8">
             <div className="text-gray-400 text-4xl mb-2">🤖</div>
             <p className="text-gray-500 mb-3">AI Interview Preparation</p>
@@ -527,20 +681,10 @@ export default function CandidateDashboard() {
               className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm disabled:opacity-50"
               disabled={loadingAI}
             >
-              {loadingAI ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Generating...
-                </span>
-              ) : (
-                'Generate AI Prep'
-              )}
+              Generate AI Prep
             </button>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* AI Profile Analysis */}
@@ -549,20 +693,33 @@ export default function CandidateDashboard() {
           <div className="flex items-center space-x-2">
             <span className="text-2xl">📊</span>
             <h2 className="text-lg font-semibold text-gray-900">AI Profile Analysis</h2>
+            {loadingProfileAI && <span className="text-sm text-gray-500">Analyzing resume…</span>}
           </div>
-          <button onClick={fetchProfileAnalysis} className="text-sm text-green-600 hover:text-green-800">
+          <button
+            onClick={fetchProfileAnalysis}
+            className="text-sm text-green-600 hover:text-green-800"
+            disabled={loadingProfileAI}
+          >
             🔄 Refresh
           </button>
         </div>
 
+        {profileAiError && (
+          <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+            {profileAiError}
+          </div>
+        )}
+
         {profileAnalysis ? (
           <div className="space-y-4">
-            {/* Overall Score */}
             <div className="bg-white rounded-lg p-4 border">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium text-gray-900">Profile Strength</h3>
-                  <p className="text-sm text-gray-600">{profileAnalysis.marketability}</p>
+                  <p className="text-sm text-gray-600 mt-1">{profileAnalysis.marketability}</p>
+                  {profileAnalysis.resumeAnalyzed && (
+                    <p className="text-xs text-green-600 mt-1">✓ Resume analyzed</p>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-green-600">{profileAnalysis.overallScore}%</div>
@@ -571,15 +728,13 @@ export default function CandidateDashboard() {
               </div>
             </div>
 
-            {/* Key Insights */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-white rounded-lg p-4 border">
                 <h3 className="font-medium text-green-700 mb-2">🌟 Key Strengths</h3>
                 <ul className="space-y-1">
-                  {profileAnalysis.strengths.slice(0, 3).map((strength, index) => (
-                    <li key={index} className="text-sm text-gray-700 flex items-center">
-                      <span className="text-green-500 mr-2">✓</span>
-                      {strength}
+                  {profileAnalysis.strengths.slice(0, 4).map((strength, index) => (
+                    <li key={index} className="text-sm text-gray-700 flex items-start">
+                      <span className="text-green-500 mr-2">✓</span>{strength}
                     </li>
                   ))}
                 </ul>
@@ -588,40 +743,78 @@ export default function CandidateDashboard() {
               <div className="bg-white rounded-lg p-4 border">
                 <h3 className="font-medium text-blue-700 mb-2">🎯 Recommendations</h3>
                 <ul className="space-y-1">
-                  {profileAnalysis.recommendations.slice(0, 3).map((rec, index) => (
+                  {profileAnalysis.recommendations.slice(0, 4).map((rec, index) => (
                     <li key={index} className="text-sm text-gray-700 flex items-start">
-                      <span className="text-blue-500 mr-2">→</span>
-                      {rec}
+                      <span className="text-blue-500 mr-2">→</span>{rec}
                     </li>
                   ))}
                 </ul>
               </div>
             </div>
 
-            {/* Role Alignment */}
+            {profileAnalysis.missingSkills && profileAnalysis.missingSkills.length > 0 && (
+              <div className="bg-white rounded-lg p-4 border">
+                <h3 className="font-medium text-orange-700 mb-2">📈 Skills to Add (from job market)</h3>
+                <div className="flex flex-wrap gap-2">
+                  {profileAnalysis.missingSkills.map((skill, i) => (
+                    <span key={i} className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {profileAnalysis.skillCourses && profileAnalysis.skillCourses.length > 0 && (
+              <div className="bg-white rounded-lg p-4 border">
+                <h3 className="font-medium text-purple-700 mb-3">🎓 Recommended Courses (Cohere / AI)</h3>
+                <div className="space-y-3">
+                  {profileAnalysis.skillCourses.slice(0, 4).map((course, i) => (
+                    <div key={i} className="bg-purple-50 rounded-lg p-3">
+                      <div className="flex justify-between items-start">
+                        <p className="font-medium text-sm text-gray-900">{course.courseTitle}</p>
+                        <span className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded">{course.platform}</span>
+                      </div>
+                      <p className="text-xs text-purple-700 mt-1">Skill: {course.skill}</p>
+                      <p className="text-xs text-gray-600 mt-1">{course.reason}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="bg-white rounded-lg p-4 border">
               <h3 className="font-medium text-gray-900 mb-2">🎯 Role Alignment</h3>
               <p className="text-sm text-gray-700">{profileAnalysis.roleAlignment}</p>
+              {profileAnalysis.jobMarketTrends && (
+                <p className="text-sm text-gray-600 mt-3 bg-teal-50 rounded p-3">{profileAnalysis.jobMarketTrends}</p>
+              )}
               <div className="mt-2 text-xs text-gray-500">
-                Last updated: {new Date(profileAnalysis.lastUpdated).toLocaleDateString()}
+                Last updated: {new Date(profileAnalysis.lastUpdated).toLocaleDateString('en-GB')}
               </div>
             </div>
           </div>
-        ) : (
+        ) : !loadingProfileAI && !profileAiError ? (
           <div className="text-center py-8">
             <div className="text-gray-400 text-4xl mb-2">📊</div>
-            <p className="text-gray-500 mb-3">AI Profile Analysis</p>
-            <button onClick={fetchProfileAnalysis} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
+            <p className="text-gray-500 mb-3">Analyze your resume and profile with AI</p>
+            <button
+              onClick={fetchProfileAnalysis}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+            >
               Analyze Profile
             </button>
           </div>
-        )}
+        ) : null}
       </div>
 
-      {/* Recommended Jobs */}
+      {/* Recommended Jobs (AI-matched) */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Recommended Jobs</h2>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Recommended Jobs</h2>
+            <p className="text-xs text-gray-500">Matched to your resume & skills</p>
+          </div>
           <Link href="/candidate/jobs" className="text-sm text-blue-600 hover:text-blue-800">
             View All
           </Link>
@@ -629,10 +822,13 @@ export default function CandidateDashboard() {
         {recentJobs.length === 0 ? (
           <div className="text-center py-8">
             <div className="text-gray-400 text-4xl mb-2">🔍</div>
-            <p className="text-gray-500">No jobs available at the moment</p>
-            <Link href="/candidate/jobs" className="text-blue-600 hover:text-blue-700 text-sm">
-              Check for new opportunities →
-            </Link>
+            <p className="text-gray-500">Complete profile analysis to see matched jobs</p>
+            <button
+              onClick={fetchProfileAnalysis}
+              className="mt-3 text-green-600 hover:text-green-800 text-sm font-medium"
+            >
+              Run AI Profile Analysis →
+            </button>
           </div>
         ) : (
           <div className="space-y-3">
@@ -641,18 +837,23 @@ export default function CandidateDashboard() {
                 key={job._id}
                 className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
               >
-                <div>
+                <div className="flex-1">
                   <h3 className="font-medium text-gray-900">{job.title || 'Untitled role'}</h3>
                   <p className="text-sm text-gray-600">{job.companyName || 'Company'}</p>
                   <p className="text-xs text-gray-500">{job.location || 'Remote'}</p>
-                  {job?.department?.name && <p className="text-xs text-gray-400">{job.department.name}</p>}
+                  {'matchReason' in job && (job as RecommendedJob).matchReason && (
+                    <p className="text-xs text-blue-600 mt-1">{(job as RecommendedJob).matchReason}</p>
+                  )}
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex items-center gap-3">
+                  {'matchScore' in job && typeof (job as RecommendedJob).matchScore === 'number' && (
+                    <span className="text-sm font-bold text-green-600">{(job as RecommendedJob).matchScore}%</span>
+                  )}
                   <Link
-                    href={`/candidate/jobs`}
+                    href="/candidate/jobs"
                     className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                   >
-                    Apply
+                    View
                   </Link>
                 </div>
               </div>
