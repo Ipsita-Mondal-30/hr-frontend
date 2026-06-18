@@ -82,7 +82,6 @@ export default function AdminWorkReviewPanel({
   };
 
   const pending = submissions.filter((s) => s.status === 'pending');
-  const reviewed = submissions.filter((s) => s.status !== 'pending');
 
   return (
     <div>

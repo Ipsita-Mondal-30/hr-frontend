@@ -130,7 +130,7 @@ export default function EmployeeAchievementsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Achievements & Recognition</h1>
@@ -158,7 +158,7 @@ export default function EmployeeAchievementsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 text-center">
           <div className="text-2xl font-bold text-blue-600">{achievements.length}</div>
           <div className="text-sm text-blue-700">Total Achievements</div>

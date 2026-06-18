@@ -505,14 +505,13 @@ export default function AdminProjectsPage() {
 
               <AdminMilestonePanel
                 projectId={selectedProject._id}
-                employees={team
-                  .map((member) => {
-                    const emp = member.employee;
-                    if (!emp) return null;
-                    if (typeof emp === 'string') return { _id: emp };
-                    return { _id: emp._id, user: emp.user };
-                  })
-                  .filter((e): e is { _id: string; user?: { name?: string } } => Boolean(e?._id))}
+                employees={team.flatMap((member): { _id: string; user?: { name?: string } }[] => {
+                  const emp = member.employee;
+                  if (!emp?._id) return [];
+                  const user =
+                    emp.user && typeof emp.user === 'object' ? { name: emp.user.name } : undefined;
+                  return [{ _id: emp._id, user }];
+                })}
                 onCreated={() => refreshProjectDetails(selectedProject._id)}
               />
 

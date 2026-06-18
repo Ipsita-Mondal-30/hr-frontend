@@ -3,6 +3,20 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
+import {
+  Users,
+  UserCheck,
+  FolderOpen,
+  Briefcase,
+  FileText,
+  Calendar,
+  Clock,
+  Building2,
+  ClipboardList,
+  ShieldCheck,
+  BarChart3,
+  type LucideIcon,
+} from 'lucide-react';
 
 interface Stats {
   jobsCount: number;
@@ -25,8 +39,8 @@ interface Stats {
     newJobs: number;
     newApplications: number;
   };
-  employeeCount?: number; // added
-  projectCount?: number;  // added
+  employeeCount?: number;
+  projectCount?: number;
 }
 
 interface RecentActivity {
@@ -35,6 +49,8 @@ interface RecentActivity {
   timestamp: string;
   user?: string;
 }
+
+type StatColor = 'blue' | 'green' | 'purple' | 'orange' | 'slate' | 'yellow' | 'red';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -45,7 +61,7 @@ export default function AdminDashboard() {
     try {
       const [statsRes, activityRes] = await Promise.all([
         api.get('/admin/stats'),
-        api.get('/admin/recent-activity')
+        api.get('/admin/recent-activity'),
       ]);
       setStats(statsRes.data);
       setRecentActivity(activityRes.data);
@@ -58,8 +74,6 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchData();
-
-    // Refresh data every 30 seconds
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -85,109 +99,61 @@ export default function AdminDashboard() {
     { label: 'Verify HR Accounts', href: '/admin/users/verification', count: stats?.pendingHRVerifications, color: 'bg-yellow-500' },
     { label: 'View Projects', href: '/admin/projects', count: stats?.projectCount, color: 'bg-purple-500' },
     { label: 'Approve Jobs', href: '/admin/jobs/pending', count: stats?.pendingJobApprovals, color: 'bg-orange-500' },
-    { label: 'Support Tickets', href: '/admin/support/tickets', count: 0, color: 'bg-red-500' }
+    { label: 'Support Tickets', href: '/admin/support/tickets', count: 0, color: 'bg-red-500' },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
           <p className="text-gray-600">Platform overview and management</p>
         </div>
-        <div className="text-sm text-gray-500">
-          Last updated: {new Date().toLocaleString()}
-        </div>
+        <div className="text-sm text-gray-500">Last updated: {new Date().toLocaleString()}</div>
       </div>
 
-      {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatCard
-          label="Total Employees"
-          value={stats?.employeeCount || 0}
-          icon="👨‍💼"
-          trend="+3 new hires this month"
-          color="bg-blue-500"
-        />
-        <StatCard
-          label="Active Projects"
-          value={stats?.projectCount || 0}
-          icon="📊"
-          trend="+2 projects started"
-          color="bg-green-500"
-        />
-        <StatCard
-          label="HR Staff"
-          value={stats?.hrCount}
-          icon="👩‍💼"
-          trend="Managing operations"
-          color="bg-purple-500"
-        />
-        <StatCard
-          label="Candidates"
-          value={stats?.candidateCount}
-          icon="👤"
-          trend="+18% this month"
-          color="bg-orange-500"
-        />
+        <StatCard label="Total Employees" value={stats?.employeeCount || 0} icon={Users} color="blue" trend="+3 new hires this month" />
+        <StatCard label="Active Projects" value={stats?.projectCount || 0} icon={FolderOpen} color="green" trend="+2 projects started" />
+        <StatCard label="HR Staff" value={stats?.hrCount} icon={UserCheck} color="purple" trend="Managing operations" />
+        <StatCard label="Candidates" value={stats?.candidateCount} icon={Users} color="orange" trend="+18% this month" />
       </div>
 
-      {/* Employee Performance Overview */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Employee Performance Overview</h2>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-blue-600" />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-900">Employee Performance Overview</h2>
+          </div>
           <Link href="/admin/employees" className="text-blue-600 hover:text-blue-800 text-sm">
             View All Employees →
           </Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <StatCard
-            label="Active Employees"
-            value={stats?.employeeCount || 0}
-            icon="👥"
-            color="bg-blue-500"
-          />
-          <StatCard
-            label="Active Projects"
-            value={stats?.projectCount || 0}
-            icon="📊"
-            color="bg-green-500"
-          />
-          <StatCard
-            label="Total Applications"
-            value={stats?.applicationsCount || 0}
-            icon="📄"
-            color="bg-yellow-500"
-          />
-          <StatCard
-            label="HR Users"
-            value={stats?.hrCount || 0}
-            icon="👨‍💼"
-            color="bg-purple-500"
-          />
+          <StatCard label="Active Employees" value={stats?.employeeCount || 0} icon={Users} color="blue" />
+          <StatCard label="Active Projects" value={stats?.projectCount || 0} icon={FolderOpen} color="green" />
+          <StatCard label="Total Applications" value={stats?.applicationsCount || 0} icon={FileText} color="yellow" />
+          <StatCard label="HR Users" value={stats?.hrCount || 0} icon={UserCheck} color="purple" />
         </div>
       </div>
 
-      {/* System Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatCard label="Active Jobs" value={stats?.activeJobs || stats?.jobsCount} icon="💼" />
-        <StatCard label="Applications" value={stats?.applicationsCount} icon="📄" />
-        <StatCard label="Total Interviews" value={stats?.totalInterviews} icon="📅" />
-        <StatCard label="Upcoming Interviews" value={stats?.upcomingInterviews} icon="⏰" />
+        <StatCard label="Active Jobs" value={stats?.activeJobs || stats?.jobsCount} icon={Briefcase} color="blue" />
+        <StatCard label="Applications" value={stats?.applicationsCount} icon={FileText} color="purple" />
+        <StatCard label="Total Interviews" value={stats?.totalInterviews} icon={Calendar} color="green" />
+        <StatCard label="Upcoming Interviews" value={stats?.upcomingInterviews} icon={Clock} color="orange" />
       </div>
 
-      {/* Additional Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatCard label="Departments" value={stats?.departmentsCount} icon="🏛️" />
-        <StatCard label="Job Roles" value={stats?.rolesCount} icon="📋" />
-        <StatCard label="Pending Applications" value={stats?.pendingApplications} icon="⏳" />
-        <StatCard label="Pending HR Verifications" value={stats?.pendingHRVerifications} icon="✅" />
+        <StatCard label="Departments" value={stats?.departmentsCount} icon={Building2} color="slate" href="/admin/settings/departments" />
+        <StatCard label="Job Roles" value={stats?.rolesCount} icon={ClipboardList} color="blue" href="/admin/settings/roles" />
+        <StatCard label="Pending Applications" value={stats?.pendingApplications} icon={Clock} color="yellow" />
+        <StatCard label="Pending HR Verifications" value={stats?.pendingHRVerifications} icon={ShieldCheck} color="green" />
       </div>
 
-      {/* Quick Actions & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Actions */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
           <div className="space-y-3">
@@ -211,7 +177,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Recent Activity */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
           <div className="space-y-3">
@@ -227,7 +192,7 @@ export default function AdminDashboard() {
               ))
             ) : (
               <div className="text-center py-8 text-gray-500">
-                <div className="text-4xl mb-2">📊</div>
+                <BarChart3 className="w-10 h-10 mx-auto mb-2 text-gray-300" />
                 <p>No recent activity</p>
               </div>
             )}
@@ -235,7 +200,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Activity Summary */}
       {stats?.recentActivity && (
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">This Week&apos;s Activity</h2>
@@ -266,32 +230,52 @@ export default function AdminDashboard() {
 function StatCard({
   label,
   value,
-  icon,
+  icon: Icon,
   trend,
-  color = 'bg-gray-500'
+  color = 'blue',
+  href,
 }: {
   label: string;
   value: number | string | undefined;
-  icon?: string;
+  icon: LucideIcon;
   trend?: string;
-  color?: string;
+  color?: StatColor;
+  href?: string;
 }) {
-  return (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
-      <div className="flex items-center justify-between">
+  const colorClasses: Record<StatColor, string> = {
+    blue: 'from-blue-500 to-blue-600 bg-blue-50 border-blue-200 text-blue-700',
+    green: 'from-emerald-500 to-emerald-600 bg-emerald-50 border-emerald-200 text-emerald-700',
+    purple: 'from-purple-500 to-purple-600 bg-purple-50 border-purple-200 text-purple-700',
+    orange: 'from-orange-500 to-orange-600 bg-orange-50 border-orange-200 text-orange-700',
+    slate: 'from-slate-500 to-slate-600 bg-slate-50 border-slate-200 text-slate-700',
+    yellow: 'from-yellow-500 to-yellow-600 bg-yellow-50 border-yellow-200 text-yellow-700',
+    red: 'from-red-500 to-red-600 bg-red-50 border-red-200 text-red-700',
+  };
+
+  const selectedColor = colorClasses[color] || colorClasses.blue;
+  const [gradient, gradientEnd, ...rest] = selectedColor.split(' ');
+
+  const card = (
+    <div className={`relative p-6 rounded-xl border ${rest.join(' ')} hover:shadow-lg transition-all duration-300 overflow-hidden ${href ? 'cursor-pointer' : ''}`}>
+      <div className="absolute top-0 right-0 w-20 h-20 opacity-10">
+        <div className={`w-full h-full bg-gradient-to-br ${gradient} ${gradientEnd} rounded-full transform translate-x-6 -translate-y-6`} />
+      </div>
+      <div className="relative flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-600">{label}</p>
-          <p className="text-2xl font-bold text-gray-900">{value || 0}</p>
-          {trend && (
-            <p className="text-xs text-green-600 mt-1">{trend}</p>
-          )}
+          <p className="text-2xl font-bold text-gray-900">{value ?? 0}</p>
+          {trend && <p className="text-xs text-emerald-600 mt-1">{trend}</p>}
         </div>
-        {icon && (
-          <div className={`w-12 h-12 ${color} rounded-lg flex items-center justify-center text-white text-xl`}>
-            {icon}
-          </div>
-        )}
+        <div className={`w-12 h-12 bg-gradient-to-br ${gradient} ${gradientEnd} rounded-xl flex items-center justify-center shadow-lg`}>
+          <Icon className="w-6 h-6 text-white" />
+        </div>
       </div>
     </div>
   );
+
+  if (href) {
+    return <Link href={href}>{card}</Link>;
+  }
+
+  return card;
 }

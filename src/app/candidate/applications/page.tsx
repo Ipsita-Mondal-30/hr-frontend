@@ -4,22 +4,21 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { Application } from '@/types';
-
-function hasDetailedAnalysis(app: Application): boolean {
-  const m = app.matchInsights;
-  return Boolean(
-    m?.strengths?.length ||
-    m?.improvements?.length ||
-    m?.actionPlan?.length ||
-    (m?.explanation && m.explanation.length > 80)
-  );
-}
+import ResumeAnalysisPanel from '@/components/applications/ResumeAnalysisPanel';
+import CoverLetterSection from '@/components/applications/CoverLetterSection';
+import { hasApplicationAnalysis, toResumeAnalysisData } from '@/lib/applicationAnalysis';
 
 export default function AppliedJobsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+
+  const updateApplication = (applicationId: string, updates: Partial<Application>) => {
+    setApplications((prev) =>
+      prev.map((app) => (app._id === applicationId ? { ...app, ...updates } : app))
+    );
+  };
 
   const fetchApplications = useCallback(async () => {
     try {
@@ -39,25 +38,20 @@ export default function AppliedJobsPage() {
   const runAnalysis = async (applicationId: string) => {
     setAnalyzingId(applicationId);
     try {
-      const res = await api.post<{
-        matchScore: number;
-        matchInsights: Application['matchInsights'];
-      }>(`/candidate/applications/${applicationId}/analyze`, {}, { skipAuthRedirect: true });
+      const res = await api.post<{ application: Application }>(
+        `/resume-analysis/application/${applicationId}/analyze`,
+        {},
+        { skipAuthRedirect: true }
+      );
 
       setApplications((prev) =>
         prev.map((app) =>
-          app._id === applicationId
-            ? {
-                ...app,
-                matchScore: res.data.matchScore,
-                matchInsights: res.data.matchInsights,
-              }
-            : app
+          app._id === applicationId ? { ...app, ...res.data.application } : app
         )
       );
     } catch (err) {
-      console.error('AI analysis failed:', err);
-      alert('Could not generate AI analysis. Check that the backend is running and GEMINI_API_KEY is set.');
+      console.error('Resume analysis failed:', err);
+      alert('Could not run resume analysis. Make sure your resume is uploaded and the backend is running.');
     } finally {
       setAnalyzingId(null);
     }
@@ -135,7 +129,10 @@ export default function AppliedJobsPage() {
               application={application}
               isAnalyzing={analyzingId === application._id}
               onAnalyze={() => runAnalysis(application._id)}
-              hasDetailedAnalysis={hasDetailedAnalysis(application)}
+              hasDetailedAnalysis={hasApplicationAnalysis(application)}
+              onCoverLetterGenerated={(letter) =>
+                updateApplication(application._id, { generatedCoverLetter: letter })
+              }
             />
           ))}
         </div>
@@ -149,14 +146,19 @@ function ApplicationCard({
   isAnalyzing,
   onAnalyze,
   hasDetailedAnalysis,
+  onCoverLetterGenerated,
 }: {
   application: Application;
   isAnalyzing: boolean;
   onAnalyze: () => void;
   hasDetailedAnalysis: boolean;
+  onCoverLetterGenerated: (letter: string) => void;
 }) {
   const [expanded, setExpanded] = useState(hasDetailedAnalysis);
   const insights = application.matchInsights;
+  const analysisData = toResumeAnalysisData(application);
+  const showAnalysis = hasDetailedAnalysis || application.matchScore != null;
+  const aiCoverLetter = application.generatedCoverLetter || application.coverLetter;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -222,82 +224,49 @@ function ApplicationCard({
               disabled={isAnalyzing}
               className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60"
             >
-              {isAnalyzing ? 'Analyzing…' : hasDetailedAnalysis ? 'Refresh AI analysis' : 'Get AI feedback'}
+              {isAnalyzing ? 'Analyzing…' : hasDetailedAnalysis ? 'Refresh analysis' : 'Get improvement feedback'}
             </button>
           </div>
         </div>
 
-        {insights?.summary && (
-          <p className="text-gray-700 text-sm mb-4 border-l-4 border-indigo-400 pl-3">{insights.summary}</p>
+        {(insights?.summary || insights?.explanation) && !expanded && (
+          <p className="text-gray-700 text-sm mb-4 border-l-4 border-indigo-400 pl-3">
+            {insights.summary || insights.explanation}
+          </p>
         )}
 
-        {hasDetailedAnalysis && (
+        <div className="mb-4">
+          <CoverLetterSection
+            applicationId={application._id}
+            jobTitle={application.job?.title}
+            companyName={application.job?.companyName}
+            coverLetter={aiCoverLetter}
+            onGenerated={onCoverLetterGenerated}
+          />
+        </div>
+
+        {showAnalysis && (
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
             className="text-sm text-indigo-600 font-medium hover:text-indigo-800 mb-3"
           >
-            {expanded ? 'Hide detailed analysis ▲' : 'Show detailed analysis ▼'}
+            {expanded ? 'Hide how to improve ▲' : 'See how to improve ▼'}
           </button>
         )}
 
-        {expanded && insights && (
+        {expanded && showAnalysis && (
           <div className="space-y-4 border-t border-gray-100 pt-4">
-            {insights.explanation && (
-              <section className="bg-indigo-50 rounded-lg p-4">
-                <h4 className="font-semibold text-indigo-900 mb-2">🤖 AI overview</h4>
-                <p className="text-indigo-950 text-sm leading-relaxed">{insights.explanation}</p>
-              </section>
-            )}
-
-            <div className="grid md:grid-cols-2 gap-4">
-              {insights.matchingSkills && insights.matchingSkills.length > 0 && (
-                <InsightList
-                  title="✅ Your matching skills"
-                  items={insights.matchingSkills}
-                  chipClass="bg-green-100 text-green-800"
-                />
-              )}
-              {insights.missingSkills && insights.missingSkills.length > 0 && (
-                <InsightList
-                  title="📈 Skills to develop"
-                  items={insights.missingSkills}
-                  chipClass="bg-amber-100 text-amber-900"
-                />
-              )}
+            <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
+              <h4 className="font-semibold text-indigo-900 mb-1">Your resume feedback for this role</h4>
+              <p className="text-sm text-indigo-800">
+                Review strengths, gaps, and actionable tips below to improve your chances for this application.
+              </p>
             </div>
 
-            {insights.strengths && insights.strengths.length > 0 && (
-              <BulletSection title="💪 Strengths" items={insights.strengths} className="text-green-900" />
-            )}
+            <ResumeAnalysisPanel data={analysisData} />
 
-            {insights.improvements && insights.improvements.length > 0 && (
-              <BulletSection
-                title="🎯 Where to improve"
-                items={insights.improvements}
-                className="text-orange-900"
-              />
-            )}
-
-            {insights.actionPlan && insights.actionPlan.length > 0 && (
-              <BulletSection
-                title="📋 Your action plan"
-                items={insights.actionPlan}
-                className="text-blue-900"
-                numbered
-              />
-            )}
-
-            <div className="grid md:grid-cols-2 gap-4">
-              {insights.resumeTips && insights.resumeTips.length > 0 && (
-                <BulletSection title="📄 Resume tips" items={insights.resumeTips} className="text-gray-800" />
-              )}
-              {insights.interviewTips && insights.interviewTips.length > 0 && (
-                <BulletSection title="🎤 Interview tips" items={insights.interviewTips} className="text-gray-800" />
-              )}
-            </div>
-
-            {insights.tags && insights.tags.length > 0 && (
+            {insights?.tags && insights.tags.length > 0 && (
               <div>
                 <h5 className="font-medium text-gray-700 text-sm mb-2">Keywords for this role</h5>
                 <div className="flex flex-wrap gap-1">
@@ -325,10 +294,15 @@ function ApplicationCard({
               </Link>
             </div>
 
-            {insights.analyzedAt && (
+            {(application.atsAnalysis?.analyzedAt || insights?.analyzedAt) && (
               <p className="text-xs text-gray-400">
-                Analysis generated {new Date(insights.analyzedAt).toLocaleString()}
-                {insights.source ? ` · ${insights.source}` : ''}
+                Analysis generated{' '}
+                {new Date(
+                  application.atsAnalysis?.analyzedAt || insights!.analyzedAt!
+                ).toLocaleString()}
+                {application.atsAnalysis?.source || insights?.source
+                  ? ` · ${application.atsAnalysis?.source || insights?.source}`
+                  : ''}
               </p>
             )}
           </div>
@@ -336,8 +310,8 @@ function ApplicationCard({
 
         {!hasDetailedAnalysis && !isAnalyzing && (
           <p className="text-sm text-gray-500 mt-2">
-            Click <strong>Get AI feedback</strong> for a personalized breakdown of how you fit this role and what to
-            improve.
+            Click <strong>Get improvement feedback</strong> to see strengths, weaknesses, and resume tips for this
+            job.
           </p>
         )}
       </div>
@@ -357,54 +331,5 @@ function ApplicationCard({
         </div>
       </div>
     </div>
-  );
-}
-
-function InsightList({
-  title,
-  items,
-  chipClass,
-}: {
-  title: string;
-  items: string[];
-  chipClass: string;
-}) {
-  return (
-    <div>
-      <h5 className="font-medium text-gray-900 text-sm mb-2">{title}</h5>
-      <div className="flex flex-wrap gap-1">
-        {items.map((item, index) => (
-          <span key={index} className={`${chipClass} px-2 py-1 rounded text-xs`}>
-            {item}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function BulletSection({
-  title,
-  items,
-  className,
-  numbered = false,
-}: {
-  title: string;
-  items: string[];
-  className?: string;
-  numbered?: boolean;
-}) {
-  return (
-    <section className="bg-gray-50 rounded-lg p-4">
-      <h4 className={`font-semibold text-sm mb-2 ${className || ''}`}>{title}</h4>
-      <ul className="space-y-1.5 text-sm text-gray-700">
-        {items.map((item, i) => (
-          <li key={i} className="flex gap-2">
-            <span className="text-gray-400 shrink-0">{numbered ? `${i + 1}.` : '•'}</span>
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }

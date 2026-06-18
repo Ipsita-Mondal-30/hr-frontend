@@ -32,7 +32,7 @@ interface PayrollRecord {
   grossSalary: number;
   netSalary: number;
   payDate: string;
-  status: 'pending' | 'paid' | 'processing';
+  status: 'pending' | 'approved' | 'paid' | 'processing';
 }
 
 type ApiPayrollRecord = Omit<PayrollRecord, 'month'> & { month: number; createdAt?: string };
@@ -133,7 +133,7 @@ export default function EmployeePayrollPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Payroll & Salary</h1>

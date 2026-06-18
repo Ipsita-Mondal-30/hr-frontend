@@ -4,6 +4,10 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from './api';
 import { getAuthToken, removeAuthToken } from './cookies';
 // import User from '@/'; // Adjust the import path as necessary
+function isAxiosError(err: unknown): err is { response?: { status?: number }; message?: string } {
+  return typeof err === 'object' && err !== null && 'response' in err;
+}
+
 export type User = {
   _id: string;
   name: string;
@@ -123,9 +127,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('⚠️ User has no role, redirecting to role selection');
         window.location.href = `/role-select?token=${token}`;
       }
-    } catch (err: any) {
-      console.error('❌ Auth check failed:', err.response?.status, err.message);
-      if (err.response?.status === 401) {
+    } catch (err: unknown) {
+      console.error('❌ Auth check failed:', isAxiosError(err) ? err.response?.status : undefined, err instanceof Error ? err.message : err);
+      if (isAxiosError(err) && err.response?.status === 401) {
         console.log('🔄 Token invalid, clearing auth state');
         removeAuthToken();
         setUser(null);

@@ -12,7 +12,6 @@ import {
   MobileNavToggle,
   NavbarButton
 } from '../components/resizable-navabar';
-import Image from "next/image";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -111,16 +110,10 @@ export default function Navbar() {
         <NavBody className="relative z-10 max-w-full mx-auto px-4 sm:px-6 lg:px-8 w-full">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3 group flex-shrink-0">
-  <div className="relative">
-    <Image 
-      src="/talora.png" 
-      alt="Talora Logo" 
-      width={40} 
-      height={40} 
-      className="rounded-xl"
-      priority // ensures it's loaded immediately (optional)
-    />
-    <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-2xl blur opacity-40 group-hover:opacity-70 transition duration-300 -z-10" />
+  <div className="relative flex-shrink-0">
+    <div className="w-10 h-10 bg-gradient-to-br from-purple-600 via-purple-700 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg">
+      <span className="text-white font-bold text-lg">T</span>
+    </div>
   </div>
   <div className="flex flex-col">
     <span className="text-2xl font-bold bg-gradient-to-r from-purple-700 via-purple-600 to-cyan-600 bg-clip-text text-transparent dark:from-purple-400 dark:via-purple-300 dark:to-cyan-400">
@@ -251,7 +244,7 @@ export default function Navbar() {
                     className="bg-gradient-to-r from-purple-600 via-purple-700 to-cyan-600 text-white hover:from-purple-700 hover:via-purple-800 hover:to-cyan-700 border-none shadow-xl hover:shadow-2xl transition-all duration-300 font-semibold px-6 py-3 rounded-2xl relative overflow-hidden group"
                   >
                     <span className="relative z-10 flex items-center space-x-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg width="16" height="16" className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                       </svg>
                       <span>Get Started</span>

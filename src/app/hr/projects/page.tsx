@@ -12,16 +12,16 @@ interface Project {
   startDate: string;
   endDate?: string;
   completionPercentage: number;
-  projectManager: {
-    user: { name: string };
-    position: string;
-  };
+  projectManager?: {
+    user?: { name?: string } | null;
+    position?: string;
+  } | null;
   teamMembers: Array<{
-    employee: {
-      _id: string;
-      user: { name: string };
-      position: string;
-    };
+    employee?: {
+      _id?: string;
+      user?: { name?: string } | null;
+      position?: string;
+    } | null;
     role: string;
     contributionPercentage: number;
     hoursWorked: number;
@@ -231,7 +231,9 @@ export default function HRProjectsPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                       <div>
                         <span className="text-gray-500">Project Manager:</span>
-                        <div className="font-medium">{project.projectManager.user.name}</div>
+                        <div className="font-medium">
+                          {project.projectManager?.user?.name || 'Pending'}
+                        </div>
                       </div>
                       <div>
                         <span className="text-gray-500">Team Size:</span>
@@ -269,9 +271,9 @@ export default function HRProjectsPage() {
                           <div
                             key={index}
                             className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-xs font-medium text-blue-600 border-2 border-white"
-                            title={`${member.employee?.user?.name || 'Unknown'} - ${member.role}`}
+                            title={`${member.employee?.user?.name || 'Pending'} - ${member.role}`}
                           >
-                            {(member.employee?.user?.name || 'U').charAt(0).toUpperCase()}
+                            {(member.employee?.user?.name || 'P').charAt(0).toUpperCase()}
                           </div>
                         ))}
                         {project.teamMembers.length > 4 && (
@@ -440,15 +442,17 @@ export default function HRProjectsPage() {
               <div>
                 <h3 className="text-lg font-semibold mb-4">Team Performance</h3>
                 <div className="space-y-3">
-                  {selectedProject.teamMembers.map((member, index) => (
+                  {selectedProject.teamMembers.map((member, index) => {
+                    const memberName = member.employee?.user?.name || 'Pending';
+                    return (
                     <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold">
-                          {member.employee.user.name.charAt(0).toUpperCase()}
+                          {memberName.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <h4 className="font-medium text-gray-900">{member.employee.user.name}</h4>
-                          <p className="text-sm text-gray-600">{member.employee.position}</p>
+                          <h4 className="font-medium text-gray-900">{memberName}</h4>
+                          <p className="text-sm text-gray-600">{member.employee?.position || 'Pending'}</p>
                           <p className="text-xs text-gray-500">{member.role}</p>
                         </div>
                       </div>
@@ -462,7 +466,8 @@ export default function HRProjectsPage() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 

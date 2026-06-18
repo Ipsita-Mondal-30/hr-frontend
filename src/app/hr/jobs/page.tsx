@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Job } from '@/types';
 import api from '@/lib/api';
+import { getRoleDepartmentId } from '@/lib/roles';
 
 interface JobForm {
   title: string;
@@ -40,8 +41,22 @@ interface Department {
 interface Role {
   _id: string;
   title: string;
-  departmentId?: string;
+  departmentId?: string | { _id: string; name: string };
 }
+
+type JobPayload = Omit<
+  JobForm,
+  'department' | 'role' | 'experienceRequired' | 'minSalary' | 'maxSalary' | 'skills' | 'tags' | 'employmentType'
+> & {
+  department?: string;
+  role?: string;
+  employmentType?: JobForm['employmentType'];
+  experienceRequired?: number;
+  minSalary?: number;
+  maxSalary?: number;
+  skills: string[];
+  tags: string[];
+};
 
 export default function ManageJobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -130,7 +145,7 @@ export default function ManageJobs() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    const jobPayload: any = {
+    const jobPayload: JobPayload = {
       ...form,
       // Remove empty strings for optional fields - convert to undefined
       department: form.department && form.department.trim() ? form.department : undefined,
@@ -147,7 +162,7 @@ export default function ManageJobs() {
     };
 
     // Remove undefined values to clean up payload
-    Object.keys(jobPayload).forEach(key => {
+    (Object.keys(jobPayload) as (keyof JobPayload)[]).forEach((key) => {
       if (jobPayload[key] === undefined || jobPayload[key] === '') {
         delete jobPayload[key];
       }
@@ -160,6 +175,9 @@ export default function ManageJobs() {
       } else {
         const response = await api.post('/jobs', jobPayload);
         console.log('Job created successfully:', response.data);
+        const msg = response.data?.message;
+        if (msg) alert(msg);
+        else alert('Job submitted for admin approval.');
       }
       resetForm();
       fetchJobs();
@@ -275,7 +293,7 @@ export default function ManageJobs() {
               >
                 <option value="">Select Role (Optional)</option>
                 {roles
-                  .filter((role) => !form.department || role.departmentId === form.department)
+                  .filter((role) => !form.department || getRoleDepartmentId(role.departmentId) === form.department)
                   .map((role) => (
                     <option key={role._id} value={role._id}>
                       {role.title}
@@ -304,7 +322,7 @@ export default function ManageJobs() {
               <select
                 id="employmentType"
                 value={form.employmentType}
-                onChange={(e) => setForm({ ...form, employmentType: e.target.value as any })}
+                onChange={(e) => setForm({ ...form, employmentType: e.target.value as JobForm['employmentType'] })}
                 className="w-full border p-2 rounded"
               >
                 <option value="full-time">Full-time</option>
@@ -454,9 +472,26 @@ export default function ManageJobs() {
         <div className="space-y-6">
           {jobs.map((job) => (
             <div key={(job.id ?? job._id)?.toString()} className="border p-4 rounded bg-white shadow">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">{job.title}</h3>
-                <button className="text-blue-600" onClick={() => startEdit(job)}>Edit</button>
+              <div className="flex justify-between items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-lg font-semibold">{job.title}</h3>
+                  {job.status === 'pending' && (
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
+                      Pending Admin Approval
+                    </span>
+                  )}
+                  {job.status === 'rejected' && (
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-800">
+                      Rejected
+                    </span>
+                  )}
+                  {(job.status === 'active' || job.status === 'open') && job.isApproved !== false && (
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                      Live
+                    </span>
+                  )}
+                </div>
+                <button className="text-blue-600 shrink-0" onClick={() => startEdit(job)}>Edit</button>
               </div>
               <p>{job.description.length > 100 ? job.description.slice(0, 100) + '...' : job.description}</p>
               <div className="mt-2 text-sm text-gray-600">

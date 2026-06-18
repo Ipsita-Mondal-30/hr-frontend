@@ -14,25 +14,6 @@ declare global {
   }
 }
 
-interface SpeechSynthesisVoice {
-  voiceURI: string;
-  name: string;
-  lang: string;
-  localService: boolean;
-  default: boolean;
-}
-
-interface SpeechSynthesisEvent extends Event {
-  charIndex: number;
-  charLength: number;
-  elapsedTime: number;
-  name: string;
-}
-
-interface SpeechSynthesisErrorEvent extends SpeechSynthesisEvent {
-  error: 'network' | 'synthesis' | 'synthesis-unavailable' | 'audio-busy' | 'audio-hardware' | 'canceled' | 'interrupted' | 'not-allowed' | 'invalid-argument' | 'language-unavailable' | 'service-not-allowed' | 'bad-grammar' | 'bad-xml';
-}
-
 interface SpeechRecognition extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
@@ -139,7 +120,6 @@ export default function VoiceInterviewPrepPage() {
   const webcamRef = useRef<Webcam>(null);
   const bodyLanguageIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const errorCountRef = useRef<number>(0);
-  const lastErrorTimeRef = useRef<number>(0);
   const [bodyLanguageSignals, setBodyLanguageSignals] = useState<BodyLanguageSignals | null>(null);
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [studioLightOn, setStudioLightOn] = useState(false);

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/AuthContext";
 
@@ -6,9 +6,15 @@ export const metadata: Metadata = {
   title: "HR Portal",
   description: "Smart HR system with AI match scoring and insights",
   icons: {
-    icon: "/talora.png", // <- your new favicon
-    shortcut: "/talora.png", // optional, for browsers that use shortcut icons
+    icon: "/talora.png",
+    shortcut: "/talora.png",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({
@@ -18,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
+      <body className="antialiased overflow-x-hidden min-w-0">
         <AuthProvider>
           {children}
         </AuthProvider>

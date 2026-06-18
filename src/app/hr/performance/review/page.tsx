@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 
 interface Employee {
@@ -19,7 +19,17 @@ interface Employee {
 }
 
 export default function PerformanceReviewPage() {
+  return (
+    <Suspense fallback={<div className="p-6">Loading review form...</div>}>
+      <PerformanceReviewContent />
+    </Suspense>
+  );
+}
+
+function PerformanceReviewContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedEmployeeId = searchParams.get('employee');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,6 +55,12 @@ export default function PerformanceReviewPage() {
   useEffect(() => {
     fetchEmployees();
   }, []);
+
+  useEffect(() => {
+    if (preselectedEmployeeId) {
+      setSelectedEmployee(preselectedEmployeeId);
+    }
+  }, [preselectedEmployeeId]);
 
   const fetchEmployees = async () => {
     try {

@@ -168,13 +168,13 @@ export default function EmployeeFeedbackPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Feedback & Reviews</h1>
-          <p className="text-gray-600">View feedback from managers, peers, and team members</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Feedback & Reviews</h1>
+          <p className="text-sm sm:text-base text-gray-600">View feedback from managers, peers, and team members</p>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
           <Link
             href="/employee/feedback/request"
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"

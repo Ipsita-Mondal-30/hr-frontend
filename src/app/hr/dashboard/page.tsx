@@ -271,18 +271,18 @@ export default function HRDashboardPage() {
   return (
     <div className="space-y-8">
       {/* Enhanced Header with Time and Actions */}
-      <div className="bg-gradient-to-r from-white to-blue-50 rounded-xl shadow-sm border border-slate-200 p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-              <UserCheck className="w-8 h-8 text-white" />
+      <div className="bg-gradient-to-r from-white to-blue-50 rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shrink-0">
+              <UserCheck className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">HR Dashboard</h1>
-              <p className="text-slate-600 mt-1">Manage your workforce and recruitment pipeline</p>
-              <div className="flex items-center space-x-4 mt-2 text-sm text-slate-500">
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">HR Dashboard</h1>
+              <p className="text-slate-600 mt-1 text-sm sm:text-base">Manage your workforce and recruitment pipeline</p>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 mt-2 text-xs sm:text-sm text-slate-500">
                 <span className="flex items-center">
-                  <Calendar className="w-4 h-4 mr-1" />
+                  <Calendar className="w-4 h-4 mr-1 shrink-0" />
                   {new Date().toLocaleDateString('en-US', { 
                     weekday: 'long', 
                     year: 'numeric', 
@@ -290,17 +290,17 @@ export default function HRDashboardPage() {
                     day: 'numeric' 
                   })}
                 </span>
-                <span>•</span>
+                <span className="hidden sm:inline">•</span>
                 <span>Last updated: {new Date().toLocaleTimeString()}</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <button className="flex items-center space-x-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 shrink-0">
+            <button className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium">
               <BarChart3 className="w-4 h-4" />
               <span>Export Report</span>
             </button>
-            <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+            <button className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
               <Target className="w-4 h-4" />
               <span>Quick Actions</span>
             </button>

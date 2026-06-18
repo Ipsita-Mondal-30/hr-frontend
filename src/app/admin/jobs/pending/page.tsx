@@ -215,7 +215,7 @@ export default function PendingJobsPage() {
                   <div className="grid grid-cols-1 gap-3 text-sm">
                     <div><strong>Title:</strong> {selectedJob.title}</div>
                     <div><strong>Company:</strong> {selectedJob.companyName}</div>
-                    <div><strong>Department:</strong> {selectedJob.department.name}</div>
+                    <div><strong>Department:</strong> {selectedJob.department?.name || 'Not specified'}</div>
                     <div><strong>Location:</strong> {selectedJob.location}</div>
                     <div><strong>Type:</strong> {selectedJob.employmentType.replace('-', ' ')}</div>
                     {(selectedJob.minSalary || selectedJob.maxSalary) && (

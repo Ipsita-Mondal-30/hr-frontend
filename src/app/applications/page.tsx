@@ -125,13 +125,13 @@ function ApplicationCard({ app }: { app: Application }) {
             <strong>Explanation:</strong> {app.matchInsights.explanation}
           </p>
           <p>
-            <strong>Matching Skills:</strong> {app.matchInsights.matchingSkills.join(', ')}
+            <strong>Matching Skills:</strong> {(app.matchInsights.matchingSkills ?? []).join(', ')}
           </p>
           <p>
-            <strong>Missing Skills:</strong> {app.matchInsights.missingSkills.join(', ')}
+            <strong>Missing Skills:</strong> {(app.matchInsights.missingSkills ?? []).join(', ')}
           </p>
           <p>
-            <strong>Tags:</strong> {app.matchInsights.tags.join(', ')}
+            <strong>Tags:</strong> {(app.matchInsights.tags ?? []).join(', ')}
           </p>
         </div>
       )}

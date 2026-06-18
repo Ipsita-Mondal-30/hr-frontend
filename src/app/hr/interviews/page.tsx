@@ -35,6 +35,16 @@ interface Interview {
     feedback: string;
     recommendation: 'hire' | 'no-hire' | 'maybe';
   };
+  recording?: {
+    url: string;
+    type?: string;
+    fileName?: string;
+    uploadedAt?: string;
+  };
+  hireApproval?: {
+    status: 'none' | 'pending' | 'approved' | 'rejected';
+    recommendedAt?: string;
+  };
   createdAt: string;
 }
 
@@ -149,6 +159,22 @@ export default function InterviewsPage() {
     }
   };
 
+  const uploadRecording = async (interviewId: string, data: { file?: File; recordingLink?: string }) => {
+    try {
+      const formData = new FormData();
+      if (data.file) formData.append('recording', data.file);
+      if (data.recordingLink) formData.append('recordingLink', data.recordingLink);
+      const response = await api.post(`/interviews/${interviewId}/recording`, formData);
+      await fetchInterviews();
+      alert((response.data as { message?: string })?.message || 'Recording saved');
+    } catch (err: unknown) {
+      const msg = isAxiosError(err)
+        ? (err.response?.data as { error?: string })?.error || 'Upload failed'
+        : 'Upload failed';
+      alert(msg);
+    }
+  };
+
   const submitScorecard = async (interviewId: string, scorecard: ScorecardInput) => {
     try {
       console.log('📋 Submitting scorecard for interview:', interviewId);
@@ -157,9 +183,10 @@ export default function InterviewsPage() {
       const response = await api.put(`/interviews/${interviewId}/scorecard`, { scorecard });
       console.log('✅ Scorecard submitted successfully:', response.data);
 
-      await fetchInterviews(); // Refresh the interviews list
+      await fetchInterviews();
       setShowScorecardModal(false);
-      alert('Scorecard submitted successfully! AI-powered emails have been sent to the candidate and HR team.');
+      const msg = (response.data as { message?: string })?.message;
+      alert(msg || 'Scorecard submitted successfully!');
     } catch (err: unknown) {
       console.error('❌ Failed to submit scorecard:', err);
       const msg = isAxiosError(err)
@@ -236,14 +263,13 @@ export default function InterviewsPage() {
   }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Interview Manager</h1>
-          <p className="text-gray-600">Schedule and manage candidate interviews</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Interview Manager</h1>
+          <p className="text-sm sm:text-base text-gray-600">Schedule and manage candidate interviews</p>
         </div>
-        <button onClick={() => setShowScheduleModal(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+        <button onClick={() => setShowScheduleModal(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm w-full sm:w-auto shrink-0">
           📅 Schedule Interview
         </button>
       </div>
@@ -326,6 +352,7 @@ export default function InterviewsPage() {
                   setSelectedInterview(interview);
                   setShowScorecardModal(true);
                 }}
+                onUploadRecording={uploadRecording}
                 getStatusColor={getStatusColor}
                 getTypeIcon={getTypeIcon}
                 isToday={true}
@@ -358,6 +385,7 @@ export default function InterviewsPage() {
                   setSelectedInterview(interview);
                   setShowScorecardModal(true);
                 }}
+                onUploadRecording={uploadRecording}
                 getStatusColor={getStatusColor}
                 getTypeIcon={getTypeIcon}
               />
@@ -390,6 +418,7 @@ interface InterviewCardProps {
   interview: Interview;
   onUpdateStatus: (id: string, status: 'scheduled' | 'completed' | 'cancelled' | 'no-show') => void;
   onViewScorecard: () => void;
+  onUploadRecording: (id: string, data: { file?: File; recordingLink?: string }) => Promise<void>;
   getStatusColor: (status: string) => string;
   getTypeIcon: (type: string) => string;
   isToday?: boolean;
@@ -399,25 +428,31 @@ function InterviewCard({
   interview,
   onUpdateStatus,
   onViewScorecard,
+  onUploadRecording,
   getStatusColor,
   getTypeIcon,
   isToday = false,
 }: InterviewCardProps) {
+  const [recordingLink, setRecordingLink] = useState('');
+  const [uploading, setUploading] = useState(false);
   const interviewDate = new Date(interview.scheduledAt);
   const isUpcoming = interviewDate > new Date();
+  const hasRecording = Boolean(interview.recording?.url);
+  const hirePending = interview.hireApproval?.status === 'pending';
+  const hireApproved = interview.hireApproval?.status === 'approved';
 
   return (
     <div className={`bg-white rounded-lg shadow-sm border p-6 ${isToday ? 'border-orange-300 bg-orange-50' : ''}`}>
-      <div className="flex justify-between items-start mb-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
         <div className="flex-1">
           <div className="flex items-center space-x-3 mb-2">
             <span className="text-2xl">{getTypeIcon(interview.type)}</span>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
-                {interview.application?.name || 'Candidate Name Not Available'}
+                {interview.application?.name || 'Pending'}
               </h3>
-              <p className="text-gray-600">{interview.application?.job?.title || 'Job Title Not Available'}</p>
-              <p className="text-sm text-gray-500">{interview.application?.job?.companyName || 'Company Not Available'}</p>
+              <p className="text-gray-600">{interview.application?.job?.title || 'Pending'}</p>
+              <p className="text-sm text-gray-500">{interview.application?.job?.companyName || 'Pending'}</p>
             </div>
           </div>
 
@@ -435,13 +470,13 @@ function InterviewCard({
             </div>
             <div>
               <p>
-                <strong>Interviewer:</strong> {interview.interviewer?.name || 'Not Available'}
+                <strong>Interviewer:</strong> {interview.interviewer?.name || 'Pending'}
               </p>
               <p>
-                <strong>Email:</strong> {interview.application?.email || 'Not Available'}
+                <strong>Email:</strong> {interview.application?.email || 'Pending'}
               </p>
               <p>
-                <strong>Phone:</strong> {interview.application?.phone || 'Not Available'}
+                <strong>Phone:</strong> {interview.application?.phone || 'Pending'}
               </p>
             </div>
           </div>
@@ -469,17 +504,80 @@ function InterviewCard({
           </span>
 
           {interview.scorecard && <span className="text-sm text-green-600 font-medium">⭐ {interview.scorecard.overall}/5</span>}
+          {hirePending && <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Awaiting admin approval</span>}
+          {hireApproved && <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">Hire approved</span>}
         </div>
       </div>
 
-      <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+      {!hasRecording && interview.status !== 'cancelled' && (
+        <div className="mb-4 p-4 rounded-lg border border-amber-200 bg-amber-50">
+          <p className="text-sm font-medium text-amber-900 mb-2">Upload meeting recording before scorecard</p>
+          <p className="text-xs text-amber-800 mb-3">Paste a Zoom/Meet/Teams link or upload the recording file.</p>
+          <div className="flex flex-col sm:flex-row gap-2 mb-2">
+            <input
+              type="url"
+              value={recordingLink}
+              onChange={(e) => setRecordingLink(e.target.value)}
+              placeholder="https://zoom.us/rec/..."
+              className="flex-1 px-3 py-2 border rounded-md text-sm"
+            />
+            <button
+              type="button"
+              disabled={uploading || !recordingLink.trim()}
+              onClick={async () => {
+                setUploading(true);
+                await onUploadRecording(interview._id, { recordingLink: recordingLink.trim() });
+                setRecordingLink('');
+                setUploading(false);
+              }}
+              className="px-3 py-2 bg-amber-600 text-white rounded-md text-sm disabled:opacity-50"
+            >
+              Save link
+            </button>
+          </div>
+          <label className="inline-flex items-center gap-2 px-3 py-2 bg-white border rounded-md text-sm cursor-pointer hover:bg-gray-50">
+            {uploading ? 'Uploading…' : 'Upload recording file'}
+            <input
+              type="file"
+              accept="video/*,audio/*,.webm,.mp4,.mov"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setUploading(true);
+                await onUploadRecording(interview._id, { file });
+                setUploading(false);
+              }}
+            />
+          </label>
+        </div>
+      )}
+
+      {hasRecording && (
+        <div className="mb-4 p-3 rounded-lg border border-green-200 bg-green-50 text-sm">
+          <span className="text-green-800 font-medium">✓ Recording on file</span>
+          {interview.recording?.fileName && (
+            <span className="text-green-700 ml-2">({interview.recording.fileName})</span>
+          )}
+          <a
+            href={interview.recording!.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-2 text-indigo-600 hover:underline"
+          >
+            View recording
+          </a>
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 pt-4 border-t border-gray-200">
         <div className="flex space-x-2">
           {isUpcoming && interview.status === 'scheduled' && (
             <>
               <button onClick={() => onUpdateStatus(interview._id, 'completed')} className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">
                 Mark Complete
               </button>
-              <button onClick={() => onUpdateStatus(interview._id, 'no-show')} className="px-3 py-1 bg-gray-600 text白 rounded text-sm hover:bg-gray-700">
+              <button onClick={() => onUpdateStatus(interview._id, 'no-show')} className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700">
                 No Show
               </button>
               <button onClick={() => onUpdateStatus(interview._id, 'cancelled')} className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
@@ -490,8 +588,13 @@ function InterviewCard({
         </div>
 
         <div className="flex space-x-2">
-          <button onClick={onViewScorecard} className="px-3 py-1 border border-blue-600 text-blue-600 rounded text-sm hover:bg-blue-50">
-            {interview.scorecard ? 'View Scorecard' : 'Add Scorecard'}
+          <button
+            onClick={onViewScorecard}
+            disabled={!hasRecording && !interview.scorecard}
+            title={!hasRecording && !interview.scorecard ? 'Upload meeting recording first' : undefined}
+            className="px-3 py-1 border border-blue-600 text-blue-600 rounded text-sm hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {interview.scorecard ? 'View Scorecard' : hasRecording ? 'Add Scorecard' : 'Scorecard (needs recording)'}
           </button>
         </div>
       </div>
@@ -560,7 +663,7 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: S
               <option value="">{applications.length > 0 ? 'Select candidate' : 'No candidates available'}</option>
               {applications.map((app) => (
                 <option key={app._id} value={app._id}>
-                  {app.name || 'Unknown Candidate'} - {app.job?.title || 'Unknown Job'}
+                  {app.name || 'Pending'} - {app.job?.title || 'Pending'}
                 </option>
               ))}
             </select>
@@ -703,12 +806,18 @@ function ScorecardModal({ isOpen, onClose, interview, onSubmit }: ScorecardModal
         </div>
 
         <div className="mb-4 p-4 bg-gray-50 rounded">
-          <h4 className="font-medium">{interview.application?.name || 'Candidate Name Not Available'}</h4>
-          <p className="text-sm text-gray-600">{interview.application?.job?.title || 'Job Title Not Available'}</p>
+          <h4 className="font-medium">{interview.application?.name || 'Pending'}</h4>
+          <p className="text-sm text-gray-600">{interview.application?.job?.title || 'Pending'}</p>
           <p className="text-sm text-gray-500">
             {new Date(interview.scheduledAt).toLocaleDateString()} at {new Date(interview.scheduledAt).toLocaleTimeString()}
           </p>
         </div>
+
+        {!interview.recording?.url && !interview.scorecard && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+            Upload the online meeting recording on the interview card before submitting a scorecard.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Rating Scales */}

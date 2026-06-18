@@ -45,7 +45,9 @@ export default function CandidateLayout({
     { name: 'Back to Home', href: '/', icon: 'home' },
     { name: 'Dashboard', href: '/candidate/dashboard', icon: 'bar-chart' },
     { name: 'Browse Jobs', href: '/candidate/jobs', icon: 'search' },
+    { name: 'Resume Analysis', href: '/candidate/resume-analysis', icon: 'file-text' },
     { name: 'Applied Jobs', href: '/candidate/applications', icon: 'file-text' },
+    { name: 'Hiring Trends', href: '/candidate/hiring-trends', icon: 'bar-chart' },
     { name: 'Interview Prep', href: '/candidate/interview-prep', icon: 'video' },
     { name: 'Saved Jobs', href: '/candidate/saved', icon: 'bookmark' },
     { name: 'Profile', href: '/candidate/profile', icon: 'user' },
@@ -77,16 +79,16 @@ export default function CandidateLayout({
             onClick={() => setSidebarOpen(true)}
           >
             <span className="sr-only">Open sidebar</span>
-            ☰
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
           </button>
           <div className="flex-1 text-sm font-semibold leading-6 text-gray-900">
             Candidate Portal
           </div>
         </div>
 
-        <main className="py-6">
-          {children}
-        </main>
+        <main className="px-4 sm:px-6 py-4 sm:py-6 overflow-x-hidden min-w-0">{children}</main>
       </div>
     </div>
   );

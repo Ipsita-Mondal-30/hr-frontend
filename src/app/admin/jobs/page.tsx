@@ -8,6 +8,7 @@ interface Job {
   title: string;
   companyName: string;
   department?: { name: string } | null;
+  role?: { title: string } | null;
   location: string;
   type: string;
   status: 'active' | 'inactive' | 'pending' | 'rejected';
@@ -279,6 +280,9 @@ export default function AdminJobs() {
                     <div>
                       <div className="text-sm font-medium text-gray-900">{job.title}</div>
                       <div className="text-sm text-gray-500">{job.department?.name || 'No Department'}</div>
+                      <div className="text-sm text-gray-500">
+                        Role: {job.role?.title || 'No role assigned'}
+                      </div>
                       <div className="text-sm text-gray-500">{job.location} • {job.type}</div>
                       {job.salary && job.salary.min && job.salary.max && (
                         <div className="text-xs text-gray-400">

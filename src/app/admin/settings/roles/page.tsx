@@ -2,15 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { getRoleDepartmentId, getRoleDepartmentName } from '@/lib/roles';
 
 interface Role {
   _id: string;
   title: string;
   description?: string;
-  departmentId?: {
-    _id: string;
-    name: string;
-  };
+  departmentId?: string | { _id: string; name: string };
   createdAt: string;
 }
 
@@ -103,7 +101,7 @@ export default function RoleManagement() {
     setFormData({ 
       title: role.title, 
       description: role.description || '',
-      departmentId: role.departmentId?._id || ''
+      departmentId: getRoleDepartmentId(role.departmentId),
     });
     setShowModal(true);
   };
@@ -193,7 +191,7 @@ export default function RoleManagement() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">
-                        {role.departmentId?.name || 'No department'}
+                        {getRoleDepartmentName(role.departmentId) || 'No department'}
                       </div>
                     </td>
                     <td className="px-6 py-4">

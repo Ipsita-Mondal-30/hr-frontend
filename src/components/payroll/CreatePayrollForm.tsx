@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 
 interface Employee {
@@ -34,6 +34,8 @@ export default function CreatePayrollForm({
   redirectPath
 }: CreatePayrollFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedEmployeeId = searchParams.get('employee');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -72,6 +74,20 @@ export default function CreatePayrollForm({
     };
     fetchEmployees();
   }, [employeesApiPath]);
+
+  useEffect(() => {
+    if (!preselectedEmployeeId || employees.length === 0) return;
+    const employee = employees.find((emp) => emp._id === preselectedEmployeeId);
+    if (employee) {
+      setFormData((prev) => ({
+        ...prev,
+        employeeId: preselectedEmployeeId,
+        baseSalary: employee.salary || prev.baseSalary,
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, employeeId: preselectedEmployeeId }));
+    }
+  }, [preselectedEmployeeId, employees]);
 
   const handleEmployeeChange = (employeeId: string) => {
     const employee = employees.find((emp) => emp._id === employeeId);

@@ -52,6 +52,10 @@ export default function EmployeeProfilePage() {
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [trainingTopic, setTrainingTopic] = useState('');
   const [trainingMessage, setTrainingMessage] = useState('');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -85,6 +89,29 @@ export default function EmployeeProfilePage() {
       alert('Error saving skills');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const changePassword = async () => {
+    if (!newPassword || newPassword.length < 8) {
+      alert('New password must be at least 8 characters');
+      return;
+    }
+    try {
+      setChangingPassword(true);
+      await api.post('/auth/change-password', { currentPassword, newPassword });
+      alert('Password updated successfully');
+      setShowPasswordModal(false);
+      setCurrentPassword('');
+      setNewPassword('');
+    } catch (error: unknown) {
+      const msg =
+        error && typeof error === 'object' && 'response' in error
+          ? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+          : 'Failed to change password';
+      alert(msg || 'Failed to change password');
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -227,7 +254,7 @@ export default function EmployeeProfilePage() {
   const completeness = calculateProfileCompleteness();
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
@@ -299,6 +326,13 @@ export default function EmployeeProfilePage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <p className="text-gray-900">{profile.user.email}</p>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowPasswordModal(true)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Change password
+              </button>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
                 <p className="text-gray-900">{profile.department?.name || 'Not assigned'}</p>
@@ -648,6 +682,52 @@ export default function EmployeeProfilePage() {
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   Submit Request
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Change password</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Current password</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">New password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  minLength={8}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={changePassword}
+                  disabled={changingPassword}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {changingPassword ? 'Updating…' : 'Update password'}
                 </button>
               </div>
             </div>

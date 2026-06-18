@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Image from 'next/image';
 
 export function TestimonialsSection() {
   const [activeTestimonial, setActiveTestimonial] = useState(0);
@@ -87,9 +88,12 @@ export function TestimonialsSection() {
 
                 {/* Author Info */}
                 <div className="flex items-center justify-center space-x-4">
-                  <img
+                  <Image
                     src={testimonials[activeTestimonial].image}
                     alt={testimonials[activeTestimonial].author}
+                    width={64}
+                    height={64}
+                    unoptimized
                     className="w-16 h-16 rounded-full object-cover ring-4 ring-white shadow-lg"
                   />
                   <div className="text-left">

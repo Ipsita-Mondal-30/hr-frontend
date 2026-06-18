@@ -123,19 +123,6 @@ export default function EmployeeProjectsPage() {
     }
   };
 
-  const getMilestoneStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'text-green-600 bg-green-100';
-      case 'in-progress':
-        return 'text-blue-600 bg-blue-100';
-      case 'overdue':
-        return 'text-red-600 bg-red-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
-    }
-  };
-
   if (loading) {
     return (
       <div className="p-6">
@@ -152,17 +139,17 @@ export default function EmployeeProjectsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Projects & Timeline</h1>
-          <p className="text-gray-600">Track your project involvement and milestone progress</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Projects & Timeline</h1>
+          <p className="text-sm sm:text-base text-gray-600">Track your project involvement and milestone progress</p>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="w-full sm:w-auto">
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">All Projects</option>
             <option value="active">Active</option>
@@ -214,9 +201,9 @@ export default function EmployeeProjectsPage() {
         ) : (
           <div className="divide-y divide-gray-200">
             {filteredProjects.map((project) => (
-              <div key={project._id} className="p-6 hover:bg-gray-50">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
+              <div key={project._id} className="p-4 sm:p-6 hover:bg-gray-50">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="text-lg font-medium text-gray-900">{project.name}</h3>
                       <div className={`w-3 h-3 rounded-full ${getPriorityColor(project.priority)}`} title={`${project.priority} priority`}></div>

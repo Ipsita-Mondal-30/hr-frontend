@@ -44,7 +44,7 @@ export default function ApplicationsPage() {
       );
     })
     .filter((app) =>
-      selectedDept ? app.job?.department.name === selectedDept : true
+      selectedDept ? app.job?.department?.name === selectedDept : true
     )
     .filter((app) =>
       selectedStatus ? app.status === selectedStatus : true

@@ -2,28 +2,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
-
-interface Interview {
-  _id: string;
-  candidateId: string;
-  candidateName: string;
-  candidateEmail: string;
-  hrId: string;
-  hrName: string;
-  hrCompany: string;
-  jobId: string;
-  jobTitle: string;
-  scheduledAt: string;
-  duration: number;
-  type: 'phone' | 'video' | 'in-person';
-  notes?: string;
-  createdAt: string;
-}
+import AdminInterviewDetailModal, {
+  type AdminInterview,
+} from '@/components/interviews/AdminInterviewDetailModal';
 
 export default function ScheduledInterviewsPage() {
-  const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [interviews, setInterviews] = useState<AdminInterview[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
+  const [selectedInterview, setSelectedInterview] = useState<AdminInterview | null>(null);
 
   useEffect(() => {
     fetchScheduledInterviews();
@@ -206,104 +192,10 @@ export default function ScheduledInterviewsPage() {
 
       {/* Interview Detail Modal */}
       {selectedInterview && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">Interview Details</h2>
-                <button
-                  onClick={() => setSelectedInterview(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Interview Information</h3>
-                  <div className="space-y-2">
-                    <div>
-                      <label className="text-sm text-gray-600">Job Title</label>
-                      <p className="font-medium">{selectedInterview.jobTitle}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-600">Type</label>
-                      <p className="font-medium capitalize">{selectedInterview.type}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-600">Duration</label>
-                      <p className="font-medium">{selectedInterview.duration} minutes</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Schedule</h3>
-                  <div className="space-y-2">
-                    <div>
-                      <label className="text-sm text-gray-600">Date</label>
-                      <p className="font-medium">{new Date(selectedInterview.scheduledAt).toLocaleDateString()}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-600">Time</label>
-                      <p className="font-medium">{new Date(selectedInterview.scheduledAt).toLocaleTimeString()}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-600">Status</label>
-                      <span className={`px-2 py-1 rounded text-sm ${
-                        isUpcoming(selectedInterview.scheduledAt) 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {isUpcoming(selectedInterview.scheduledAt) ? 'Upcoming' : 'Past Due'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Candidate</h3>
-                  <div className="space-y-2">
-                    <div>
-                      <label className="text-sm text-gray-600">Name</label>
-                      <p className="font-medium">{selectedInterview.candidateName}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-600">Email</label>
-                      <p className="font-medium">{selectedInterview.candidateEmail}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">HR Representative</h3>
-                  <div className="space-y-2">
-                    <div>
-                      <label className="text-sm text-gray-600">Name</label>
-                      <p className="font-medium">{selectedInterview.hrName}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-600">Company</label>
-                      <p className="font-medium">{selectedInterview.hrCompany}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {selectedInterview.notes && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Notes</h3>
-                  <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">{selectedInterview.notes}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <AdminInterviewDetailModal
+          interview={selectedInterview}
+          onClose={() => setSelectedInterview(null)}
+        />
       )}
     </div>
   );

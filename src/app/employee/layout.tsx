@@ -119,7 +119,7 @@ export default function EmployeeLayout({
           </div>
         </div>
 
-        <main>{children}</main>
+        <main className="px-4 sm:px-6 py-4 sm:py-6 overflow-x-hidden min-w-0">{children}</main>
       </div>
     </div>
   );

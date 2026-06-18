@@ -5,7 +5,9 @@ import api from '@/lib/api';
 import JobApplicationModal from '@/components/JobApplicationModal';
 import { Job } from '../../../types/index'
 
-// Remove the local Job interface - use the shared one instead
+interface CandidateApplication {
+  job?: { _id?: string };
+}
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -34,9 +36,9 @@ export default function JobsPage() {
 
   const fetchAppliedJobs = async () => {
     try {
-      const res = await api.get<any[]>('/candidate/applications');
+      const res = await api.get<CandidateApplication[]>('/candidate/applications');
       const appliedJobIdsList = (res.data || [])
-        .map((app: any) => app.job?._id)
+        .map((app) => app.job?._id)
         .filter(Boolean) as string[];
       setAppliedJobIds(new Set(appliedJobIdsList));
       console.log('📋 Applied jobs:', appliedJobIdsList);

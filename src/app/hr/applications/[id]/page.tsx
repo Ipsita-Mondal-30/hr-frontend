@@ -3,6 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import ResumeAnalysisPanel, {
+  type AnalysisHistoryItem,
+} from '@/components/applications/ResumeAnalysisPanel';
 
 interface ApplicationDetail {
   _id: string;
@@ -32,6 +35,7 @@ interface ApplicationDetail {
   resumeUrl: string;
   portfolio?: string;
   coverLetter?: string;
+  generatedCoverLetter?: string;
   applicationData?: {
     linkedIn?: string;
     github?: string;
@@ -44,6 +48,34 @@ interface ApplicationDetail {
     matchingSkills: string[];
     missingSkills: string[];
     tags: string[];
+    strengths?: string[];
+    improvements?: string[];
+    actionPlan?: string[];
+    resumeTips?: string[];
+  };
+  atsAnalysis?: {
+    overallScore?: number;
+    atsScore?: number;
+    skillMatchScore?: number;
+    experienceScore?: number;
+    keywordCoverage?: number;
+    missingSkills?: string[];
+    strengths?: string[];
+    weaknesses?: string[];
+    recommendations?: string[];
+    bulletImprovements?: string[];
+    wordingSuggestions?: string[];
+    projectEnhancements?: string[];
+    improvedBullets?: string;
+  };
+  parsedResume?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    skills?: string[];
+    education?: string[];
+    projects?: string[];
+    experience?: string[];
   };
   hrNotes?: string;
   createdAt: string;
@@ -57,14 +89,23 @@ export default function ApplicationDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
+  const [analysisHistory, setAnalysisHistory] = useState<AnalysisHistoryItem[]>([]);
+  const [analyzing, setAnalyzing] = useState(false);
 
   const fetchApplication = useCallback(
     async (id: string) => {
       try {
         setLoading(true);
-        const res = await api.get<ApplicationDetail>(`/applications/${id}`);
-        setApplication(res.data);
-        setNotes(res.data.hrNotes || '');
+        const [appRes, analysisRes] = await Promise.all([
+          api.get<ApplicationDetail>(`/applications/${id}`),
+          api.get<{ application: ApplicationDetail; history: AnalysisHistoryItem[] }>(
+            `/resume-analysis/application/${id}`
+          ).catch(() => ({ data: { application: null, history: [] } })),
+        ]);
+        const appData = analysisRes.data.application || appRes.data;
+        setApplication({ ...appRes.data, ...appData });
+        setNotes(appRes.data.hrNotes || '');
+        setAnalysisHistory(analysisRes.data.history || []);
       } catch (err) {
         console.error('Failed to fetch application:', err);
         alert('Failed to load application details');
@@ -106,6 +147,20 @@ export default function ApplicationDetailPage() {
       alert('Failed to save notes');
     } finally {
       setSavingNotes(false);
+    }
+  };
+
+  const rerunAnalysis = async () => {
+    if (!application) return;
+    setAnalyzing(true);
+    try {
+      await api.post(`/resume-analysis/application/${application._id}/analyze`);
+      await fetchApplication(application._id);
+      alert('Resume analysis completed');
+    } catch {
+      alert('Failed to run resume analysis');
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -291,8 +346,9 @@ export default function ApplicationDetailPage() {
               </div>
             )}
 
-            {/* Cover Letter */}
-            {application.coverLetter && (
+            {/* Cover letter submitted with application (not AI-generated) */}
+            {application.coverLetter &&
+              application.coverLetter !== application.generatedCoverLetter && (
               <div className="mb-6">
                 <h3 className="font-medium text-gray-900 mb-2">Cover Letter</h3>
                 <div className="text-gray-700 text-sm bg-gray-50 p-3 rounded whitespace-pre-wrap">
@@ -336,8 +392,38 @@ export default function ApplicationDetailPage() {
             </div>
           </div>
 
-          {/* AI Match Analysis */}
-          {application.matchInsights && (
+          {/* ATS Resume Analysis */}
+          {(application.atsAnalysis || application.matchScore) && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold text-gray-900">Resume Analysis</h2>
+                <button
+                  onClick={rerunAnalysis}
+                  disabled={analyzing}
+                  className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {analyzing ? 'Analyzing...' : 'Re-run Analysis'}
+                </button>
+              </div>
+              <ResumeAnalysisPanel
+                data={{
+                  atsAnalysis: application.atsAnalysis,
+                  parsedResume: application.parsedResume,
+                  scores: application.atsAnalysis,
+                  missingSkills: application.atsAnalysis?.missingSkills || application.matchInsights?.missingSkills,
+                  strengths: application.atsAnalysis?.strengths || application.matchInsights?.strengths,
+                  weaknesses: application.atsAnalysis?.weaknesses || application.matchInsights?.improvements,
+                  recommendations: application.atsAnalysis?.recommendations || application.matchInsights?.actionPlan,
+                  bulletImprovements: application.atsAnalysis?.bulletImprovements || application.matchInsights?.resumeTips,
+                  improvedBullets: application.atsAnalysis?.improvedBullets,
+                }}
+                history={analysisHistory}
+              />
+            </div>
+          )}
+
+          {/* Legacy AI Match Analysis fallback */}
+          {!application.atsAnalysis && application.matchInsights && (
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">🤖 AI Match Analysis</h2>
               <div className="mb-4">

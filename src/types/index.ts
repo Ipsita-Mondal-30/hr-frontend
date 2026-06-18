@@ -89,9 +89,37 @@ export interface Application {
     actionPlan?: string[];
     resumeTips?: string[];
     interviewTips?: string[];
+    projectEnhancements?: string[];
     analyzedAt?: string;
     source?: string;
   };
+  atsAnalysis?: {
+    overallScore?: number;
+    atsScore?: number;
+    skillMatchScore?: number;
+    experienceScore?: number;
+    keywordCoverage?: number;
+    missingSkills?: string[];
+    strengths?: string[];
+    weaknesses?: string[];
+    recommendations?: string[];
+    bulletImprovements?: string[];
+    wordingSuggestions?: string[];
+    projectEnhancements?: string[];
+    analyzedAt?: string;
+    source?: string;
+  };
+  parsedResume?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    skills?: string[];
+    education?: string[];
+    projects?: string[];
+    experience?: string[];
+  };
+  coverLetter?: string;
+  generatedCoverLetter?: string;
   createdAt?: string;
   status: string;
   candidate: { name: string; email: string };

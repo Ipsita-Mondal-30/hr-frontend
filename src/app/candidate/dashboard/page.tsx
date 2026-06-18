@@ -31,6 +31,15 @@ interface DashboardStats {
   scheduledInterviews: number;
 }
 
+interface DashboardNotification {
+  _id: string;
+  title: string;
+  message: string;
+  read: boolean;
+  link?: string;
+  createdAt: string;
+}
+
 interface Interview {
   _id: string;
   scheduledAt: string;
@@ -141,7 +150,7 @@ export default function CandidateDashboard() {
   const [loadingProfileAI, setLoadingProfileAI] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [profileAiError, setProfileAiError] = useState<string | null>(null);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -282,20 +291,19 @@ export default function CandidateDashboard() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg p-6 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <h1 className="text-2xl font-bold">Welcome back, {user?.name}!</h1>
-              <Hand className="w-6 h-6 text-yellow-300" />
+    <div className="space-y-6">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg p-4 sm:p-6 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-bold">Welcome back, {user?.name}!</h1>
+              <Hand className="w-6 h-6 text-yellow-300 shrink-0" />
             </div>
-            <p className="text-blue-100">
+            <p className="text-blue-100 text-sm sm:text-base">
               Ready to find your next opportunity? Let&apos;s explore what&apos;s new for you.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
               className="relative p-2 text-white hover:text-blue-100 transition-colors"
@@ -407,7 +415,7 @@ export default function CandidateDashboard() {
       )}
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <StatCard title="Total Applications" value={stats.totalApplications} icon={<FileText className="w-5 h-5" />} color="bg-blue-50 text-blue-600" />
         <StatCard title="Pending" value={stats.pendingApplications} icon={<Clock className="w-5 h-5" />} color="bg-yellow-50 text-yellow-600" />
         <StatCard title="Shortlisted" value={stats.shortlistedApplications} icon={<CheckCircle className="w-5 h-5" />} color="bg-green-50 text-green-600" />
@@ -418,8 +426,8 @@ export default function CandidateDashboard() {
       {/* Profile Completeness Alert */}
       {stats.profileCompleteness < 100 && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start sm:items-center gap-3 min-w-0">
               <AlertTriangle className="w-6 h-6 text-orange-600" />
               <div>
                 <h3 className="font-medium text-orange-900">Complete Your Profile</h3>
@@ -428,7 +436,7 @@ export default function CandidateDashboard() {
                 </p>
               </div>
             </div>
-            <Link href="/candidate/profile" className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm">
+            <Link href="/candidate/profile" className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm text-center shrink-0 w-full sm:w-auto">
               Complete Profile
             </Link>
           </div>
@@ -456,7 +464,7 @@ export default function CandidateDashboard() {
             {upcomingInterviews.map((interview) => (
               <div
                 key={interview._id}
-                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
               >
                 <div>
                   <h3 className="font-medium text-gray-900">{interview.application?.job?.title || 'Unknown Job'}</h3>
@@ -501,7 +509,7 @@ export default function CandidateDashboard() {
             {applications.map((app) => (
               <div
                 key={app._id}
-                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
               >
                 <div>
                   <h3 className="font-medium text-gray-900">{app.job?.title || 'Unknown Job'}</h3>
@@ -835,7 +843,7 @@ export default function CandidateDashboard() {
             {recentJobs.map((job) => (
               <div
                 key={job._id}
-                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
               >
                 <div className="flex-1">
                   <h3 className="font-medium text-gray-900">{job.title || 'Untitled role'}</h3>
@@ -865,7 +873,7 @@ export default function CandidateDashboard() {
       {/* Quick Actions */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <QuickActionCard title="Search Jobs" description="Find your next opportunity" icon={<Search className="w-6 h-6" />} href="/candidate/jobs" />
           <QuickActionCard title="Update Profile" description="Keep your profile current" icon={<User className="w-6 h-6" />} href="/candidate/profile" />
           <QuickActionCard title="Salary Research" description="Research market rates" icon={<DollarSign className="w-6 h-6" />} href="/candidate/salary" />

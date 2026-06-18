@@ -41,7 +41,7 @@ export default function ApplicationDetailPage() {
       <div className="bg-white p-4 rounded shadow">
         <h2 className="font-semibold text-lg mb-2">Job Info</h2>
         <p><strong>Title:</strong> {application.job?.title}</p>
-        <p><strong>Department:</strong> {application.job?.department.name}</p>
+        <p><strong>Department:</strong> {application.job?.department?.name}</p>
       </div>
 
       <div className="bg-white p-4 rounded shadow">
