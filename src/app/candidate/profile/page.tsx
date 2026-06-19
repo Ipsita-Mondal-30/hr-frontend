@@ -1,7 +1,7 @@
 'use client';
 
 import { notify } from '@/lib/notify';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
@@ -60,6 +60,8 @@ export default function CandidateProfilePage() {
   const [interviewReports, setInterviewReports] = useState<InterviewHistoryItem[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -137,6 +139,50 @@ export default function CandidateProfilePage() {
       ...prev,
       skills: prev.skills.filter((skill) => skill !== skillToRemove),
     }));
+  };
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      notify('Please select an image file (JPG, PNG, or WEBP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      notify('Photo must be 5MB or smaller');
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+      const res = await api.post<{ profilePicture: string; profileCompleteness?: number }>(
+        '/candidate/profile/photo',
+        formData
+      );
+      setProfile((prev) => ({
+        ...prev,
+        profilePicture: res.data.profilePicture,
+        profileCompleteness: res.data.profileCompleteness ?? prev.profileCompleteness,
+      }));
+      notify('Profile photo updated');
+    } catch (err: unknown) {
+      console.error('Photo upload failed:', err);
+      const message =
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === 'string'
+          ? (err as { response: { data: { error: string } } }).response.data.error
+          : 'Failed to upload photo';
+      notify(message);
+    } finally {
+      setUploadingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = '';
+    }
   };
 
   // Use the backend-calculated profile completeness
@@ -219,7 +265,23 @@ export default function CandidateProfilePage() {
                 )}
               </div>
               {editing && (
-                <button className="text-sm text-blue-600 hover:text-blue-800">Change Photo</button>
+                <>
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={handlePhotoSelect}
+                  />
+                  <button
+                    type="button"
+                    disabled={uploadingPhoto}
+                    onClick={() => photoInputRef.current?.click()}
+                    className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-60"
+                  >
+                    {uploadingPhoto ? 'Uploading...' : 'Change Photo'}
+                  </button>
+                </>
               )}
             </div>
 
