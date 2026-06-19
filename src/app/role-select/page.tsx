@@ -100,16 +100,11 @@ function readSession(): { token: string; userInfo: DecodedJwt | null } {
   }
 }
 
-function isErrorWithMessage(e: unknown): e is { message: string; response?: { data?: { error?: string } } } {
-  if (typeof e !== 'object' || e === null) return false;
-  const maybe = e as { message?: unknown; response?: { data?: { error?: string } } };
-  if (typeof maybe.message === 'string') return true;
-  return typeof maybe.response?.data?.error === 'string';
-}
-
 function getErrorMessage(err: unknown): string {
-  if (isErrorWithMessage(err)) {
-    return err.response?.data?.error || err.message;
+  if (typeof err === 'object' && err !== null) {
+    const maybe = err as { message?: unknown; response?: { data?: { error?: string } } };
+    if (typeof maybe.response?.data?.error === 'string') return maybe.response.data.error;
+    if (typeof maybe.message === 'string') return maybe.message;
   }
   return 'Please try again.';
 }
