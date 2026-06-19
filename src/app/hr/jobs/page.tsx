@@ -94,7 +94,7 @@ export default function ManageJobs() {
     fetchDepartments();
     fetchRoles();
     if (user?.role === 'hr') {
-      api.get<{ isVerified?: boolean }>('/hr/profile').then((res) => {
+      api.get<{ isVerified?: boolean }>('/auth/hr-profile').then((res) => {
         setIsVerified(Boolean(res.data.isVerified));
       }).catch(() => {});
     }

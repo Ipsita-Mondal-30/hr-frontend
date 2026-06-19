@@ -34,7 +34,7 @@ export default function HRProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await api.get<HRProfile>('/hr/profile');
+      const res = await api.get<HRProfile>('/auth/hr-profile');
       setProfile(res.data);
       setPhone(res.data.phone || '');
       setPosition(res.data.position || '');
@@ -55,7 +55,7 @@ export default function HRProfilePage() {
 
     setSaving(true);
     try {
-      const res = await api.put<{ user: HRProfile; message: string }>('/hr/profile', {
+      const res = await api.put<{ user: HRProfile; message: string }>('/auth/hr-profile', {
         phone: phone.trim(),
         position: position.trim(),
       });
