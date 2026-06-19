@@ -3,16 +3,17 @@ import LoginContent from '@/components/LoginContent';
 
 function LoginFallback() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
-        <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
-            Welcome to Talora
-          </h2>
-          <p className="text-gray-600 mb-8">
-            Loading...
-          </p>
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+    <div className="relative min-h-screen overflow-hidden bg-slate-950">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-32 top-0 h-[28rem] w-[28rem] rounded-full bg-purple-600/30 blur-[120px]" />
+        <div className="absolute -right-24 bottom-0 h-[32rem] w-[32rem] rounded-full bg-indigo-500/25 blur-[120px]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-purple-950/80 to-slate-950" />
+      </div>
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
+        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.07] p-10 text-center shadow-2xl backdrop-blur-xl">
+          <div className="mx-auto mb-6 h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-purple-400" />
+          <h2 className="text-xl font-semibold text-white">Welcome to Talora</h2>
+          <p className="mt-2 text-sm text-slate-400">Loading...</p>
         </div>
       </div>
     </div>

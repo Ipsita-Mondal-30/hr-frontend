@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
 
@@ -61,7 +62,7 @@ export default function AdminReports() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Failed to export report:', err);
-      alert('Failed to export report');
+      notify('Failed to export report');
     }
   };
 

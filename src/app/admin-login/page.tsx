@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -32,7 +33,7 @@ export default function AdminLoginPage() {
       
     } catch (error) {
       console.error('Login error:', error);
-      alert('Login failed. Please try again.');
+      notify('Login failed. Please try again.');
     } finally {
       setLoading(false);
     }

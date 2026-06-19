@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -71,7 +72,7 @@ export default function AdminPayrollDetailPage() {
       setNotes(response.data.notes || '');
     } catch (error) {
       console.error('Error fetching payroll details:', error);
-      alert('Error loading payroll details');
+      notify('Error loading payroll details');
     } finally {
       setLoading(false);
     }
@@ -87,10 +88,10 @@ export default function AdminPayrollDetailPage() {
     try {
       await api.put(`/admin/payroll/${payroll._id}/notes`, { notes });
       setPayroll((prev) => (prev ? { ...prev, notes } : prev));
-      alert('Notes saved successfully');
+      notify('Notes saved successfully');
     } catch (error) {
       console.error('Error saving notes:', error);
-      alert('Failed to save notes');
+      notify('Failed to save notes');
     } finally {
       setSavingNotes(false);
     }
@@ -104,7 +105,7 @@ export default function AdminPayrollDetailPage() {
       await fetchPayrollDetails();
     } catch (error) {
       console.error('Error approving payroll:', error);
-      alert('Error approving payroll');
+      notify('Error approving payroll');
     } finally {
       setUpdating(false);
     }
@@ -118,7 +119,7 @@ export default function AdminPayrollDetailPage() {
       await fetchPayrollDetails();
     } catch (error) {
       console.error('Error marking payroll as paid:', error);
-      alert('Error marking payroll as paid');
+      notify('Error marking payroll as paid');
     } finally {
       setUpdating(false);
     }

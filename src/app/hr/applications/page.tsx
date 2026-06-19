@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
@@ -199,7 +200,7 @@ export default function ApplicationsPage() {
       setApplications((prev) => prev.map((app) => (app._id === id ? { ...app, status: newStatus } : app)));
 
       // Show success message
-      alert(`Status updated to ${newStatus} successfully`);
+      notify(`Status updated to ${newStatus} successfully`);
     } catch (err: unknown) {
       console.error('Status update failed', err);
       const msg = isAxiosLikeError(err)
@@ -207,7 +208,7 @@ export default function ApplicationsPage() {
         : err instanceof Error
         ? err.message
         : 'Failed to update status';
-      alert('Failed to update status: ' + msg);
+      notify('Failed to update status: ' + msg);
       // Refresh on error to ensure consistency
       fetchApplications();
     }
@@ -223,7 +224,7 @@ export default function ApplicationsPage() {
       setApplications((prev) => prev.map((app) => (app._id === id ? { ...app, hrNotes: notes } : app)));
 
       setNotesModal({ isOpen: false, applicationId: null });
-      alert('Notes saved successfully');
+      notify('Notes saved successfully');
     } catch (err: unknown) {
       console.error('Failed to save notes', err);
       const msg = isAxiosLikeError(err)
@@ -231,13 +232,13 @@ export default function ApplicationsPage() {
         : err instanceof Error
         ? err.message
         : 'Failed to save notes';
-      alert('Failed to save notes: ' + msg);
+      notify('Failed to save notes: ' + msg);
     }
   };
 
   const bulkUpdateStatus = async (status: string) => {
     if (selectedApplications.length === 0) {
-      alert('Please select applications first');
+      notify('Please select applications first');
       return;
     }
 
@@ -254,7 +255,7 @@ export default function ApplicationsPage() {
       setApplications((prev) => prev.map((app) => (selectedApplications.includes(app._id) ? { ...app, status } : app)));
 
       setSelectedApplications([]);
-      alert(`${selectedApplications.length} applications updated to ${status} successfully`);
+      notify(`${selectedApplications.length} applications updated to ${status} successfully`);
     } catch (err: unknown) {
       console.error('Bulk update failed', err);
       const msg = isAxiosLikeError(err)
@@ -262,7 +263,7 @@ export default function ApplicationsPage() {
         : err instanceof Error
         ? err.message
         : 'Failed to update applications';
-      alert('Failed to update applications: ' + msg);
+      notify('Failed to update applications: ' + msg);
       // Refresh on error to ensure consistency
       fetchApplications();
     }
@@ -270,7 +271,7 @@ export default function ApplicationsPage() {
 
   const downloadResume = (resumeUrl: string, candidateName: string) => {
     if (!resumeUrl) {
-      alert('No resume available');
+      notify('No resume available');
       return;
     }
 
@@ -697,7 +698,7 @@ function MessageModal({ isOpen, applicationId, onClose, applications }: MessageM
 
   const sendMessage = async () => {
     if (!subject.trim() || !message.trim()) {
-      alert('Please fill in both subject and message');
+      notify('Please fill in both subject and message');
       return;
     }
 
@@ -710,13 +711,13 @@ function MessageModal({ isOpen, applicationId, onClose, applications }: MessageM
         recipientEmail: application?.email,
       });
 
-      alert('Message sent successfully!');
+      notify('Message sent successfully!');
       setMessage('');
       setSubject('');
       onClose();
     } catch (err) {
       console.error('Failed to send message:', err);
-      alert('Failed to send message');
+      notify('Failed to send message');
     } finally {
       setSending(false);
     }

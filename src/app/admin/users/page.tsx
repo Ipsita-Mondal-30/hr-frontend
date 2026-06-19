@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
@@ -50,7 +51,7 @@ export default function UsersManagement() {
       setUsers(res.data || []);
     } catch (err: unknown) {
       console.error('Failed to fetch users:', err);
-      alert(apiErrorMessage(err, 'Failed to load users'));
+      notify(apiErrorMessage(err, 'Failed to load users'));
     } finally {
       setLoading(false);
     }
@@ -71,7 +72,7 @@ export default function UsersManagement() {
       );
     } catch (err: unknown) {
       console.error('Failed to update user status:', err);
-      alert(apiErrorMessage(err, 'Failed to update user status'));
+      notify(apiErrorMessage(err, 'Failed to update user status'));
     } finally {
       setActionLoading(null);
     }
@@ -87,13 +88,13 @@ export default function UsersManagement() {
       );
       const { message, emailSent, temporaryPassword } = res.data;
       if (!emailSent && temporaryPassword) {
-        alert(`${message}\n\nTemporary password: ${temporaryPassword}`);
+        notify(`${message}\n\nTemporary password: ${temporaryPassword}`);
       } else {
-        alert(message || 'Password reset email sent successfully');
+        notify(message || 'Password reset email sent successfully');
       }
     } catch (err: unknown) {
       console.error('Failed to reset password:', err);
-      alert(apiErrorMessage(err, 'Failed to reset password'));
+      notify(apiErrorMessage(err, 'Failed to reset password'));
     } finally {
       setActionLoading(null);
     }
@@ -110,10 +111,10 @@ export default function UsersManagement() {
           user._id === userId ? { ...user, isVerified: res.data.isVerified ?? true } : user
         )
       );
-      alert('HR account verified successfully');
+      notify('HR account verified successfully');
     } catch (err: unknown) {
       console.error('Failed to verify HR:', err);
-      alert(apiErrorMessage(err, 'Failed to verify HR account'));
+      notify(apiErrorMessage(err, 'Failed to verify HR account'));
     } finally {
       setActionLoading(null);
     }
@@ -121,7 +122,7 @@ export default function UsersManagement() {
 
   const bulkAction = async (action: 'activate' | 'deactivate' | 'delete') => {
     if (selectedUsers.length === 0) {
-      alert('Please select users first');
+      notify('Please select users first');
       return;
     }
 
@@ -147,10 +148,10 @@ export default function UsersManagement() {
       }
 
       setSelectedUsers([]);
-      alert(`Successfully ${action}d ${count} users`);
+      notify(`Successfully ${action}d ${count} users`);
     } catch (err: unknown) {
       console.error(`Failed to ${action} users:`, err);
-      alert(apiErrorMessage(err, `Failed to ${action} users`));
+      notify(apiErrorMessage(err, `Failed to ${action} users`));
     } finally {
       setActionLoading(null);
     }

@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState } from 'react';
 import { FileText, Copy, Check, Loader2 } from 'lucide-react';
 import api from '@/lib/api';
@@ -33,7 +34,7 @@ export default function CoverLetterSection({
       onGenerated(letter);
     } catch (err) {
       console.error('Cover letter generation failed:', err);
-      alert('Could not generate cover letter. Make sure your resume is on file and try again.');
+      notify('Could not generate cover letter. Make sure your resume is on file and try again.');
     } finally {
       setGenerating(false);
     }
@@ -46,7 +47,7 @@ export default function CoverLetterSection({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      alert('Could not copy to clipboard');
+      notify('Could not copy to clipboard');
     }
   };
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
@@ -350,7 +351,7 @@ export default function VoiceInterviewPrepPage() {
       startListening();
     } catch (error) {
       console.error('Failed to start interview:', error);
-      alert('Failed to start interview');
+      notify('Failed to start interview');
     } finally {
       setLoading(false);
     }
@@ -444,7 +445,7 @@ export default function VoiceInterviewPrepPage() {
         : null;
 
     if (!SpeechRecognitionAPI) {
-      alert('Speech recognition is not supported. Please use Chrome or Edge.');
+      notify('Speech recognition is not supported. Please use Chrome or Edge.');
       return;
     }
 
@@ -485,7 +486,7 @@ export default function VoiceInterviewPrepPage() {
       if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
         isListeningRef.current = false;
         setIsListening(false);
-        alert('Microphone access is blocked. Allow the mic in your browser settings and try again.');
+        notify('Microphone access is blocked. Allow the mic in your browser settings and try again.');
         return;
       }
       if (event.error === 'no-speech' && isListeningRef.current) {
@@ -700,9 +701,9 @@ export default function VoiceInterviewPrepPage() {
     try {
       const res = await api.post(`/voice-interview/resend-email/${id}`, {}, { skipAuthRedirect: true });
       setEmailSent(res.data.success);
-      alert(res.data.message);
+      notify(res.data.message);
     } catch {
-      alert('Could not send email. Please download your report instead.');
+      notify('Could not send email. Please download your report instead.');
     } finally {
       setResendingEmail(false);
     }

@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect } from 'react';
 import { Job } from '@/types';
 import api from '@/lib/api';
@@ -96,7 +97,7 @@ export default function ManageJobs() {
       setJobs(res.data);
     } catch (error) {
       console.error('Failed to fetch jobs:', error);
-      alert('Failed to load jobs. Please try again.');
+      notify('Failed to load jobs. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -176,20 +177,20 @@ export default function ManageJobs() {
         const response = await api.post('/jobs', jobPayload);
         console.log('Job created successfully:', response.data);
         const msg = response.data?.message;
-        if (msg) alert(msg);
-        else alert('Job submitted for admin approval.');
+        if (msg) notify(msg);
+        else notify('Job submitted for admin approval.');
       }
       resetForm();
       fetchJobs();
     } catch (error: unknown) {
       if (isApiError(error)) {
         const message = error.response?.data?.message ?? error.response?.data?.error ?? 'Unknown error';
-        alert(`Error saving job: ${message}`);
+        notify(`Error saving job: ${message}`);
         console.error('API error response:', error.response);
       } else if (error instanceof Error) {
-        alert(`Error saving job: ${error.message}`);
+        notify(`Error saving job: ${error.message}`);
       } else {
-        alert('Error saving job. Please try again.');
+        notify('Error saving job. Please try again.');
         console.error('Unknown error:', error);
       }
     }

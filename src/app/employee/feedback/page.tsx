@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
@@ -116,7 +117,7 @@ export default function EmployeeFeedbackPage() {
       await fetchFeedback();
     } catch (error) {
       console.error('Error submitting response:', error);
-      alert('Failed to submit response');
+      notify('Failed to submit response');
     } finally {
       setSubmittingResponse(false);
     }

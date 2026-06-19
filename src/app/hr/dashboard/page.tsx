@@ -89,7 +89,6 @@ export default function HRDashboardPage() {
   const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [seeding, setSeeding] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -172,48 +171,6 @@ export default function HRDashboardPage() {
     fetchDashboardData();
   }, []);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.get('/auth/me');
-        console.log("🔐 Current User:", res.data);
-      } catch (err) {
-        console.error("❌ Error fetching user:", err);
-      }
-    };
-    fetchUser();
-  }, []);
-
-  const handleSeedData = async () => {
-    setSeeding(true);
-    try {
-      await api.post('/debug/seed');
-      // Refresh dashboard data
-      const res = await api.get<DashboardData>("/admin/dashboard");
-      setData(res.data);
-      alert('Sample data created successfully!');
-    } catch (err: unknown) {
-      console.error('Error seeding data:', err);
-      const msg = isAxiosError(err) ? ((err.response?.data as { error?: string })?.error || 'Failed to seed data') : 'Failed to seed data';
-      alert(msg);
-    } finally {
-      setSeeding(false);
-    }
-  };
-
-  const checkDatabaseData = async () => {
-    try {
-      const res = await api.get<{ jobsCount: number; applicationsCount: number; usersCount: number }>('/debug/data');
-      console.log('Database data:', res.data);
-      alert(
-        `Database contains: ${res.data.jobsCount} jobs, ${res.data.applicationsCount} applications, ${res.data.usersCount} users`
-      );
-    } catch (err: unknown) {
-      console.error('Error checking data:', err);
-      alert('Failed to check database data');
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -234,21 +191,12 @@ export default function HRDashboardPage() {
           </div>
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Dashboard Error</h2>
           <p className="text-red-600 mb-6">{error}</p>
-          <div className="flex justify-center space-x-3">
-            <button
-              onClick={checkDatabaseData}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              Check Database
-            </button>
-            <button
-              onClick={handleSeedData}
-              disabled={seeding}
-              className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:bg-slate-400 transition-colors font-medium"
-            >
-              {seeding ? 'Creating Sample Data...' : 'Create Sample Data'}
-            </button>
-          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -482,21 +430,6 @@ export default function HRDashboardPage() {
           <QuickActionCard title="Performance Reports" description="View performance analytics" icon="📈" href="/hr/reports" />
         </div>
       </div>
-
-      {/* Show message if no data */}
-      {data.totalJobs === 0 && data.totalApplications === 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <h3 className="text-lg font-medium text-yellow-800 mb-2">No Data Found</h3>
-          <p className="text-yellow-700 mb-4">Your database appears to be empty. Would you like to create some sample data?</p>
-          <button
-            onClick={handleSeedData}
-            disabled={seeding}
-            className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:bg-gray-400"
-          >
-            {seeding ? 'Creating Sample Data...' : 'Create Sample Data'}
-          </button>
-        </div>
-      )}
     </div>
   );
 }

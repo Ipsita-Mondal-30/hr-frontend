@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 
@@ -75,7 +76,7 @@ export default function EmployeeSupportPanel({
 
   const handleRespond = async (id: string, type: Tab, status = 'resolved') => {
     if (!responseText.trim()) {
-      alert('Please enter a response');
+      notify('Please enter a response');
       return;
     }
     try {
@@ -88,10 +89,10 @@ export default function EmployeeSupportPanel({
       setResponseText('');
       setActiveId(null);
       await fetchData();
-      alert('Response sent to employee');
+      notify('Response sent to employee');
     } catch (error) {
       console.error('Error sending response:', error);
-      alert('Failed to send response');
+      notify('Failed to send response');
     } finally {
       setSubmitting(false);
     }

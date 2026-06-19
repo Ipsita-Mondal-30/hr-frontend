@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -141,10 +142,10 @@ export default function EmployeesPage() {
       const refreshed = await api.get<Employee>(`/hr/employees/${selectedEmployee._id}`);
       setSelectedEmployee(refreshed.data);
       await fetchEmployees();
-      alert('Department and manager updated');
+      notify('Department and manager updated');
     } catch (error) {
       console.error('Error saving assignment:', error);
-      alert('Failed to update assignment');
+      notify('Failed to update assignment');
     } finally {
       setSavingAssign(false);
     }
@@ -166,7 +167,7 @@ export default function EmployeesPage() {
       }
     } catch (err: unknown) {
       console.error('Error generating AI insights:', err);
-      alert('Failed to generate AI insights');
+      notify('Failed to generate AI insights');
     } finally {
       setGeneratingInsights(null);
     }

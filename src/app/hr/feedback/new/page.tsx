@@ -1,4 +1,5 @@
 'use client';
+import { notify } from '@/lib/notify';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
@@ -62,7 +63,7 @@ export default function NewFeedbackPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!employeeId) {
-      alert('No employee selected');
+      notify('No employee selected');
       return;
     }
     setSubmitting(true);
@@ -72,11 +73,11 @@ export default function NewFeedbackPage() {
         employee: employeeId,
       });
 
-      alert('Feedback submitted successfully!');
+      notify('Feedback submitted successfully!');
       router.push('/hr/employees');
     } catch (error) {
       console.error('Error submitting feedback:', error);
-      alert('Error submitting feedback');
+      notify('Error submitting feedback');
     } finally {
       setSubmitting(false);
     }

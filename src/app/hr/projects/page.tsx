@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 
@@ -89,10 +90,10 @@ export default function HRProjectsPage() {
       });
       
       fetchProjects();
-      alert('Project created successfully!');
+      notify('Project created successfully!');
     } catch (error) {
       console.error('Error creating project:', error);
-      alert('Failed to create project. Please try again.');
+      notify('Failed to create project. Please try again.');
     }
   };
 

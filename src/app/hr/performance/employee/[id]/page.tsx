@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import api from '@/lib/api';
@@ -106,12 +107,12 @@ export default function EmployeePerformanceDetails() {
   const handleAssignOkr = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!okrForm.objective.trim()) {
-      alert('Objective is required');
+      notify('Objective is required');
       return;
     }
     const validKrs = okrForm.keyResults.filter((kr) => kr.title.trim());
     if (validKrs.length === 0) {
-      alert('Add at least one key result');
+      notify('Add at least one key result');
       return;
     }
 
@@ -134,12 +135,12 @@ export default function EmployeePerformanceDetails() {
         keyResults: [{ ...EMPTY_KR }]
       });
       await fetchPerformanceData();
-      alert('OKR assigned successfully. The employee can view it on their performance page.');
+      notify('OKR assigned successfully. The employee can view it on their performance page.');
     } catch (error) {
       const message = isAxiosError(error)
         ? error.response?.data?.error || 'Failed to assign OKR'
         : 'Failed to assign OKR';
-      alert(message);
+      notify(message);
     } finally {
       setSubmittingOkr(false);
     }

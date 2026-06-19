@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 
@@ -72,15 +73,15 @@ export default function ProjectWorkUpload({
   const handleSubmit = async () => {
     if (disabled) return;
     if (!file) {
-      alert('Please select a file to upload');
+      notify('Please select a file to upload');
       return;
     }
     if (!title.trim()) {
-      alert('Please enter a title for your submission');
+      notify('Please enter a title for your submission');
       return;
     }
     if (!milestoneId) {
-      alert('Please select an active milestone');
+      notify('Please select an active milestone');
       return;
     }
 
@@ -102,11 +103,11 @@ export default function ProjectWorkUpload({
       setFile(null);
       await fetchMySubmissions();
       onSubmitted?.();
-      alert('Work submitted! Admin will review and assign your contribution & hours.');
+      notify('Work submitted! Admin will review and assign your contribution & hours.');
     } catch (e: unknown) {
       console.error('Upload failed:', e);
       const err = e as { response?: { data?: { error?: string } } };
-      alert(err.response?.data?.error || 'Failed to upload work.');
+      notify(err.response?.data?.error || 'Failed to upload work.');
     } finally {
       setUploading(false);
     }

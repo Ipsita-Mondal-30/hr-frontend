@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -42,7 +43,7 @@ export default function AdminEmployeesPage() {
       setEmployees(list);
     } catch (err) {
       console.error('Error fetching employees:', err);
-      alert(isApiError(err) ? err.response?.data?.error || 'Failed to load employees' : 'Failed to load employees');
+      notify(isApiError(err) ? err.response?.data?.error || 'Failed to load employees' : 'Failed to load employees');
     } finally {
       setLoading(false);
     }
@@ -65,7 +66,7 @@ export default function AdminEmployeesPage() {
       setAiModalEmployee({ ...employee, aiInsights: insights });
     } catch (err) {
       console.error('AI analysis failed:', err);
-      alert(isApiError(err) ? err.response?.data?.error || 'AI analysis failed' : 'AI analysis failed');
+      notify(isApiError(err) ? err.response?.data?.error || 'AI analysis failed' : 'AI analysis failed');
     } finally {
       setAnalyzingId(null);
     }

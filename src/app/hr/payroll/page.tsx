@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -57,7 +58,7 @@ export default function PayrollManagement() {
       fetchPayrolls();
     } catch (error) {
       console.error('Error approving payroll:', error);
-      alert('Failed to approve payroll');
+      notify('Failed to approve payroll');
     }
   };
 
@@ -67,7 +68,7 @@ export default function PayrollManagement() {
       fetchPayrolls();
     } catch (error) {
       console.error('Error marking payroll as paid:', error);
-      alert('Failed to mark payroll as paid');
+      notify('Failed to mark payroll as paid');
     }
   };
 

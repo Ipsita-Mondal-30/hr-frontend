@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 
@@ -56,13 +57,13 @@ export default function HRVerification() {
       setSelectedHR(null);
       setVerificationNotes('');
       
-      alert(`HR ${approved ? 'approved' : 'rejected'} successfully`);
+      notify(`HR ${approved ? 'approved' : 'rejected'} successfully`);
       
       // Also refresh the list to ensure consistency
       setTimeout(fetchPendingHRs, 1000);
     } catch (err) {
       console.error('Failed to verify HR:', err);
-      alert('Failed to process verification');
+      notify('Failed to process verification');
       // Refresh on error to ensure consistency
       fetchPendingHRs();
     }
@@ -71,10 +72,10 @@ export default function HRVerification() {
   const sendVerificationEmail = async (hrId: string) => {
     try {
       await api.post(`/admin/users/${hrId}/send-verification-email`);
-      alert('Verification email sent successfully');
+      notify('Verification email sent successfully');
     } catch (err) {
       console.error('Failed to send verification email:', err);
-      alert('Failed to send verification email');
+      notify('Failed to send verification email');
     }
   };
 

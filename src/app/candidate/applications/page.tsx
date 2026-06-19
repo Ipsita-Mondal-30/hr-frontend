@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -51,7 +52,7 @@ export default function AppliedJobsPage() {
       );
     } catch (err) {
       console.error('Resume analysis failed:', err);
-      alert('Could not run resume analysis. Make sure your resume is uploaded and the backend is running.');
+      notify('Could not run resume analysis. Make sure your resume is uploaded and the backend is running.');
     } finally {
       setAnalyzingId(null);
     }

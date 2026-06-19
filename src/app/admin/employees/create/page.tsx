@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -28,7 +29,7 @@ export default function CreateEmployee() {
       router.push('/admin/employees');
     } catch (error) {
       console.error('Error creating employee:', error);
-      alert('Failed to create employee');
+      notify('Failed to create employee');
     } finally {
       setLoading(false);
     }

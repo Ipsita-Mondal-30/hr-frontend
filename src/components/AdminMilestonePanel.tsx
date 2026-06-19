@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState } from 'react';
 import api from '@/lib/api';
 
@@ -33,7 +34,7 @@ export default function AdminMilestonePanel({
 
   const submit = async () => {
     if (!title.trim() || !dueDate) {
-      alert('Title and due date are required');
+      notify('Title and due date are required');
       return;
     }
     setLoading(true);
@@ -50,7 +51,7 @@ export default function AdminMilestonePanel({
       onCreated?.();
     } catch (e) {
       console.error(e);
-      alert('Failed to create milestone');
+      notify('Failed to create milestone');
     } finally {
       setLoading(false);
     }

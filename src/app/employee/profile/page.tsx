@@ -1,4 +1,5 @@
 'use client';
+import { notify } from '@/lib/notify';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
@@ -82,11 +83,11 @@ export default function EmployeeProfilePage() {
       setSaving(true);
       await api.put('/employees/me/skills', { skills: profile.skills });
       setEditing(false);
-      alert('Skills updated successfully!');
+      notify('Skills updated successfully!');
       await fetchProfile();
     } catch (error) {
       console.error('Error saving profile:', error);
-      alert('Error saving skills');
+      notify('Error saving skills');
     } finally {
       setSaving(false);
     }
@@ -94,13 +95,13 @@ export default function EmployeeProfilePage() {
 
   const changePassword = async () => {
     if (!newPassword || newPassword.length < 8) {
-      alert('New password must be at least 8 characters');
+      notify('New password must be at least 8 characters');
       return;
     }
     try {
       setChangingPassword(true);
       await api.post('/auth/change-password', { currentPassword, newPassword });
-      alert('Password updated successfully');
+      notify('Password updated successfully');
       setShowPasswordModal(false);
       setCurrentPassword('');
       setNewPassword('');
@@ -109,7 +110,7 @@ export default function EmployeeProfilePage() {
         error && typeof error === 'object' && 'response' in error
           ? (error as { response?: { data?: { error?: string } } }).response?.data?.error
           : 'Failed to change password';
-      alert(msg || 'Failed to change password');
+      notify(msg || 'Failed to change password');
     } finally {
       setChangingPassword(false);
     }
@@ -117,7 +118,7 @@ export default function EmployeeProfilePage() {
 
   const handleResumeUpload = async () => {
     if (!resumeFile) {
-      alert('Please select a resume file');
+      notify('Please select a resume file');
       return;
     }
     try {
@@ -127,13 +128,13 @@ export default function EmployeeProfilePage() {
       await api.post('/employees/me/resume/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      alert('Resume uploaded successfully! HR and Admin have been notified.');
+      notify('Resume uploaded successfully! HR and Admin have been notified.');
       setShowResumeModal(false);
       setResumeFile(null);
       await fetchProfile();
     } catch (error) {
       console.error('Error uploading resume:', error);
-      alert('Failed to upload resume');
+      notify('Failed to upload resume');
     } finally {
       setUploadingResume(false);
     }
@@ -145,17 +146,17 @@ export default function EmployeeProfilePage() {
         requestType: feedbackType,
         message: feedbackMessage.trim() || undefined,
       });
-      alert('Feedback request sent to HR/Admin!');
+      notify('Feedback request sent to HR/Admin!');
       setShowFeedbackModal(false);
       setFeedbackMessage('');
     } catch {
-      alert('Failed to submit feedback request');
+      notify('Failed to submit feedback request');
     }
   };
 
   const submitTrainingRequest = async () => {
     if (!trainingTopic.trim()) {
-      alert('Please enter a training topic');
+      notify('Please enter a training topic');
       return;
     }
     try {
@@ -163,12 +164,12 @@ export default function EmployeeProfilePage() {
         topic: trainingTopic.trim(),
         message: trainingMessage.trim() || undefined,
       });
-      alert('Training request sent to HR/Admin!');
+      notify('Training request sent to HR/Admin!');
       setShowTrainingModal(false);
       setTrainingTopic('');
       setTrainingMessage('');
     } catch {
-      alert('Failed to submit training request');
+      notify('Failed to submit training request');
     }
   };
 
@@ -180,7 +181,7 @@ export default function EmployeeProfilePage() {
     );
 
     if (skillExists) {
-      alert('Skill already exists');
+      notify('Skill already exists');
       return;
     }
 

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/AuthContext";
 import AuthBootstrap from "@/components/AuthBootstrap";
+import AppToaster from "@/components/AppToaster";
 
 export const metadata: Metadata = {
   title: "HR Portal",
@@ -28,6 +29,7 @@ export default function RootLayout({
       <body className="antialiased overflow-x-hidden min-w-0">
         <AuthProvider>
           <AuthBootstrap />
+          <AppToaster />
           {children}
         </AuthProvider>
       </body>

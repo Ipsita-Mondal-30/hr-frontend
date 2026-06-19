@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -53,7 +54,7 @@ export default function GiveFeedbackPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEmployee) {
-      alert('Please select an employee');
+      notify('Please select an employee');
       return;
     }
 
@@ -64,11 +65,11 @@ export default function GiveFeedbackPage() {
         employee: selectedEmployee
       });
       
-      alert('Feedback submitted successfully!');
+      notify('Feedback submitted successfully!');
       router.push('/hr/employees');
     } catch (error) {
       console.error('Error submitting feedback:', error);
-      alert('Error submitting feedback');
+      notify('Error submitting feedback');
     } finally {
       setLoading(false);
     }

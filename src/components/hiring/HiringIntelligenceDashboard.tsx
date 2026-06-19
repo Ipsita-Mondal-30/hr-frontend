@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useCallback, useEffect, useState } from 'react';
 import api from '@/lib/api';
 import {
@@ -196,7 +197,7 @@ export default function HiringIntelligenceDashboard({
       await fetchInsights(true);
     } catch (err) {
       console.error(err);
-      alert('Sync failed. Check Adzuna API credentials and backend logs.');
+      notify('Sync failed. Check Adzuna API credentials and backend logs.');
     } finally {
       setSyncing(false);
     }
@@ -214,7 +215,7 @@ export default function HiringIntelligenceDashboard({
       setMatchResult(res.data);
     } catch (err) {
       console.error(err);
-      alert('Resume matching failed. Upload a valid PDF.');
+      notify('Resume matching failed. Upload a valid PDF.');
     } finally {
       setMatching(false);
     }

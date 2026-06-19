@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 
@@ -77,7 +78,7 @@ export default function AdminWorkReviewPanel({
       if (res.data.project) onReviewed?.(res.data.project);
     } catch (e) {
       console.error('Review failed:', e);
-      alert('Failed to submit review');
+      notify('Failed to submit review');
     }
   };
 

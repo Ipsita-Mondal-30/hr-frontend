@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -164,7 +165,7 @@ export default function EmployeeDetailPage() {
       setEmployee(response.data);
     } catch (error) {
       console.error('Error fetching employee details:', error);
-      alert(apiErrorMessage(error, 'Error loading employee details'));
+      notify(apiErrorMessage(error, 'Error loading employee details'));
       setEmployee(null);
     } finally {
       setLoading(false);
@@ -219,10 +220,10 @@ export default function EmployeeDetailPage() {
       });
       await fetchEmployeeDetails();
       setShowAssignModal(false);
-      alert('Department and manager updated successfully');
+      notify('Department and manager updated successfully');
     } catch (error) {
       console.error('Error saving assignment:', error);
-      alert(apiErrorMessage(error, 'Failed to update assignment'));
+      notify(apiErrorMessage(error, 'Failed to update assignment'));
     } finally {
       setSavingAssign(false);
     }
@@ -239,7 +240,7 @@ export default function EmployeeDetailPage() {
       setActiveTab('ai');
     } catch (error) {
       console.error('Error generating AI insights:', error);
-      alert(apiErrorMessage(error, 'Failed to generate AI insights'));
+      notify(apiErrorMessage(error, 'Failed to generate AI insights'));
     } finally {
       setGeneratingInsights(false);
     }

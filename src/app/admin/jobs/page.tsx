@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
 
@@ -52,10 +53,10 @@ export default function AdminJobs() {
       setJobs(jobs.map(job =>
         job._id === jobId ? { ...job, status, rejectionReason: reason } : job
       ));
-      alert(`Job ${status} successfully`);
+      notify(`Job ${status} successfully`);
     } catch (err) {
       console.error('Failed to update job status:', err);
-      alert('Failed to update job status');
+      notify('Failed to update job status');
     }
   };
 
@@ -65,16 +66,16 @@ export default function AdminJobs() {
     try {
       await api.delete(`/admin/jobs/${jobId}`);
       setJobs(jobs.filter(job => job._id !== jobId));
-      alert('Job deleted successfully');
+      notify('Job deleted successfully');
     } catch (err) {
       console.error('Failed to delete job:', err);
-      alert('Failed to delete job');
+      notify('Failed to delete job');
     }
   };
 
   const bulkAction = async (action: 'approve' | 'reject' | 'delete') => {
     if (selectedJobs.length === 0) {
-      alert('Please select jobs first');
+      notify('Please select jobs first');
       return;
     }
 
@@ -105,10 +106,10 @@ export default function AdminJobs() {
       }
 
       setSelectedJobs([]);
-      alert(`Successfully ${action}d ${selectedJobs.length} jobs`);
+      notify(`Successfully ${action}d ${selectedJobs.length} jobs`);
     } catch (err) {
       console.error(`Failed to ${action} jobs:`, err);
-      alert(`Failed to ${action} jobs`);
+      notify(`Failed to ${action} jobs`);
     }
   };
 

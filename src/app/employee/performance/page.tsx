@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
@@ -126,7 +127,7 @@ export default function EmployeePerformancePage() {
     } catch (error: unknown) {
       console.error('Error updating key result:', error);
       const axiosError = error as { response?: { data?: { error?: string } } };
-      alert(axiosError.response?.data?.error || 'Failed to update progress');
+      notify(axiosError.response?.data?.error || 'Failed to update progress');
     } finally {
       setUpdatingProgress(null);
     }
@@ -147,7 +148,7 @@ export default function EmployeePerformancePage() {
     } catch (error: unknown) {
       console.error('Error generating AI insights:', error);
       const axiosError = error as { response?: { data?: { error?: string } } };
-      alert(axiosError.response?.data?.error || 'Failed to generate AI insights');
+      notify(axiosError.response?.data?.error || 'Failed to generate AI insights');
     } finally {
       setGeneratingInsightsId(null);
     }
@@ -161,7 +162,7 @@ export default function EmployeePerformancePage() {
       await fetchPerformanceData();
     } catch (error) {
       console.error('Error acknowledging review:', error);
-      alert('Failed to acknowledge review');
+      notify('Failed to acknowledge review');
     } finally {
       setAcknowledgingId(null);
     }

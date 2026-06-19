@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/lib/AuthContext';
@@ -96,7 +97,7 @@ export default function CandidateProfilePage() {
       const report = res.data.report as InterviewReport;
       downloadInterviewReport(report, res.data.candidateName, res.data.companyName);
     } catch {
-      alert('Could not download report. Please try again.');
+      notify('Could not download report. Please try again.');
     } finally {
       setDownloadingId(null);
     }
@@ -108,10 +109,10 @@ export default function CandidateProfilePage() {
       const res = await api.put('/candidate/profile', profile);
       setProfile((prev) => ({ ...prev, ...(res.data as Partial<CandidateProfile>) })); // Update with response that includes new completeness
       setEditing(false);
-      alert('Profile updated successfully!');
+      notify('Profile updated successfully!');
     } catch (err) {
       console.error('Error saving profile:', err);
-      alert('Error saving profile');
+      notify('Error saving profile');
     } finally {
       setSaving(false);
     }

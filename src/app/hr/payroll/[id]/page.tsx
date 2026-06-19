@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -70,7 +71,7 @@ export default function HRPayrollDetailPage() {
       setNotes(response.data.notes || '');
     } catch (error) {
       console.error('Error fetching payroll details:', error);
-      alert('Error loading payroll details');
+      notify('Error loading payroll details');
     } finally {
       setLoading(false);
     }
@@ -82,10 +83,10 @@ export default function HRPayrollDetailPage() {
     try {
       await api.put(`/hr/payroll/${payroll._id}/notes`, { notes });
       setPayroll(prev => prev ? { ...prev, notes } : prev);
-      alert('Notes saved successfully');
+      notify('Notes saved successfully');
     } catch (error) {
       console.error('Error saving notes:', error);
-      alert('Failed to save notes');
+      notify('Failed to save notes');
     } finally {
       setSavingNotes(false);
     }
@@ -96,10 +97,10 @@ export default function HRPayrollDetailPage() {
     try {
       await api.put(`/hr/payroll/${payroll._id}/approve`, { action: 'approve' });
       fetchPayrollDetails();
-      alert('Payroll approved successfully');
+      notify('Payroll approved successfully');
     } catch (error) {
       console.error('Error approving payroll:', error);
-      alert('Failed to approve payroll');
+      notify('Failed to approve payroll');
     }
   };
 
@@ -108,10 +109,10 @@ export default function HRPayrollDetailPage() {
     try {
       await api.put(`/hr/payroll/${payroll._id}/mark-paid`, {});
       fetchPayrollDetails();
-      alert('Payroll marked as paid successfully');
+      notify('Payroll marked as paid successfully');
     } catch (error) {
       console.error('Error marking payroll as paid:', error);
-      alert('Failed to mark payroll as paid');
+      notify('Failed to mark payroll as paid');
     }
   };
 

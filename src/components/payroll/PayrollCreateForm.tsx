@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -87,7 +88,7 @@ export default function CreatePayroll() {
       router.push('/hr/payroll');
     } catch (error) {
       console.error('Error creating payroll:', error);
-      alert('Failed to create payroll');
+      notify('Failed to create payroll');
     } finally {
       setLoading(false);
     }

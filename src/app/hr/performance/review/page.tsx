@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
@@ -74,7 +75,7 @@ function PerformanceReviewContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEmployee) {
-      alert('Please select an employee');
+      notify('Please select an employee');
       return;
     }
 
@@ -103,7 +104,7 @@ ${formData.managerComments}`,
         reviewPeriod: formData.reviewPeriod
       });
       
-      alert('Performance review submitted successfully!');
+      notify('Performance review submitted successfully!');
       router.push('/hr/performance');
     } catch (error: unknown) {
       console.error('Error submitting review:', error);
@@ -112,7 +113,7 @@ ${formData.managerComments}`,
         axiosError.response?.data?.error ||
         axiosError.response?.data?.message ||
         'Error submitting performance review';
-      alert(message);
+      notify(message);
     } finally {
       setLoading(false);
     }

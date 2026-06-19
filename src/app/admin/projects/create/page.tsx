@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -64,7 +65,7 @@ export default function CreateProject() {
       router.push('/admin/projects');
     } catch (error) {
       console.error('Error creating project:', error);
-      alert('Failed to create project');
+      notify('Failed to create project');
     } finally {
       setLoading(false);
     }

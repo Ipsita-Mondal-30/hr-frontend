@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -88,11 +89,11 @@ export default function GiveFeedbackPage() {
         isAnonymous: formData.isAnonymous,
       });
 
-      alert('Feedback submitted successfully!');
+      notify('Feedback submitted successfully!');
       router.push('/hr/performance');
     } catch (error: unknown) {
       console.error('Error submitting feedback:', error);
-      alert('Failed to submit feedback. Please try again.');
+      notify('Failed to submit feedback. Please try again.');
     } finally {
       setSubmitting(false);
     }

@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -86,7 +87,7 @@ export default function EmployeeHelpPage() {
       await fetchTickets();
     } catch (error) {
       console.error('Error submitting ticket:', error);
-      alert('Failed to submit support request');
+      notify('Failed to submit support request');
     } finally {
       setSubmitting(false);
     }

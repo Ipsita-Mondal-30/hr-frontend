@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
@@ -67,7 +68,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
       const response = await api.post('/candidate/apply-with-resume', submitData);
 
       console.log('✅ Application submitted successfully:', response.data);
-      alert('Application submitted successfully! You will receive a confirmation email shortly.');
+      notify('Application submitted successfully! You will receive a confirmation email shortly.');
 
       // Trigger refresh of parent component data
       onSuccess();
@@ -84,7 +85,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
         : err instanceof Error
         ? err.message
         : 'Error submitting application';
-      alert(errorMessage);
+      notify(errorMessage);
     } finally {
       setSubmitting(false);
     }

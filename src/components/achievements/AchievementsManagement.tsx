@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 
@@ -102,7 +103,7 @@ export default function AchievementsManagement({
       fetchData();
     } catch (error) {
       console.error('Error creating achievement:', error);
-      alert('Failed to create achievement');
+      notify('Failed to create achievement');
     }
   };
 
@@ -115,7 +116,7 @@ export default function AchievementsManagement({
       fetchData();
     } catch (error) {
       console.error('Error deleting achievement:', error);
-      alert('Failed to delete achievement');
+      notify('Failed to delete achievement');
     } finally {
       setDeletingId(null);
     }

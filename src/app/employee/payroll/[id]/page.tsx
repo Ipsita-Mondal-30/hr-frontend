@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -68,7 +69,7 @@ export default function EmployeePayrollDetailPage() {
       setPayroll(response.data as PayrollRecord);
     } catch (error) {
       console.error('Error fetching payroll details:', error);
-      alert('Error loading payroll details');
+      notify('Error loading payroll details');
     } finally {
       setLoading(false);
     }
@@ -123,7 +124,7 @@ export default function EmployeePayrollDetailPage() {
       await downloadPayslip(params.id, { stamped });
     } catch (error) {
       console.error('Error downloading payslip:', error);
-      alert('Failed to download payslip');
+      notify('Failed to download payslip');
     } finally {
       setDownloading(null);
     }

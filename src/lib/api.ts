@@ -1,5 +1,5 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
-import { getAuthToken, setAuthToken } from './cookies';
+import { clearAllAuthTokens, getAuthToken, setAuthToken } from './cookies';
 
 /** Set on a request to avoid redirecting to home on 401 (e.g. interview prep bootstrap). */
 export type ApiRequestConfig = InternalAxiosRequestConfig & {
@@ -64,9 +64,7 @@ api.interceptors.response.use(
       }
 
       console.error('❌ 401 Unauthorized - clearing auth and redirecting');
-      document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('token');
+      clearAllAuthTokens();
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
         window.location.href = '/';
       }

@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -24,6 +25,14 @@ interface FeedbackRequestItem {
   createdAt: string;
 }
 
+function normalizeRequests(data: unknown): FeedbackRequestItem[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object' && Array.isArray((data as { requests?: FeedbackRequestItem[] }).requests)) {
+    return (data as { requests: FeedbackRequestItem[] }).requests;
+  }
+  return [];
+}
+
 export default function RequestFeedbackPage() {
   const router = useRouter();
   const [requestType, setRequestType] = useState('Performance Review');
@@ -32,14 +41,25 @@ export default function RequestFeedbackPage() {
   const [submitted, setSubmitted] = useState(false);
   const [requests, setRequests] = useState<FeedbackRequestItem[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchRequests = useCallback(async () => {
     try {
       setLoadingRequests(true);
+      setFetchError(null);
       const res = await api.get('/employees/me/feedback-requests');
-      setRequests(res.data || []);
-    } catch (error) {
+      setRequests(normalizeRequests(res.data));
+    } catch (error: unknown) {
       console.error('Error fetching feedback requests:', error);
+      const status =
+        error && typeof error === 'object' && 'response' in error
+          ? (error as { response?: { status?: number } }).response?.status
+          : undefined;
+      if (status === 404) {
+        setFetchError('Could not load your past requests. The server may need an update — try submitting again after redeploying the backend.');
+      } else {
+        setFetchError('Could not load your feedback requests. Please refresh the page.');
+      }
     } finally {
       setLoadingRequests(false);
     }
@@ -54,16 +74,24 @@ export default function RequestFeedbackPage() {
     setLoading(true);
 
     try {
-      await api.post('/employees/me/request-feedback', {
+      const res = await api.post('/employees/me/request-feedback', {
         requestType,
         message: message.trim() || undefined,
       });
+
+      const created = res.data?.request as FeedbackRequestItem | undefined;
+      if (created?._id) {
+        setRequests((prev) => [created, ...prev.filter((r) => r._id !== created._id)]);
+      } else {
+        await fetchRequests();
+      }
+
       setSubmitted(true);
       setMessage('');
-      await fetchRequests();
+      notify('Feedback request submitted successfully');
     } catch (error) {
       console.error('Error submitting feedback request:', error);
-      alert('Failed to submit feedback request. Please try again.');
+      notify('Failed to submit feedback request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -177,6 +205,8 @@ export default function RequestFeedbackPage() {
         </h2>
         {loadingRequests ? (
           <div className="animate-pulse h-20 bg-gray-100 rounded" />
+        ) : fetchError ? (
+          <p className="text-amber-700 text-sm bg-amber-50 border border-amber-200 rounded-lg p-3">{fetchError}</p>
         ) : requests.length === 0 ? (
           <p className="text-gray-500 text-sm">No requests yet. Submit one above and HR will respond here.</p>
         ) : (

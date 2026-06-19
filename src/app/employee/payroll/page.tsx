@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
@@ -108,7 +109,7 @@ export default function EmployeePayrollPage() {
       await downloadPayslip(recordId, { stamped });
     } catch (error) {
       console.error('Error downloading payslip:', error);
-      alert('Failed to download payslip');
+      notify('Failed to download payslip');
     } finally {
       setDownloadingId(null);
     }

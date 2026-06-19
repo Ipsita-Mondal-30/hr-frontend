@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -178,7 +179,7 @@ export default function EditProjectPage() {
   const addTeamMember = () => {
     if (!addEmployeeId) return;
     if (teamMembers.some((m) => m.employeeId === addEmployeeId)) {
-      alert('Employee is already on the team');
+      notify('Employee is already on the team');
       return;
     }
     const emp = employees.find((e) => e._id === addEmployeeId);
@@ -215,19 +216,19 @@ export default function EditProjectPage() {
     e.preventDefault();
 
     if (!form.name.trim()) {
-      alert('Project name is required');
+      notify('Project name is required');
       return;
     }
     if (!form.description.trim()) {
-      alert('Description is required');
+      notify('Description is required');
       return;
     }
     if (!form.startDate) {
-      alert('Start date is required');
+      notify('Start date is required');
       return;
     }
     if (!form.projectManager) {
-      alert('Project manager is required');
+      notify('Project manager is required');
       return;
     }
 
@@ -261,7 +262,7 @@ export default function EditProjectPage() {
       router.push('/admin/projects');
     } catch (err) {
       console.error('Failed to save project:', err);
-      alert('Failed to save project. Please try again.');
+      notify('Failed to save project. Please try again.');
     } finally {
       setSaving(false);
     }

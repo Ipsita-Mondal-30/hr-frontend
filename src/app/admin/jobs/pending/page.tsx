@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 
@@ -67,24 +68,24 @@ export default function PendingJobsPage() {
       setPendingJobs(prev => prev.filter(job => job._id !== jobId));
       setSelectedJob(null);
       
-      alert('Job approved successfully!');
+      notify('Job approved successfully!');
     } catch (err) {
       console.error('Failed to approve job:', err);
       if (err instanceof Error) {
         if (isAxiosLikeError(err)) {
-          alert('Failed to approve job: ' + (err.response?.data?.error || err.message));
+          notify('Failed to approve job: ' + (err.response?.data?.error || err.message));
         } else {
-          alert('Failed to approve job: ' + err.message);
+          notify('Failed to approve job: ' + err.message);
         }
       } else {
-        alert('Failed to approve job: ' + String(err));
+        notify('Failed to approve job: ' + String(err));
       }
     }
   };
 
   const rejectJob = async (jobId: string, reason: string) => {
     if (!reason.trim()) {
-      alert('Please provide a reason for rejection');
+      notify('Please provide a reason for rejection');
       return;
     }
 
@@ -102,17 +103,17 @@ export default function PendingJobsPage() {
       setSelectedJob(null);
       setRejectionReason('');
       
-      alert('Job rejected successfully!');
+      notify('Job rejected successfully!');
     } catch (err) {
       console.error('Failed to reject job:', err);
       if (err instanceof Error) {
         if (isAxiosLikeError(err)) {
-          alert('Failed to reject job: ' + (err.response?.data?.error || err.message));
+          notify('Failed to reject job: ' + (err.response?.data?.error || err.message));
         } else {
-          alert('Failed to reject job: ' + err.message);
+          notify('Failed to reject job: ' + err.message);
         }
       } else {
-        alert('Failed to reject job: ' + String(err));
+        notify('Failed to reject job: ' + String(err));
       }
     }
   };

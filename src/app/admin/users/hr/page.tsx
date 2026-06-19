@@ -1,4 +1,5 @@
 'use client';
+import { notify } from '@/lib/notify';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 
@@ -80,11 +81,11 @@ export default function ViewHRUsersPage() {
         setSelectedHR(null);
       }
       
-      alert(`${hrName} has been deleted successfully.`);
+      notify(`${hrName} has been deleted successfully.`);
       console.log(`✅ Successfully deleted HR user: ${hrName}`);
     } catch (error) {
       console.error('Error deleting HR user:', error);
-      alert('Failed to delete HR user. Please try again.');
+      notify('Failed to delete HR user. Please try again.');
     }
   };
 

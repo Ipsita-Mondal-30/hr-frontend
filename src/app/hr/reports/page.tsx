@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
 
@@ -84,7 +85,7 @@ export default function HRReportsPage() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Failed to export data:', err);
-      alert('Failed to export data');
+      notify('Failed to export data');
     }
   };
 

@@ -1,4 +1,5 @@
 'use client';
+import { notify } from '@/lib/notify';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 
@@ -82,11 +83,11 @@ export default function ViewCandidatesPage() {
         setSelectedCandidate(null);
       }
       
-      alert(`${candidateName} has been deleted successfully.`);
+      notify(`${candidateName} has been deleted successfully.`);
       console.log(`✅ Successfully deleted candidate: ${candidateName}`);
     } catch (error) {
       console.error('Error deleting candidate:', error);
-      alert('Failed to delete candidate. Please try again.');
+      notify('Failed to delete candidate. Please try again.');
     }
   };
 

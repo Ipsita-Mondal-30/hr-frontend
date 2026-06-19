@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useCallback, useEffect, useState } from 'react';
 import api from '@/lib/api';
 
@@ -80,7 +81,7 @@ export default function AdminHireApprovalsPage() {
   const approve = async () => {
     if (!selected) return;
     if (!selected.recording?.url) {
-      alert('No meeting recording on file. Cannot approve without reviewing the recording.');
+      notify('No meeting recording on file. Cannot approve without reviewing the recording.');
       return;
     }
     setProcessing(true);
@@ -91,7 +92,7 @@ export default function AdminHireApprovalsPage() {
         adminNotes,
       });
       setLastCredentials(res.data.credentials);
-      alert(res.data.message || 'Hire approved');
+      notify(res.data.message || 'Hire approved');
       setSelected(null);
       fetchItems();
     } catch (err: unknown) {
@@ -99,7 +100,7 @@ export default function AdminHireApprovalsPage() {
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
           : 'Approval failed';
-      alert(msg || 'Approval failed');
+      notify(msg || 'Approval failed');
     } finally {
       setProcessing(false);
     }
@@ -108,17 +109,17 @@ export default function AdminHireApprovalsPage() {
   const reject = async () => {
     if (!selected) return;
     if (!adminNotes.trim()) {
-      alert('Please add notes explaining the rejection');
+      notify('Please add notes explaining the rejection');
       return;
     }
     setProcessing(true);
     try {
       await api.post(`/admin/hire-approvals/${selected._id}/reject`, { adminNotes });
-      alert('Hire recommendation rejected');
+      notify('Hire recommendation rejected');
       setSelected(null);
       fetchItems();
     } catch {
-      alert('Rejection failed');
+      notify('Rejection failed');
     } finally {
       setProcessing(false);
     }

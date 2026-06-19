@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from './api';
-import { getAuthToken, removeAuthToken, setAuthToken } from './cookies';
+import { clearAllAuthTokens, getAuthToken, setAuthToken } from './cookies';
 // import User from '@/'; // Adjust the import path as necessary
 function isAxiosError(err: unknown): err is { response?: { status?: number }; message?: string } {
   return typeof err === 'object' && err !== null && 'response' in err;
@@ -47,26 +47,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
-      // Call backend logout endpoint
       await api.post('/auth/logout');
     } catch (error) {
       console.warn('Backend logout failed:', error);
     }
-    
-    // Clear frontend state and cookies
+
     setUser(null);
     setLoading(false);
-    removeAuthToken();
-    
-    // Clear any cached data but preserve some settings
-    if (typeof window !== 'undefined') {
-      // Clear specific auth-related items instead of everything
-      localStorage.removeItem('dashboardCache');
-      localStorage.removeItem('userCache');
-      sessionStorage.clear();
-    }
-    
-    // Redirect to home page (not login, to allow OAuth flow)
+    clearAllAuthTokens();
+
     window.location.href = '/';
   };
 
@@ -141,7 +130,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error('❌ Auth check failed:', isAxiosError(err) ? err.response?.status : undefined, err instanceof Error ? err.message : err);
       if (isAxiosError(err) && err.response?.status === 401) {
         console.log('🔄 Token invalid, clearing auth state');
-        removeAuthToken();
+        clearAllAuthTokens();
         setUser(null);
       }
     } finally {

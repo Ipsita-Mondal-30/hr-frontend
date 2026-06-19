@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -108,7 +109,7 @@ export default function ApplicationDetailPage() {
         setAnalysisHistory(analysisRes.data.history || []);
       } catch (err) {
         console.error('Failed to fetch application:', err);
-        alert('Failed to load application details');
+        notify('Failed to load application details');
         router.push('/hr/applications');
       } finally {
         setLoading(false);
@@ -128,10 +129,10 @@ export default function ApplicationDetailPage() {
     try {
       await api.put(`/applications/${application._id}/status`, { status: newStatus });
       setApplication((prev) => (prev ? { ...prev, status: newStatus } : null));
-      alert(`Status updated to ${newStatus}`);
+      notify(`Status updated to ${newStatus}`);
     } catch (err) {
       console.error('Status update failed:', err);
-      alert('Failed to update status');
+      notify('Failed to update status');
     }
   };
 
@@ -141,10 +142,10 @@ export default function ApplicationDetailPage() {
     try {
       await api.put(`/applications/${application._id}/notes`, { notes });
       setApplication((prev) => (prev ? { ...prev, hrNotes: notes } : prev));
-      alert('Notes saved successfully');
+      notify('Notes saved successfully');
     } catch (err) {
       console.error('Failed to save notes:', err);
-      alert('Failed to save notes');
+      notify('Failed to save notes');
     } finally {
       setSavingNotes(false);
     }
@@ -156,9 +157,9 @@ export default function ApplicationDetailPage() {
     try {
       await api.post(`/resume-analysis/application/${application._id}/analyze`);
       await fetchApplication(application._id);
-      alert('Resume analysis completed');
+      notify('Resume analysis completed');
     } catch {
-      alert('Failed to run resume analysis');
+      notify('Failed to run resume analysis');
     } finally {
       setAnalyzing(false);
     }
@@ -166,7 +167,7 @@ export default function ApplicationDetailPage() {
 
   const downloadResume = () => {
     if (!application?.resumeUrl) {
-      alert('No resume available');
+      notify('No resume available');
       return;
     }
     const link = document.createElement('a');

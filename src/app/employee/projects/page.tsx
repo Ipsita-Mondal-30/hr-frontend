@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
@@ -413,7 +414,7 @@ function MilestoneRespondCard({
 
   const submit = async () => {
     if (!note.trim()) {
-      alert('Add a brief update note for your PM');
+      notify('Add a brief update note for your PM');
       return;
     }
 
@@ -427,7 +428,7 @@ function MilestoneRespondCard({
     } catch (e: unknown) {
       console.error(e);
       const err = e as { response?: { data?: { error?: string } } };
-      alert(err.response?.data?.error || 'Failed to submit update');
+      notify(err.response?.data?.error || 'Failed to submit update');
     } finally {
       setSaving(false);
     }

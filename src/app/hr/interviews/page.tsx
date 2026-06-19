@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 
@@ -133,7 +134,7 @@ export default function InterviewsPage() {
       // Refresh both interviews and applications
       await Promise.all([fetchInterviews(), fetchApplications()]);
       setShowScheduleModal(false);
-      alert('Interview scheduled successfully!');
+      notify('Interview scheduled successfully!');
     } catch (err: unknown) {
       console.error('Failed to schedule interview:', err);
       const msg = isAxiosError(err)
@@ -141,7 +142,7 @@ export default function InterviewsPage() {
           (err.response?.data as { error?: string; message?: string } | undefined)?.message ||
           'Failed to schedule interview'
         : 'Failed to schedule interview';
-      alert('Failed to schedule interview: ' + msg);
+      notify('Failed to schedule interview: ' + msg);
     }
   };
 
@@ -152,10 +153,10 @@ export default function InterviewsPage() {
     try {
       await api.put(`/interviews/${interviewId}/status`, { status });
       setInterviews((prev) => prev.map((interview) => (interview._id === interviewId ? { ...interview, status } : interview)));
-      alert(`Interview status updated to ${status}`);
+      notify(`Interview status updated to ${status}`);
     } catch (err) {
       console.error('Failed to update interview status:', err);
-      alert('Failed to update interview status');
+      notify('Failed to update interview status');
     }
   };
 
@@ -166,12 +167,12 @@ export default function InterviewsPage() {
       if (data.recordingLink) formData.append('recordingLink', data.recordingLink);
       const response = await api.post(`/interviews/${interviewId}/recording`, formData);
       await fetchInterviews();
-      alert((response.data as { message?: string })?.message || 'Recording saved');
+      notify((response.data as { message?: string })?.message || 'Recording saved');
     } catch (err: unknown) {
       const msg = isAxiosError(err)
         ? (err.response?.data as { error?: string })?.error || 'Upload failed'
         : 'Upload failed';
-      alert(msg);
+      notify(msg);
     }
   };
 
@@ -186,7 +187,7 @@ export default function InterviewsPage() {
       await fetchInterviews();
       setShowScorecardModal(false);
       const msg = (response.data as { message?: string })?.message;
-      alert(msg || 'Scorecard submitted successfully!');
+      notify(msg || 'Scorecard submitted successfully!');
     } catch (err: unknown) {
       console.error('❌ Failed to submit scorecard:', err);
       const msg = isAxiosError(err)
@@ -194,7 +195,7 @@ export default function InterviewsPage() {
           (err.response?.data as { error?: string; message?: string } | undefined)?.message ||
           'Unknown error'
         : 'Unknown error';
-      alert(`Failed to submit scorecard: ${msg}`);
+      notify(`Failed to submit scorecard: ${msg}`);
     }
   };
 
@@ -624,7 +625,7 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: S
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.applicationId || !formData.scheduledAt) {
-      alert('Please select an application and date/time');
+      notify('Please select an application and date/time');
       return;
     }
     onSchedule(formData);

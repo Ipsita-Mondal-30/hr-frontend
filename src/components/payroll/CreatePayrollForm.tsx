@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/notify';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
@@ -129,7 +130,7 @@ export default function CreatePayrollForm({
       router.push(redirectPath);
     } catch (error) {
       console.error('Error creating payroll:', error);
-      alert(getErrorMessage(error));
+      notify(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
