@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import api from "@/lib/api";
+import { notify } from "@/lib/notify";
 import { isProjectCompleted } from "@/lib/projectUtils";
 import { 
   Users, 
@@ -13,6 +15,11 @@ import {
   FolderOpen,
   Calendar,
   Target,
+  ChevronDown,
+  FileText,
+  MessageSquare,
+  CalendarDays,
+  ClipboardList,
 } from "lucide-react";
 
 interface DashboardData {
@@ -84,11 +91,119 @@ function isAxiosError(e: unknown): e is { response?: { data?: unknown; status?: 
   return typeof e === "object" && e !== null && "response" in e;
 }
 
+const HR_QUICK_ACTIONS = [
+  { title: 'Post New Job', description: 'Create a job listing', href: '/hr/jobs', icon: Briefcase },
+  { title: 'Review Applications', description: 'Manage candidate applications', href: '/hr/applications', icon: ClipboardList },
+  { title: 'Schedule Interviews', description: 'Plan interview sessions', href: '/hr/interviews', icon: CalendarDays },
+  { title: 'Manage Employees', description: 'View employee profiles', href: '/hr/employees', icon: Users },
+  { title: 'Give Feedback', description: 'Submit employee feedback', href: '/hr/feedback/give', icon: MessageSquare },
+  { title: 'View Reports', description: 'Analytics and exports', href: '/hr/reports', icon: BarChart3 },
+];
+
+function hasExportableData(data: DashboardData, employeeData: EmployeeData | null): boolean {
+  if (data.totalJobs > 0 || data.totalApplications > 0 || data.openJobs > 0 || data.closedJobs > 0) {
+    return true;
+  }
+  if ((data.recentApplications?.length ?? 0) > 0) return true;
+  if (!employeeData) return false;
+  if (employeeData.totalEmployees > 0 || employeeData.activeProjects > 0 || employeeData.completedProjects > 0) {
+    return true;
+  }
+  if (employeeData.topPerformers.length > 0 || employeeData.recentFeedback.length > 0) return true;
+  return false;
+}
+
+function buildDashboardCsv(data: DashboardData, employeeData: EmployeeData | null): string {
+  const lines: string[] = [];
+  const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+
+  lines.push('HR Dashboard Report');
+  lines.push(`Generated,${esc(new Date().toLocaleString())}`);
+  lines.push('');
+  lines.push('Recruitment Overview');
+  lines.push('Metric,Value');
+  lines.push(`Total Jobs,${data.totalJobs}`);
+  lines.push(`Open Jobs,${data.openJobs}`);
+  lines.push(`Closed Jobs,${data.closedJobs}`);
+  lines.push(`Total Applications,${data.totalApplications}`);
+  lines.push(`Average Match Score,${data.avgMatchScore?.toFixed(1) ?? 0}%`);
+
+  if (employeeData) {
+    lines.push('');
+    lines.push('Employee Overview');
+    lines.push('Metric,Value');
+    lines.push(`Total Employees,${employeeData.totalEmployees}`);
+    lines.push(`Active Projects,${employeeData.activeProjects}`);
+    lines.push(`Completed Projects,${employeeData.completedProjects}`);
+    lines.push(`Average Performance,${employeeData.averagePerformance.toFixed(1)}%`);
+  }
+
+  if (data.recentApplications?.length) {
+    lines.push('');
+    lines.push('Recent Applications');
+    lines.push('Name,Email,Job,Match Score');
+    for (const app of data.recentApplications) {
+      lines.push([esc(app.name), esc(app.email), esc(app.job?.title || ''), app.matchScore ?? 'N/A'].join(','));
+    }
+  }
+
+  if (employeeData?.topPerformers.length) {
+    lines.push('');
+    lines.push('Top Performers');
+    lines.push('Name,Position,Performance Score,Projects,Feedback Count,Avg Rating');
+    for (const p of employeeData.topPerformers) {
+      lines.push([
+        esc(p.employee?.user?.name || 'Unknown'),
+        esc(p.employee?.position || ''),
+        p.employee.performanceScore,
+        p.metrics?.projectsInvolved ?? 0,
+        p.metrics?.feedbackCount ?? 0,
+        p.metrics?.averageRating?.toFixed(1) ?? 0,
+      ].join(','));
+    }
+  }
+
+  if (employeeData?.recentFeedback.length) {
+    lines.push('');
+    lines.push('Recent Feedback');
+    lines.push('Employee,Position,Reviewer,Rating,Type,Date');
+    for (const f of employeeData.recentFeedback) {
+      lines.push([
+        esc(f.employee?.user?.name || 'Unknown'),
+        esc(f.employee?.position || ''),
+        esc(f.reviewer?.name || ''),
+        f.overallRating ?? 0,
+        esc(f.type || ''),
+        esc(new Date(f.createdAt).toLocaleDateString()),
+      ].join(','));
+    }
+  }
+
+  return lines.join('\n');
+}
+
+function downloadCsv(content: string, filename: string) {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+}
+
 export default function HRDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
+  const quickActionsRef = useRef<HTMLDivElement>(null);
+  const quickActionsSectionRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -171,6 +286,48 @@ export default function HRDashboardPage() {
     fetchDashboardData();
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (quickActionsRef.current && !quickActionsRef.current.contains(e.target as Node)) {
+        setQuickActionsOpen(false);
+      }
+    };
+    if (quickActionsOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [quickActionsOpen]);
+
+  const handleExportReport = async () => {
+    if (!data) return;
+
+    if (!hasExportableData(data, employeeData)) {
+      notify('Nothing to export');
+      return;
+    }
+
+    setExporting(true);
+    try {
+      const csv = buildDashboardCsv(data, employeeData);
+      downloadCsv(csv, `hr-dashboard-report-${new Date().toISOString().slice(0, 10)}.csv`);
+      notify('Report exported successfully');
+    } catch (err) {
+      console.error('Export failed:', err);
+      notify('Failed to export report');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleQuickActionsToggle = () => {
+    setQuickActionsOpen((open) => !open);
+  };
+
+  const scrollToQuickActions = () => {
+    setQuickActionsOpen(false);
+    quickActionsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -244,14 +401,62 @@ export default function HRDashboardPage() {
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 shrink-0">
-            <button className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium">
+            <button
+              type="button"
+              onClick={handleExportReport}
+              disabled={exporting}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium disabled:opacity-60"
+            >
               <BarChart3 className="w-4 h-4" />
-              <span>Export Report</span>
+              <span>{exporting ? 'Exporting...' : 'Export Report'}</span>
             </button>
-            <button className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
-              <Target className="w-4 h-4" />
-              <span>Quick Actions</span>
-            </button>
+            <div className="relative" ref={quickActionsRef}>
+              <button
+                type="button"
+                onClick={handleQuickActionsToggle}
+                className="flex w-full items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              >
+                <Target className="w-4 h-4" />
+                <span>Quick Actions</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${quickActionsOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {quickActionsOpen && (
+                <div className="absolute right-0 z-20 mt-2 w-72 rounded-xl border border-slate-200 bg-white py-2 shadow-lg">
+                  {HR_QUICK_ACTIONS.map((action) => {
+                    const Icon = action.icon;
+                    return (
+                      <button
+                        key={action.href}
+                        type="button"
+                        onClick={() => {
+                          setQuickActionsOpen(false);
+                          router.push(action.href);
+                        }}
+                        className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-slate-50 transition-colors"
+                      >
+                        <div className="mt-0.5 rounded-lg bg-blue-50 p-2">
+                          <Icon className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">{action.title}</p>
+                          <p className="text-xs text-slate-500">{action.description}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                  <div className="border-t border-slate-100 mt-1 pt-1">
+                    <button
+                      type="button"
+                      onClick={scrollToQuickActions}
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-blue-600 hover:bg-blue-50"
+                    >
+                      <FileText className="h-4 w-4" />
+                      View all quick actions below
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -422,12 +627,27 @@ export default function HRDashboardPage() {
       )}
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div ref={quickActionsSectionRef} className="bg-white rounded-lg shadow p-6">
         <h2 className="text-lg font-semibold mb-4">⚡ Quick Actions</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <QuickActionCard title="Manage Employees" description="View and manage employee profiles" icon="👥" href="/hr/employees" />
-          <QuickActionCard title="Give Feedback" description="Provide employee feedback" icon="💬" href="/hr/feedback/give" />
-          <QuickActionCard title="Performance Reports" description="View performance analytics" icon="📈" href="/hr/reports" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {HR_QUICK_ACTIONS.map((action) => {
+            const Icon = action.icon;
+            return (
+              <Link
+                key={action.href}
+                href={action.href}
+                className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all group"
+              >
+                <div className="rounded-lg bg-blue-50 p-2 group-hover:bg-blue-100 transition-colors">
+                  <Icon className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-0.5">{action.title}</h3>
+                  <p className="text-xs text-gray-600">{action.description}</p>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -497,17 +717,5 @@ function StatCard({
         </div>
       </div>
     </div>
-  );
-}
-
-function QuickActionCard({ title, description, icon, href }: { title: string; description: string; icon: string; href: string }) {
-  return (
-    <Link href={href} className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all group">
-      <div className="text-center">
-        <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">{icon}</div>
-        <h3 className="font-medium text-gray-900 mb-1">{title}</h3>
-        <p className="text-xs text-gray-600">{description}</p>
-      </div>
-    </Link>
   );
 }
