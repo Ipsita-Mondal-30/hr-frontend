@@ -92,51 +92,27 @@ export default function HRLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.push('/');
-        return;
-      }
+    if (loading) return;
 
-      if (user.role !== 'hr' && user.role !== 'admin') {
-        alert('Access Denied: HR credentials required');
-        router.push('/');
-        return;
-      }
-
-      setIsAuthorized(true);
+    if (!user) {
+      router.replace('/login');
+      return;
     }
+
+    if (user.role !== 'hr' && user.role !== 'admin') {
+      router.replace('/');
+      return;
+    }
+
+    setIsAuthorized(true);
   }, [user, loading, router]);
 
-  if (loading) {
+  if (loading || !isAuthorized) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4" />
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthorized) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-red-50 p-4">
-        <div className="text-center p-6 sm:p-8 bg-white rounded-lg shadow-md max-w-md w-full">
-          <div className="text-red-500 mb-4 flex justify-center">
-            <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-red-600 mb-2">Access Denied</h1>
-          <p className="text-gray-600 mb-4">HR credentials required to access this area</p>
-          <button
-            type="button"
-            onClick={() => router.push('/')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 w-full sm:w-auto"
-          >
-            Go to Home
-          </button>
+          <p>{loading ? 'Loading...' : 'Redirecting...'}</p>
         </div>
       </div>
     );

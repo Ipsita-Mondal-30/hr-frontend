@@ -69,7 +69,7 @@ export default function AuthCallbackPage() {
               window.location.href = `/role-select?token=${token}`;
           }
         }
-      }, 1000); // Reduced delay since we're using window.location.href
+      }, 100);
 
     } catch (err) {
       console.error('Token decode error:', err);

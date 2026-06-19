@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from './api';
-import { getAuthToken, removeAuthToken } from './cookies';
+import { getAuthToken, removeAuthToken, setAuthToken } from './cookies';
 // import User from '@/'; // Adjust the import path as necessary
 function isAxiosError(err: unknown): err is { response?: { status?: number }; message?: string } {
   return typeof err === 'object' && err !== null && 'response' in err;
@@ -75,6 +75,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const fetchUser = async () => {
+    // Capture OAuth token from URL (cross-domain: backend cookie is on Render, not Vercel)
+    if (typeof window !== 'undefined') {
+      const urlToken = new URLSearchParams(window.location.search).get('token');
+      if (urlToken) {
+        console.log('🔑 OAuth token found in URL, saving to cookies');
+        setAuthToken(urlToken);
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+
     const token = getAuthToken();
     console.log('🔍 AuthContext fetchUser - token:', token ? 'Present (' + token.substring(0, 20) + '...)' : 'Missing');
 

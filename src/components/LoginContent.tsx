@@ -105,7 +105,7 @@ export default function LoginContent() {
           {/* Google OAuth Login */}
           <div className="space-y-4">
             <a
-              href={`${API_BASE_URL}/api/auth/google`}
+              href={`${API_BASE_URL}/api/auth/google?frontend=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : 'https://hr-frontend-54b2.vercel.app')}`}
               className="w-full inline-flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-base font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200"
             >
               <svg className="w-6 h-6 mr-3" viewBox="0 0 24 24">
