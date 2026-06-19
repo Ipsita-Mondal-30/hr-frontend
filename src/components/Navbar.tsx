@@ -3,6 +3,7 @@
 import { useAuth } from '@/lib/AuthContext';
 import Link from 'next/link';
 import { useState } from 'react';
+import { getDashboardPath } from '@/lib/dashboardRoutes';
 import {
   Navbar as ResizableNavbar,
   NavBody,
@@ -19,17 +20,7 @@ export default function Navbar() {
 
   const getDashboardLink = () => {
     if (!user) return '/';
-    
-    switch (user.role) {
-      case 'admin':
-        return '/admin/dashboard';
-      case 'hr':
-        return '/hr/dashboard';
-      case 'candidate':
-        return '/candidate/dashboard';
-      default:
-        return '/';
-    }
+    return getDashboardPath(user.role) || '/role-select';
   };
 
   const getRoleDisplayName = () => {
@@ -42,6 +33,8 @@ export default function Navbar() {
         return 'HR';
       case 'candidate':
         return 'Candidate';
+      case 'employee':
+        return 'Employee';
       default:
         return user.role;
     }
@@ -92,6 +85,15 @@ export default function Navbar() {
         { name: 'Manage Jobs', link: '/admin/jobs' },
         { name: 'Users', link: '/admin/users' },
         { name: 'Pending Approvals', link: '/admin/jobs/pending' }
+      ];
+    }
+
+    if (user.role === 'employee') {
+      return [
+        ...baseItems,
+        { name: 'My Projects', link: '/employee/projects' },
+        { name: 'Performance', link: '/employee/performance' },
+        { name: 'Payroll', link: '/employee/payroll' },
       ];
     }
 

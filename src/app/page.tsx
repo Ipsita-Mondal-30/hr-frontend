@@ -2,6 +2,10 @@
 import { useAuth } from '@/lib/AuthContext';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { getAuthToken } from '@/lib/cookies';
+import { getDashboardPath, getRoleDescription } from '@/lib/dashboardRoutes';
 import { RoleCards3D } from '../components/RoleCards3D';
 import { HeroSection } from '../components/HeroSection';
 import { AboutSection } from '../components/AboutSection';
@@ -23,7 +27,7 @@ import {
   User 
 } from 'lucide-react';
 
-type UserRole = 'admin' | 'hr' | 'candidate' | 'user' | string;
+type UserRole = 'admin' | 'hr' | 'candidate' | 'employee' | string;
 
 interface DashboardUser {
   name: string;
@@ -61,31 +65,15 @@ export default function HomePage() {
 }
 
 function UserDashboard({ user }: { user: DashboardUser }) {
-  const getDashboardLink = () => {
-    switch (user.role) {
-      case 'admin':
-        return '/admin/dashboard';
-      case 'hr':
-        return '/hr/dashboard';
-      case 'candidate':
-        return '/candidate/dashboard';
-      default:
-        return '/';
-    }
-  };
+  const router = useRouter();
+  const dashboardPath = getDashboardPath(user.role);
+  const needsRoleSelection = !dashboardPath;
 
-  const getRoleDescription = () => {
-    switch (user.role) {
-      case 'admin':
-        return 'Manage the entire HR system, approve jobs, and oversee all operations.';
-      case 'hr':
-        return 'Post jobs, review applications, and manage the hiring process.';
-      case 'candidate':
-        return 'Browse jobs, submit applications, and track your progress.';
-      default:
-        return 'Welcome to the HR system.';
+  useEffect(() => {
+    if (dashboardPath) {
+      router.replace(dashboardPath);
     }
-  };
+  }, [dashboardPath, router]);
 
   const getQuickActions = () => {
     switch (user.role) {
@@ -110,10 +98,30 @@ function UserDashboard({ user }: { user: DashboardUser }) {
           { title: 'Saved Jobs', href: '/candidate/saved', icon: 'bookmark' },
           { title: 'Update Profile', href: '/candidate/profile', icon: 'user' },
         ];
+      case 'employee':
+        return [
+          { title: 'My Projects', href: '/employee/projects', icon: 'briefcase' },
+          { title: 'Performance', href: '/employee/performance', icon: 'bar-chart' },
+          { title: 'Payroll', href: '/employee/payroll', icon: 'file-text' },
+          { title: 'My Profile', href: '/employee/profile', icon: 'user' },
+        ];
       default:
         return [];
     }
   };
+
+  const roleSelectHref = (() => {
+    const token = getAuthToken();
+    return token ? `/role-select?token=${encodeURIComponent(token)}` : '/role-select';
+  })();
+
+  if (dashboardPath) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -127,15 +135,15 @@ function UserDashboard({ user }: { user: DashboardUser }) {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user.name}!</h1>
-            <p className="text-gray-600">{getRoleDescription()}</p>
+            <p className="text-gray-600">{getRoleDescription(user.role)}</p>
           </div>
         </div>
 
         <Link
-          href={getDashboardLink()}
+          href={roleSelectHref}
           className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
         >
-          Go to Dashboard →
+          {needsRoleSelection ? 'Select Your Role →' : 'Go to Dashboard →'}
         </Link>
       </div>
 

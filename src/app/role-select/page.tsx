@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
-import { setAuthToken } from '@/lib/cookies';
+import { setAuthToken, getAuthToken } from '@/lib/cookies';
 import { useAuth } from '@/lib/AuthContext';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
@@ -36,21 +36,23 @@ export default function RoleSelectPage() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const jwtFromQuery = urlParams.get('token');
+    const jwtFromCookie = getAuthToken();
+    const jwt = jwtFromQuery || jwtFromCookie;
 
-    if (!jwtFromQuery) {
-      console.error('No token in role-select URL');
-      setTimeout(() => router.push('/'), 2000);
+    if (!jwt) {
+      console.error('No token available for role selection');
+      setTimeout(() => router.push('/login'), 2000);
       return;
     }
 
     try {
-      const decoded = jwtDecode<DecodedJwt>(jwtFromQuery);
+      const decoded = jwtDecode<DecodedJwt>(jwt);
       setUserInfo(decoded);
-      setToken(jwtFromQuery);
-      setAuthToken(jwtFromQuery);
+      setToken(jwt);
+      setAuthToken(jwt);
     } catch (err) {
       console.error('Error decoding token:', err);
-      setTimeout(() => router.push('/'), 2000);
+      setTimeout(() => router.push('/login'), 2000);
     }
   }, [router]);
 
