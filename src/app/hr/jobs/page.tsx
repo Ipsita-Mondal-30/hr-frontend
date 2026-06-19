@@ -2,8 +2,10 @@
 
 import { notify } from '@/lib/notify';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Job } from '@/types';
 import api from '@/lib/api';
+import { useAuth } from '@/lib/AuthContext';
 import { getRoleDepartmentId } from '@/lib/roles';
 
 interface JobForm {
@@ -60,6 +62,9 @@ type JobPayload = Omit<
 };
 
 export default function ManageJobs() {
+  const { user } = useAuth();
+  const [isVerified, setIsVerified] = useState(Boolean(user?.isVerified));
+  const canPostJobs = user?.role === 'admin' || isVerified;
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [formVisible, setFormVisible] = useState<boolean>(false);
@@ -88,7 +93,12 @@ export default function ManageJobs() {
     fetchJobs();
     fetchDepartments();
     fetchRoles();
-  }, []);
+    if (user?.role === 'hr') {
+      api.get<{ isVerified?: boolean }>('/hr/profile').then((res) => {
+        setIsVerified(Boolean(res.data.isVerified));
+      }).catch(() => {});
+    }
+  }, [user?.role]);
 
   async function fetchJobs() {
     setLoading(true);
@@ -185,7 +195,11 @@ export default function ManageJobs() {
     } catch (error: unknown) {
       if (isApiError(error)) {
         const message = error.response?.data?.message ?? error.response?.data?.error ?? 'Unknown error';
-        notify(`Error saving job: ${message}`);
+        if (message.includes('verified') || (error.response?.data as { code?: string })?.code === 'HR_NOT_VERIFIED') {
+          notify('Your account must be verified by an admin before you can post jobs.');
+        } else {
+          notify(`Error saving job: ${message}`);
+        }
         console.error('API error response:', error.response);
       } else if (error instanceof Error) {
         notify(`Error saving job: ${error.message}`);
@@ -220,11 +234,30 @@ export default function ManageJobs() {
 
   return (
     <div className="p-6">
+      {!canPostJobs && (
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <h2 className="font-semibold text-amber-900">Job posting locked</h2>
+          <p className="mt-1 text-sm text-amber-800">
+            Complete your{' '}
+            <Link href="/hr/profile" className="font-medium underline">
+              HR profile
+            </Link>{' '}
+            (phone and position), then wait for an admin to verify your account and add company details.
+            You can view existing jobs below, but cannot create new ones until approved.
+          </p>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-semibold">Manage Jobs</h1>
         <button
-          className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm"
+          className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!canPostJobs}
           onClick={() => {
+            if (!canPostJobs) {
+              notify('Complete your profile and get admin approval before posting jobs.');
+              return;
+            }
             if (formVisible) resetForm();
             else setFormVisible(true);
           }}

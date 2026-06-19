@@ -8,8 +8,8 @@ interface PendingHR {
   _id: string;
   name: string;
   email: string;
-  company: string;
-  position: string;
+  company?: string;
+  position?: string;
   phone?: string;
   website?: string;
   linkedIn?: string;
@@ -20,15 +20,52 @@ interface PendingHR {
   notes?: string;
 }
 
+const INDUSTRY_OPTIONS = [
+  'Technology',
+  'Healthcare',
+  'Finance',
+  'Education',
+  'Retail',
+  'Manufacturing',
+  'Consulting',
+  'Other',
+];
+
+const COMPANY_SIZE_OPTIONS = [
+  '1-10 employees',
+  '11-50 employees',
+  '51-200 employees',
+  '201-500 employees',
+  '501-1000 employees',
+  '1000+ employees',
+];
+
 export default function HRVerification() {
   const [pendingHRs, setPendingHRs] = useState<PendingHR[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedHR, setSelectedHR] = useState<PendingHR | null>(null);
   const [verificationNotes, setVerificationNotes] = useState('');
+  const [companyForm, setCompanyForm] = useState({
+    company: '',
+    industry: '',
+    companySize: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchPendingHRs();
   }, []);
+
+  useEffect(() => {
+    if (selectedHR) {
+      setCompanyForm({
+        company: selectedHR.company || '',
+        industry: selectedHR.industry || '',
+        companySize: selectedHR.companySize || '',
+      });
+      setVerificationNotes('');
+    }
+  }, [selectedHR]);
 
   const fetchPendingHRs = async () => {
     try {
@@ -42,30 +79,43 @@ export default function HRVerification() {
   };
 
   const verifyHR = async (hrId: string, approved: boolean) => {
+    if (approved) {
+      if (!companyForm.company.trim() || !companyForm.industry.trim() || !companyForm.companySize.trim()) {
+        notify('Please fill in Company, Industry, and Company Size before approving');
+        return;
+      }
+    }
+
+    setSubmitting(true);
     try {
-      console.log(`🔄 ${approved ? 'Approving' : 'Rejecting'} HR:`, hrId);
-      
       const response = await api.put(`/admin/users/${hrId}/verify-hr`, {
         action: approved ? 'approve' : 'reject',
-        notes: verificationNotes
+        notes: verificationNotes,
+        ...(approved ? companyForm : {}),
       });
-      
+
       console.log('✅ HR verification response:', response.data);
-      
-      // Remove from pending list immediately
-      setPendingHRs(prev => prev.filter(hr => hr._id !== hrId));
+
+      setPendingHRs((prev) => prev.filter((hr) => hr._id !== hrId));
       setSelectedHR(null);
       setVerificationNotes('');
-      
+      setCompanyForm({ company: '', industry: '', companySize: '' });
+
       notify(`HR ${approved ? 'approved' : 'rejected'} successfully`);
-      
-      // Also refresh the list to ensure consistency
       setTimeout(fetchPendingHRs, 1000);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to verify HR:', err);
-      notify('Failed to process verification');
-      // Refresh on error to ensure consistency
+      const message =
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === 'string'
+          ? (err as { response: { data: { error: string } } }).response.data.error
+          : 'Failed to process verification';
+      notify(message);
       fetchPendingHRs();
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -78,6 +128,8 @@ export default function HRVerification() {
       notify('Failed to send verification email');
     }
   };
+
+  const hrProfileComplete = selectedHR?.phone?.trim() && selectedHR?.position?.trim();
 
   if (loading) {
     return (
@@ -92,35 +144,34 @@ export default function HRVerification() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">HR Account Verification</h1>
-        <p className="text-gray-600">Review and approve HR account applications</p>
+        <p className="text-gray-600">
+          HR users complete phone and position on their profile. You add company details when approving.
+        </p>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg shadow-sm border p-4 text-center">
           <div className="text-2xl font-bold text-yellow-600">{pendingHRs.length}</div>
           <div className="text-sm text-gray-600">Pending Verification</div>
         </div>
         <div className="bg-white rounded-lg shadow-sm border p-4 text-center">
-          <div className="text-2xl font-bold text-green-600">0</div>
+          <div className="text-2xl font-bold text-green-600">—</div>
           <div className="text-sm text-gray-600">Approved Today</div>
         </div>
         <div className="bg-white rounded-lg shadow-sm border p-4 text-center">
-          <div className="text-2xl font-bold text-red-600">0</div>
+          <div className="text-2xl font-bold text-red-600">—</div>
           <div className="text-sm text-gray-600">Rejected Today</div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pending List */}
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Pending Applications</h2>
           </div>
-          
+
           <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
             {pendingHRs.length > 0 ? (
               pendingHRs.map((hr) => (
@@ -135,20 +186,26 @@ export default function HRVerification() {
                     <div>
                       <h3 className="font-medium text-gray-900">{hr.name}</h3>
                       <p className="text-sm text-gray-600">{hr.email}</p>
-                      <p className="text-sm text-gray-500">{hr.position} at {hr.company}</p>
+                      <p className="text-sm text-gray-500">
+                        {hr.position || 'Position pending'} · {hr.phone || 'Phone pending'}
+                      </p>
                     </div>
                     <div className="text-xs text-gray-400">
                       {new Date(hr.createdAt).toLocaleDateString()}
                     </div>
                   </div>
-                  
-                  <div className="mt-2 flex items-center space-x-2">
+
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
                       Pending Review
                     </span>
-                    {hr.verificationDocuments && hr.verificationDocuments.length > 0 && (
-                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {hr.verificationDocuments.length} Documents
+                    {hr.phone && hr.position ? (
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                        Profile complete
+                      </span>
+                    ) : (
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
+                        Awaiting HR profile
                       </span>
                     )}
                   </div>
@@ -164,89 +221,72 @@ export default function HRVerification() {
           </div>
         </div>
 
-        {/* Details Panel */}
         <div className="bg-white rounded-lg shadow-sm border">
           {selectedHR ? (
             <div>
               <div className="p-6 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">Application Details</h2>
               </div>
-              
+
               <div className="p-6 space-y-6">
-                {/* Basic Info */}
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-3">Personal Information</h3>
+                  <h3 className="font-medium text-gray-900 mb-3">HR Profile (filled by HR user)</h3>
+                  {!hrProfileComplete && (
+                    <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                      HR has not completed phone and position yet. They can update this at{' '}
+                      <span className="font-medium">/hr/profile</span> before you approve.
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 gap-3 text-sm">
                     <div><strong>Name:</strong> {selectedHR.name}</div>
                     <div><strong>Email:</strong> {selectedHR.email}</div>
                     <div><strong>Phone:</strong> {selectedHR.phone || 'Not provided'}</div>
-                    <div><strong>Position:</strong> {selectedHR.position}</div>
+                    <div><strong>Position:</strong> {selectedHR.position || 'Not provided'}</div>
                   </div>
                 </div>
 
-                {/* Company Info */}
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-3">Company Information</h3>
-                  <div className="grid grid-cols-1 gap-3 text-sm">
-                    <div><strong>Company:</strong> {selectedHR.company}</div>
-                    <div><strong>Industry:</strong> {selectedHR.industry || 'Not specified'}</div>
-                    <div><strong>Company Size:</strong> {selectedHR.companySize || 'Not specified'}</div>
-                    {selectedHR.website && (
-                      <div>
-                        <strong>Website:</strong>{' '}
-                        <a 
-                          href={selectedHR.website} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          {selectedHR.website}
-                        </a>
-                      </div>
-                    )}
-                    {selectedHR.linkedIn && (
-                      <div>
-                        <strong>LinkedIn:</strong>{' '}
-                        <a 
-                          href={selectedHR.linkedIn} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          View Profile
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Documents */}
-                {selectedHR.verificationDocuments && selectedHR.verificationDocuments.length > 0 && (
-                  <div>
-                    <h3 className="font-medium text-gray-900 mb-3">Verification Documents</h3>
-                    <div className="space-y-2">
-                      {selectedHR.verificationDocuments.map((doc, index) => (
-                        <a
-                          key={index}
-                          href={doc}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50"
-                        >
-                          <div className="text-blue-600 mr-3">📄</div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              Document {index + 1}
-                            </div>
-                            <div className="text-xs text-gray-500">Click to view</div>
-                          </div>
-                        </a>
-                      ))}
+                  <h3 className="font-medium text-gray-900 mb-3">Company Information (you fill on approval)</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Company *</label>
+                      <input
+                        type="text"
+                        value={companyForm.company}
+                        onChange={(e) => setCompanyForm({ ...companyForm, company: e.target.value })}
+                        placeholder="e.g. Acme Corp"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Industry *</label>
+                      <select
+                        value={companyForm.industry}
+                        onChange={(e) => setCompanyForm({ ...companyForm, industry: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      >
+                        <option value="">Select industry</option>
+                        {INDUSTRY_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Company Size *</label>
+                      <select
+                        value={companyForm.companySize}
+                        onChange={(e) => setCompanyForm({ ...companyForm, companySize: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      >
+                        <option value="">Select company size</option>
+                        {COMPANY_SIZE_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
-                )}
+                </div>
 
-                {/* Verification Notes */}
                 <div>
                   <h3 className="font-medium text-gray-900 mb-3">Verification Notes</h3>
                   <textarea
@@ -258,25 +298,29 @@ export default function HRVerification() {
                   />
                 </div>
 
-                {/* Actions */}
                 <div className="flex space-x-3 pt-4 border-t border-gray-200">
                   <button
+                    type="button"
+                    disabled={submitting}
                     onClick={() => verifyHR(selectedHR._id, true)}
-                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-60"
                   >
-                    ✅ Approve
+                    {submitting ? 'Processing...' : 'Approve'}
                   </button>
                   <button
+                    type="button"
+                    disabled={submitting}
                     onClick={() => verifyHR(selectedHR._id, false)}
-                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-60"
                   >
-                    ❌ Reject
+                    Reject
                   </button>
                   <button
+                    type="button"
                     onClick={() => sendVerificationEmail(selectedHR._id)}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   >
-                    📧 Email
+                    Email
                   </button>
                 </div>
               </div>

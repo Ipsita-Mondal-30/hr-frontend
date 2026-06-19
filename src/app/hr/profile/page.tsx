@@ -1,0 +1,198 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Building2, Phone, Briefcase, CheckCircle2, Clock } from 'lucide-react';
+import api from '@/lib/api';
+import { notify } from '@/lib/notify';
+import { useAuth } from '@/lib/AuthContext';
+import TaloraLoader from '@/components/TaloraLoader';
+
+interface HRProfile {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  position?: string;
+  company?: string;
+  industry?: string;
+  companySize?: string;
+  isVerified?: boolean;
+}
+
+export default function HRProfilePage() {
+  const { user, updateUser } = useAuth();
+  const [profile, setProfile] = useState<HRProfile | null>(null);
+  const [phone, setPhone] = useState('');
+  const [position, setPosition] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await api.get<HRProfile>('/hr/profile');
+      setProfile(res.data);
+      setPhone(res.data.phone || '');
+      setPosition(res.data.position || '');
+    } catch (err) {
+      console.error('Failed to load HR profile:', err);
+      notify('Failed to load profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phone.trim() || !position.trim()) {
+      notify('Phone and position are required');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await api.put<{ user: HRProfile; message: string }>('/hr/profile', {
+        phone: phone.trim(),
+        position: position.trim(),
+      });
+      setProfile(res.data.user);
+      if (user) {
+        updateUser({ ...user, phone: res.data.user.phone, position: res.data.user.position });
+      }
+      notify('Profile saved successfully');
+    } catch (err: unknown) {
+      const message =
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === 'string'
+          ? (err as { response: { data: { error: string } } }).response.data.error
+          : 'Failed to save profile';
+      notify(message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <TaloraLoader message="Loading profile..." className="min-h-[50vh]" />;
+  }
+
+  const profileComplete = Boolean(phone.trim() && position.trim());
+  const isVerified = profile?.isVerified ?? user?.isVerified;
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">HR Profile</h1>
+        <p className="text-gray-600 mt-1">
+          Complete your profile so an admin can verify your account. After approval, you can post jobs.
+        </p>
+      </div>
+
+      {!isVerified && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex gap-3">
+          <Clock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-amber-900">Verification pending</p>
+            <p className="text-sm text-amber-800 mt-1">
+              Fill in your phone and position below. An admin will add your company details and approve your account.
+              Until then, you cannot post jobs.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isVerified && (
+        <div className="rounded-xl border border-green-200 bg-green-50 p-4 flex gap-3">
+          <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-green-900">Account verified</p>
+            <p className="text-sm text-green-800 mt-1">You can post and manage jobs.</p>
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border p-6 space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Your details</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-sm">
+            <div><span className="text-gray-500">Name</span><p className="font-medium">{profile?.name}</p></div>
+            <div><span className="text-gray-500">Email</span><p className="font-medium">{profile?.email}</p></div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="phone" className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                <Phone className="h-4 w-4" />
+                Phone *
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+1 555 123 4567"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="position" className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                <Briefcase className="h-4 w-4" />
+                Position *
+              </label>
+              <input
+                id="position"
+                type="text"
+                value={position}
+                onChange={(e) => setPosition(e.target.value)}
+                placeholder="e.g. HR Manager, Talent Acquisition Lead"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        {(profile?.company || profile?.industry || profile?.companySize) && (
+          <div className="border-t pt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-blue-600" />
+              Company (set by admin)
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-gray-50 rounded-lg p-4">
+              <div><span className="text-gray-500">Company</span><p className="font-medium">{profile?.company || '—'}</p></div>
+              <div><span className="text-gray-500">Industry</span><p className="font-medium">{profile?.industry || '—'}</p></div>
+              <div className="sm:col-span-2"><span className="text-gray-500">Company Size</span><p className="font-medium">{profile?.companySize || '—'}</p></div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-sm text-gray-500">
+            {profileComplete ? 'Profile ready for admin review' : 'Complete both fields to submit for verification'}
+          </p>
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-60"
+          >
+            {saving ? 'Saving...' : 'Save Profile'}
+          </button>
+        </div>
+      </form>
+
+      {!isVerified && profileComplete && (
+        <p className="text-center text-sm text-gray-500">
+          Waiting for admin approval.{' '}
+          <Link href="/hr/jobs" className="text-blue-600 hover:underline">Job posting</Link> unlocks after verification.
+        </p>
+      )}
+    </div>
+  );
+}

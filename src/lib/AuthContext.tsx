@@ -14,7 +14,12 @@ export type User = {
   name: string;
   email: string;
   role: 'admin' | 'hr' | 'candidate' | 'employee';
+  isVerified?: boolean;
   phone?: string;
+  position?: string;
+  company?: string;
+  industry?: string;
+  companySize?: string;
   location?: string;
   skills?: string[];
   experience?: string;
