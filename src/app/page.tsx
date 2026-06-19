@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { getAuthToken } from '@/lib/cookies';
 import { getDashboardPath, getRoleDescription } from '@/lib/dashboardRoutes';
+import TaloraLoader from '@/components/TaloraLoader';
 import { RoleCards3D } from '../components/RoleCards3D';
 import { HeroSection } from '../components/HeroSection';
 import { AboutSection } from '../components/AboutSection';
@@ -43,9 +44,7 @@ export default function HomePage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <TaloraLoader message="Loading Talora..." className="min-h-[60vh]" />
       </div>
     );
   }
@@ -110,17 +109,10 @@ function UserDashboard({ user }: { user: DashboardUser }) {
     }
   };
 
-  const roleSelectHref = (() => {
-    const token = getAuthToken();
-    return token ? `/role-select?token=${encodeURIComponent(token)}` : '/role-select';
-  })();
+  const roleSelectHref = '/role-select';
 
   if (dashboardPath) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-      </div>
-    );
+    return <TaloraLoader message="Taking you to your dashboard..." className="min-h-[16rem]" />;
   }
 
   return (

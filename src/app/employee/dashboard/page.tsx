@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/lib/api';
+import TaloraLoader from '@/components/TaloraLoader';
 import { User, Briefcase, TrendingUp, Calendar, Award, DollarSign } from 'lucide-react';
 
 interface EmployeeData {
@@ -38,26 +39,8 @@ export default function EmployeeDashboard() {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      const timeoutId = setTimeout(() => {
-        if (loading) {
-          console.warn('Dashboard loading timeout, setting default data');
-          setLoading(false);
-        }
-      }, 10000);
-
       try {
         setLoading(true);
-
-        // Force token check similar to HR dashboard
-        try {
-          console.log("🔍 Employee Dashboard - Checking authentication...");
-          const authRes = await api.get("/auth/me");
-          console.log("🔐 Employee Dashboard - Current user:", authRes.data);
-        } catch (authErr) {
-          console.error("❌ Employee Dashboard - Auth check failed:", authErr);
-          if (typeof window !== 'undefined') window.location.href = '/login';
-          return;
-        }
 
         if (!user) {
           setEmployeeData({
@@ -77,16 +60,18 @@ export default function EmployeeDashboard() {
             performanceScore: 0,
             achievements: 0
           });
-          setLoading(false);
-          clearTimeout(timeoutId);
           return;
         }
 
-        try {
-          const profileResponse = await api.get('/employees/profile');
-          setEmployeeData(profileResponse.data);
-        } catch (profileErr) {
-          console.warn('Failed to fetch employee profile, using user data:', profileErr);
+        const [profileResult, statsResult] = await Promise.allSettled([
+          api.get('/employees/profile'),
+          api.get('/employees/dashboard/stats'),
+        ]);
+
+        if (profileResult.status === 'fulfilled') {
+          setEmployeeData(profileResult.value.data);
+        } else {
+          console.warn('Failed to fetch employee profile, using user data:', profileResult.reason);
           setEmployeeData({
             _id: user._id || 'temp',
             user: {
@@ -98,11 +83,10 @@ export default function EmployeeDashboard() {
           });
         }
 
-        try {
-          const statsResponse = await api.get('/employees/dashboard/stats');
-          setStats(statsResponse.data);
-        } catch (statsErr) {
-          console.warn('Failed to fetch dashboard stats, using defaults:', statsErr);
+        if (statsResult.status === 'fulfilled') {
+          setStats(statsResult.value.data);
+        } else {
+          console.warn('Failed to fetch dashboard stats, using defaults:', statsResult.reason);
           setStats({
             totalProjects: 0,
             activeProjects: 0,
@@ -114,7 +98,6 @@ export default function EmployeeDashboard() {
         }
       } catch (err: unknown) {
         console.error('Error fetching dashboard data:', err);
-        // fallback
         setEmployeeData({
           _id: 'fallback',
           user: {
@@ -134,37 +117,14 @@ export default function EmployeeDashboard() {
         });
       } finally {
         setLoading(false);
-        clearTimeout(timeoutId);
       }
     };
 
     fetchDashboardData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]); // Removed loading from dependency array intentionally
-
-  // Token verification, redirect if invalid
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.get('/auth/me');
-        console.log("🔐 Employee Dashboard - Current User:", res.data);
-      } catch (err) {
-        console.error("❌ Employee Dashboard - Error fetching user:", err);
-        if (typeof window !== 'undefined') window.location.href = '/login';
-      }
-    };
-    fetchUser();
-  }, []);
+  }, [user]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
+    return <TaloraLoader fullScreen message="Loading your dashboard..." />;
   }
 
   if (!employeeData) {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { notify } from "@/lib/notify";
+import TaloraLoader from "@/components/TaloraLoader";
 import { isProjectCompleted } from "@/lib/projectUtils";
 import { 
   Users, 
@@ -198,6 +199,7 @@ export default function HRDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [employeeLoading, setEmployeeLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
@@ -206,70 +208,62 @@ export default function HRDashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
+    const fetchEmployeeData = async () => {
+      try {
+        const [employeesRes, projectsRes, topPerformersRes, feedbackRes] = await Promise.all([
+          api.get<ApiEmployeesRes>("/employees?limit=1000"),
+          api.get<ApiProjectsRes>("/projects?limit=1000"),
+          api.get<ApiTopPerformersRes>("/admin/employees/top-performers?limit=5"),
+          api.get<ApiFeedbackRes>("/feedback?limit=10"),
+        ]);
+
+        const employeesArr =
+          Array.isArray(employeesRes.data) ? employeesRes.data : employeesRes.data?.employees || [];
+        const projectsArr =
+          Array.isArray(projectsRes.data) ? projectsRes.data : projectsRes.data?.projects || [];
+        const topPerformersArr =
+          Array.isArray(topPerformersRes.data)
+            ? topPerformersRes.data
+            : topPerformersRes.data?.topPerformers || [];
+        const feedbackArr =
+          Array.isArray(feedbackRes.data) ? feedbackRes.data : feedbackRes.data?.feedback || [];
+
+        setEmployeeData({
+          totalEmployees: employeesArr.length,
+          activeProjects: projectsArr.filter((p) => p.status === "active" && !isProjectCompleted(p)).length,
+          completedProjects: projectsArr.filter((p) => isProjectCompleted(p)).length,
+          averagePerformance:
+            employeesArr.length > 0
+              ? employeesArr.reduce((sum, emp) => sum + (emp.performanceScore || 0), 0) / employeesArr.length
+              : 0,
+          topPerformers: topPerformersArr,
+          recentFeedback: feedbackArr,
+        });
+      } catch (empErr: unknown) {
+        console.warn("⚠️ Could not fetch employee data:", empErr);
+        setEmployeeData({
+          totalEmployees: 0,
+          activeProjects: 0,
+          completedProjects: 0,
+          averagePerformance: 0,
+          topPerformers: [],
+          recentFeedback: [],
+        });
+      } finally {
+        setEmployeeLoading(false);
+      }
+    };
+
     const fetchDashboardData = async () => {
       try {
-        console.log("🔍 Fetching HR dashboard data...");
-        console.log("🔍 API base URL:", api.defaults.baseURL);
-
-        // First check if we have authentication
-        const authRes = await api.get("/auth/me");
-        console.log("🔐 Current user: line 35", authRes.data);
-
-        // Then fetch dashboard data
         const res = await api.get<DashboardData>("/admin/dashboard");
-        console.log("✅ Dashboard data received:", res.data);
         setData(res.data);
-
-        // Fetch employee performance data
-        try {
-          const [employeesRes, projectsRes, topPerformersRes, feedbackRes] = await Promise.all([
-            api.get<ApiEmployeesRes>("/employees?limit=1000"),
-            api.get<ApiProjectsRes>("/projects?limit=1000"),
-            api.get<ApiTopPerformersRes>("/admin/employees/top-performers?limit=5"),
-            api.get<ApiFeedbackRes>("/feedback?limit=10"),
-          ]);
-
-          const employeesArr =
-            Array.isArray(employeesRes.data) ? employeesRes.data : employeesRes.data?.employees || [];
-          const projectsArr =
-            Array.isArray(projectsRes.data) ? projectsRes.data : projectsRes.data?.projects || [];
-          const topPerformersArr =
-            Array.isArray(topPerformersRes.data)
-              ? topPerformersRes.data
-              : topPerformersRes.data?.topPerformers || [];
-          const feedbackArr =
-            Array.isArray(feedbackRes.data) ? feedbackRes.data : feedbackRes.data?.feedback || [];
-
-          setEmployeeData({
-            totalEmployees: employeesArr.length,
-            activeProjects: projectsArr.filter((p) => p.status === "active" && !isProjectCompleted(p)).length,
-            completedProjects: projectsArr.filter((p) => isProjectCompleted(p)).length,
-            averagePerformance:
-              employeesArr.length > 0
-                ? employeesArr.reduce((sum, emp) => sum + (emp.performanceScore || 0), 0) / employeesArr.length
-                : 0,
-            topPerformers: topPerformersArr,
-            recentFeedback: feedbackArr,
-          });
-        } catch (empErr: unknown) {
-          console.warn("⚠️ Could not fetch employee data:", empErr);
-          // Set default empty data
-          setEmployeeData({
-            totalEmployees: 0,
-            activeProjects: 0,
-            completedProjects: 0,
-            averagePerformance: 0,
-            topPerformers: [],
-            recentFeedback: [],
-          });
-        }
-
         setError(null);
+        setLoading(false);
+        void fetchEmployeeData();
       } catch (err: unknown) {
         console.error("❌ Error fetching HR dashboard data:", err);
         if (isAxiosError(err)) {
-          console.error("❌ Error response:", err.response?.data);
-          console.error("❌ Error status:", err.response?.status);
           const respData = err.response?.data as { message?: string; error?: string } | undefined;
           const msg = respData?.message || respData?.error || "Failed to load dashboard data";
           setError(msg);
@@ -278,8 +272,8 @@ export default function HRDashboardPage() {
         } else {
           setError("Failed to load dashboard data");
         }
-      } finally {
         setLoading(false);
+        setEmployeeLoading(false);
       }
     };
 
@@ -329,14 +323,7 @@ export default function HRDashboardPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600 font-medium">Loading Dashboard</p>
-        </div>
-      </div>
-    );
+    return <TaloraLoader message="Loading dashboard..." className="min-h-[60vh]" />;
   }
 
   if (error) {
@@ -512,8 +499,10 @@ export default function HRDashboardPage() {
         </div>
       </div>
 
-      {/* Employee Performance Stats - FIXED: Removed duplicate props */}
-      {employeeData && (
+      {/* Employee Performance Stats */}
+      {employeeLoading ? (
+        <TaloraLoader size="sm" message="Loading employee insights..." className="min-h-[10rem]" />
+      ) : employeeData ? (
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold mb-4 text-green-800">👥 Employee Performance Overview</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -528,7 +517,7 @@ export default function HRDashboardPage() {
             />
           </div>
         </div>
-      )}
+      ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Performers */}

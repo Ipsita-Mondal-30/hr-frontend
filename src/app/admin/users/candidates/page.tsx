@@ -1,4 +1,5 @@
 'use client';
+import TaloraLoader from '@/components/TaloraLoader';
 import { notify } from '@/lib/notify';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
@@ -134,9 +135,7 @@ export default function ViewCandidatesPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
+      <TaloraLoader size="sm" className="min-h-64" />
     );
   }
 

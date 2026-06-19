@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import api from '@/lib/api';
+import TaloraLoader from '@/components/TaloraLoader';
 
 interface SalaryData {
   role: string;
@@ -251,10 +252,7 @@ export default function SalarySearchPage() {
 
       {/* Results */}
       {loading && (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Searching salary data...</p>
-        </div>
+        <TaloraLoader size="sm" message="Searching salary data..." className="min-h-[8rem]" />
       )}
 
       {searched && !loading && salaryData.length === 0 && (

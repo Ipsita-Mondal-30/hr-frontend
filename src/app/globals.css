@@ -171,6 +171,73 @@
   }
 }
 
+/* Talora branded loader */
+@keyframes talora-ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes talora-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes talora-logo-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes talora-text-shimmer {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.talora-loader-ring {
+  background: conic-gradient(
+    from 0deg,
+    #a855f7,
+    #6366f1,
+    #3b82f6,
+    #06b6d4,
+    #10b981,
+    #f59e0b,
+    #ec4899,
+    #a855f7
+  );
+  animation: talora-ring-spin 1.1s linear infinite;
+}
+
+.talora-loader-glow {
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.45) 0%, transparent 70%);
+  animation: talora-glow-pulse 1.8s ease-in-out infinite;
+}
+
+.talora-loader-logo {
+  animation: talora-logo-float 2s ease-in-out infinite;
+}
+
+.talora-loader-text {
+  animation: talora-text-shimmer 1.6s ease-in-out infinite;
+}
+
 /* Keep inline icons from expanding if styles fail to load */
 nav svg:not([width]),
 button svg:not([width]),

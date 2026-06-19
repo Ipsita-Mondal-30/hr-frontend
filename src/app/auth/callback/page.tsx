@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
 import { setAuthToken } from '@/lib/cookies';
+import { getDashboardPath } from '@/lib/dashboardRoutes';
 
 interface DecodedToken {
   _id: string;
@@ -39,36 +40,19 @@ export default function AuthCallbackPage() {
 
       // Add a small delay to ensure token is properly set
       setTimeout(() => {
-        if (!decoded.role) {
-          // Send token to select-role
-          console.log('No role found, redirecting to role-select');
-          window.location.href = `/role-select?token=${token}`;
-        } else {
+        const dashboardPath = getDashboardPath(decoded.role);
+        if (dashboardPath) {
           console.log('Role found:', decoded.role, 'redirecting to dashboard');
-          // Clear any cached data to prevent stale state
           if (typeof window !== 'undefined') {
             localStorage.removeItem('dashboardCache');
             sessionStorage.removeItem('userCache');
           }
-
-          switch (decoded.role) {
-            case 'admin':
-              window.location.href = '/admin/dashboard';
-              break;
-            case 'hr':
-              window.location.href = '/hr/dashboard';
-              break;
-            case 'candidate':
-              window.location.href = '/candidate/dashboard';
-              break;
-            case 'employee':
-              window.location.href = '/employee/dashboard';
-              break;
-            default:
-              console.log('Unknown role:', decoded.role, 'redirecting to role selection');
-              window.location.href = `/role-select?token=${token}`;
-          }
+          window.location.replace(dashboardPath);
+          return;
         }
+
+        console.log('No role found, redirecting to role-select');
+        window.location.replace('/role-select');
       }, 100);
 
     } catch (err) {

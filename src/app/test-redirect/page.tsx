@@ -1,4 +1,5 @@
 'use client';
+import TaloraLoader from '@/components/TaloraLoader';
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getAuthToken, setAuthToken } from '@/lib/cookies';
@@ -136,7 +137,7 @@ function LoadingFallback() {
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow">
         <h1 className="text-2xl font-bold mb-6 text-center">Redirect Test Page</h1>
         <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <TaloraLoader size="sm" />
           <span className="ml-2 text-gray-600">Loading...</span>
         </div>
       </div>

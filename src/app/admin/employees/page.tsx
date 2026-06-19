@@ -1,4 +1,5 @@
 'use client';
+import TaloraLoader from '@/components/TaloraLoader';
 
 import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
@@ -86,9 +87,7 @@ export default function AdminEmployeesPage() {
 
   if (loading) {
     return (
-      <div className="p-6 flex justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-      </div>
+      <TaloraLoader size="sm" className="min-h-64" />
     );
   }
 

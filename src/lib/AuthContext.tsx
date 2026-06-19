@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from './api';
 import { clearAllAuthTokens, getAuthToken, setAuthToken } from './cookies';
+import { getDashboardPath } from './dashboardRoutes';
 // import User from '@/'; // Adjust the import path as necessary
 function isAxiosError(err: unknown): err is { response?: { status?: number }; message?: string } {
   return typeof err === 'object' && err !== null && 'response' in err;
@@ -99,24 +100,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         _id: userData._id
       });
       
-      // If user is a candidate, fetch additional profile data including completeness
-      if (userData.role === 'candidate') {
-        try {
-          const profileRes = await api.get('/candidate/dashboard-stats');
-          const profileData = profileRes.data;
-          userData.profileCompleteness = profileData.profileCompleteness || 0;
-          console.log('📊 Profile completeness fetched:', userData.profileCompleteness);
-        } catch (profileErr) {
-          console.error('⚠️ Failed to fetch profile completeness:', profileErr);
-          userData.profileCompleteness = 0;
-        }
-      }
-      
       setUser(userData);
       console.log('✅ User state updated in AuthContext');
 
-      // Don't redirect if we're already on a public page or role selection
-      if (publicPages.some(page => currentPath.includes(page))) {
+      // Fetch candidate profile completeness in the background — don't block initial render
+      if (userData.role === 'candidate') {
+        api
+          .get('/candidate/dashboard-stats')
+          .then((profileRes) => {
+            const completeness = profileRes.data?.profileCompleteness || 0;
+            setUser((prev) => (prev ? { ...prev, profileCompleteness: completeness } : prev));
+          })
+          .catch((profileErr) => {
+            console.error('⚠️ Failed to fetch profile completeness:', profileErr);
+          });
+      }
+
+      // Don't redirect if we're already on a public page (except role-select — handled below)
+      const isPublicPage = publicPages.some((page) => currentPath.includes(page));
+      const isRoleSelectPage = currentPath.includes('/role-select');
+
+      if (isRoleSelectPage && userData.role) {
+        const dashboardPath = getDashboardPath(userData.role);
+        if (dashboardPath) {
+          console.log('✅ Role already set, leaving role-select for', dashboardPath);
+          window.location.replace(dashboardPath);
+          return;
+        }
+      }
+
+      if (isPublicPage) {
         console.log('ℹ️ On public page, no redirect needed');
         return;
       }
@@ -124,7 +137,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Only redirect to role selection if user has no role and is on a protected page
       if (!userData.role) {
         console.log('⚠️ User has no role, redirecting to role selection');
-        window.location.href = `/role-select?token=${token}`;
+        window.location.replace('/role-select');
       }
     } catch (err: unknown) {
       console.error('❌ Auth check failed:', isAxiosError(err) ? err.response?.status : undefined, err instanceof Error ? err.message : err);

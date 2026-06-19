@@ -1,4 +1,5 @@
 'use client';
+import TaloraLoader from '@/components/TaloraLoader';
 
 import { notify } from '@/lib/notify';
 import { useState, useEffect, useCallback } from 'react';
@@ -150,9 +151,7 @@ export default function HRPayrollDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
+      <TaloraLoader size="sm" className="min-h-64" />
     );
   }
 
