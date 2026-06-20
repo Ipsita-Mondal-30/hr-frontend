@@ -20,6 +20,21 @@ interface HRProfile {
   isVerified?: boolean;
 }
 
+const API_TIMEOUT_MS = 35000;
+
+function getApiErrorMessage(err: unknown, fallback: string): string {
+  if (typeof err === 'object' && err !== null) {
+    const maybe = err as { code?: string; response?: { data?: { error?: string } } };
+    if (maybe.code === 'ECONNABORTED') {
+      return 'Server is waking up — please wait a moment and try again.';
+    }
+    if (typeof maybe.response?.data?.error === 'string') {
+      return maybe.response.data.error;
+    }
+  }
+  return fallback;
+}
+
 export default function HRProfilePage() {
   const { user, updateUser } = useAuth();
   const [profile, setProfile] = useState<HRProfile | null>(null);
@@ -27,20 +42,41 @@ export default function HRProfilePage() {
   const [position, setPosition] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveLabel, setSaveLabel] = useState('Save Profile');
 
   useEffect(() => {
+    if (user) {
+      setProfile((prev) => ({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone ?? prev?.phone,
+        position: user.position ?? prev?.position,
+        company: user.company ?? prev?.company,
+        industry: user.industry ?? prev?.industry,
+        companySize: user.companySize ?? prev?.companySize,
+        isVerified: user.isVerified ?? prev?.isVerified,
+      }));
+      if (user.phone) setPhone(user.phone);
+      if (user.position) setPosition(user.position);
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    api.get('/health', { timeout: 8000 }).catch(() => {});
     fetchProfile();
   }, []);
 
   const fetchProfile = async () => {
     try {
-      const res = await api.get<HRProfile>('/auth/hr-profile');
+      const res = await api.get<HRProfile>('/auth/hr-profile', { timeout: API_TIMEOUT_MS });
       setProfile(res.data);
       setPhone(res.data.phone || '');
       setPosition(res.data.position || '');
     } catch (err) {
       console.error('Failed to load HR profile:', err);
-      notify('Failed to load profile');
+      if (!user) notify(getApiErrorMessage(err, 'Failed to load profile'));
     } finally {
       setLoading(false);
     }
@@ -48,37 +84,72 @@ export default function HRProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone.trim() || !position.trim()) {
+    const trimmedPhone = phone.trim();
+    const trimmedPosition = position.trim();
+
+    if (!trimmedPhone || !trimmedPosition) {
       notify('Phone and position are required');
       return;
     }
 
+    if (saving) return;
+
+    const previousProfile = profile;
+    const previousPhone = phone;
+    const previousPosition = position;
+
     setSaving(true);
+    setSaveLabel('Saving...');
+
+    const optimisticProfile: HRProfile = {
+      _id: profile?._id || user?._id || '',
+      name: profile?.name || user?.name || '',
+      email: profile?.email || user?.email || '',
+      phone: trimmedPhone,
+      position: trimmedPosition,
+      company: profile?.company,
+      industry: profile?.industry,
+      companySize: profile?.companySize,
+      isVerified: profile?.isVerified ?? user?.isVerified,
+    };
+
+    setProfile(optimisticProfile);
+    if (user) {
+      updateUser({ ...user, phone: trimmedPhone, position: trimmedPosition });
+    }
+
     try {
-      const res = await api.put<{ user: HRProfile; message: string }>('/auth/hr-profile', {
-        phone: phone.trim(),
-        position: position.trim(),
-      });
+      const res = await api.put<{ user: HRProfile; message: string }>(
+        '/auth/hr-profile',
+        { phone: trimmedPhone, position: trimmedPosition },
+        { timeout: API_TIMEOUT_MS }
+      );
       setProfile(res.data.user);
       if (user) {
         updateUser({ ...user, phone: res.data.user.phone, position: res.data.user.position });
       }
+      setSaveLabel('Saved');
       notify('Profile saved successfully');
+      setTimeout(() => setSaveLabel('Save Profile'), 2000);
     } catch (err: unknown) {
-      const message =
-        typeof err === 'object' &&
-        err !== null &&
-        'response' in err &&
-        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === 'string'
-          ? (err as { response: { data: { error: string } } }).response.data.error
-          : 'Failed to save profile';
-      notify(message);
+      setProfile(previousProfile);
+      setPhone(previousPhone);
+      setPosition(previousPosition);
+      if (user && previousProfile) {
+        updateUser({
+          ...user,
+          phone: previousProfile.phone,
+          position: previousProfile.position,
+        });
+      }
+      notify(getApiErrorMessage(err, 'Failed to save profile'));
+      setSaveLabel('Save Profile');
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
+  if (loading && !profile) {
     return <TaloraLoader message="Loading profile..." className="min-h-[50vh]" />;
   }
 
@@ -139,6 +210,7 @@ export default function HRProfilePage() {
                 placeholder="+1 555 123 4567"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
+                disabled={saving}
               />
             </div>
             <div>
@@ -154,6 +226,7 @@ export default function HRProfilePage() {
                 placeholder="e.g. HR Manager, Talent Acquisition Lead"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
+                disabled={saving}
               />
             </div>
           </div>
@@ -173,16 +246,20 @@ export default function HRProfilePage() {
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center justify-between pt-2 gap-4">
           <p className="text-sm text-gray-500">
-            {profileComplete ? 'Profile ready for admin review' : 'Complete both fields to submit for verification'}
+            {saving
+              ? 'Syncing with server...'
+              : profileComplete
+                ? 'Profile ready for admin review'
+                : 'Complete both fields to submit for verification'}
           </p>
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-60"
+            className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-60 shrink-0"
           >
-            {saving ? 'Saving...' : 'Save Profile'}
+            {saveLabel}
           </button>
         </div>
       </form>
