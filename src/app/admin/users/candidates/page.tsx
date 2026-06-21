@@ -184,7 +184,7 @@ export default function ViewCandidatesPage() {
       {/* Candidates Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {filteredCandidates.map((candidate) => (
-          <div key={candidate._id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div key={candidate._id} className="talora-modal-panel shadow-sm border border-gray-200 p-6">
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">{candidate.name}</h3>
@@ -268,8 +268,8 @@ export default function ViewCandidatesPage() {
 
       {/* Candidate Detail Modal */}
       {selectedCandidate && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-[60]">
-          <div className="bg-white rounded-t-2xl sm:rounded-lg max-w-4xl w-full max-h-[92vh] sm:max-h-[90vh] overflow-y-auto shadow-xl">
+        <div className="talora-modal-overlay flex items-end sm:items-center justify-center p-0 sm:p-4 z-[60]">
+          <div className="talora-modal-panel max-w-4xl w-full max-h-[92vh] sm:max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-xl">
             <div className="p-4 sm:p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
               <div className="flex justify-between items-center gap-3">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900 truncate">{selectedCandidate.name}</h2>

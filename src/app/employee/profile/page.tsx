@@ -311,7 +311,7 @@ export default function EmployeeProfilePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Basic Information */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="talora-modal-panel shadow p-6">
             <div className="text-center mb-6">
               <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-blue-600 font-semibold text-2xl">
@@ -381,7 +381,7 @@ export default function EmployeeProfilePage() {
         {/* Performance & Skills */}
         <div className="lg:col-span-2 space-y-6">
           {/* Performance Metrics */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="talora-modal-panel shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Metrics</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -414,7 +414,7 @@ export default function EmployeeProfilePage() {
           </div>
 
           {/* Skills */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="talora-modal-panel shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Skills & Competencies</h3>
 
             <div className="flex flex-wrap gap-2 mb-4">
@@ -470,7 +470,7 @@ export default function EmployeeProfilePage() {
           </div>
 
           {/* Career Information */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="talora-modal-panel shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Career Information</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -503,7 +503,7 @@ export default function EmployeeProfilePage() {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="talora-modal-panel shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -540,7 +540,7 @@ export default function EmployeeProfilePage() {
 
           {/* Resume */}
           {profile.resume?.fileUrl && (
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="talora-modal-panel shadow p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">My Resume</h3>
               <p className="text-sm text-gray-600 mb-2">{profile.resume.fileName}</p>
               <p className="text-xs text-gray-500 mb-3">
@@ -561,8 +561,8 @@ export default function EmployeeProfilePage() {
 
       {/* Resume Upload Modal */}
       {showResumeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="talora-modal-overlay flex items-center justify-center z-50 p-4">
+          <div className="talora-modal-panel p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">Update Resume</h3>
             <div className="space-y-4">
               <div>
@@ -599,8 +599,8 @@ export default function EmployeeProfilePage() {
 
       {/* Feedback Request Modal */}
       {showFeedbackModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="talora-modal-overlay flex items-center justify-center z-50 p-4">
+          <div className="talora-modal-panel p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">Request Feedback</h3>
             <div className="space-y-4">
               <div>
@@ -647,8 +647,8 @@ export default function EmployeeProfilePage() {
 
       {/* Training Request Modal */}
       {showTrainingModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="talora-modal-overlay flex items-center justify-center z-50 p-4">
+          <div className="talora-modal-panel p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">Request Training</h3>
             <div className="space-y-4">
               <div>
@@ -691,8 +691,8 @@ export default function EmployeeProfilePage() {
       )}
 
       {showPasswordModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="talora-modal-overlay flex items-center justify-center z-50 p-4">
+          <div className="talora-modal-panel p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">Change password</h3>
             <div className="space-y-4">
               <div>

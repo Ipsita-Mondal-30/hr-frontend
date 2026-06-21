@@ -167,8 +167,8 @@ export default function AchievementsManagement({
       </div>
 
       {showCreateForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="talora-modal-overlay flex items-center justify-center z-50 p-4">
+          <div className="talora-modal-panel p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Add New Achievement</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -278,7 +278,7 @@ export default function AchievementsManagement({
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className="talora-modal-panel shadow-sm border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">

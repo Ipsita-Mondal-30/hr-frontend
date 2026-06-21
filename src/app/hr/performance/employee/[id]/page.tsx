@@ -238,7 +238,7 @@ export default function EmployeePerformanceDetails() {
       </div>
 
       {/* Employee Profile Card */}
-      <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
+      <div className="talora-modal-panel shadow-sm border p-6 mb-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Employee Information</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
@@ -284,21 +284,21 @@ export default function EmployeePerformanceDetails() {
 
       {/* Performance Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="talora-modal-panel shadow-sm border p-6">
           <p className="text-sm font-medium text-gray-600">Performance Score</p>
           <p className="text-2xl font-bold text-gray-900">{employee.performanceScore || 0}%</p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="talora-modal-panel shadow-sm border p-6">
           <p className="text-sm font-medium text-gray-600">Projects Completed</p>
           <p className="text-2xl font-bold text-gray-900">{metrics?.projectsCompleted || 0}</p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="talora-modal-panel shadow-sm border p-6">
           <p className="text-sm font-medium text-gray-600">Average Rating</p>
           <p className="text-2xl font-bold text-gray-900">
             {metrics?.averageRating ? `${metrics.averageRating.toFixed(1)}/5` : 'N/A'}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="talora-modal-panel shadow-sm border p-6">
           <p className="text-sm font-medium text-gray-600">OKRs Completed</p>
           <p className="text-2xl font-bold text-gray-900">
             {metrics?.completedOKRs || 0}/{metrics?.okrsCount || 0}
@@ -308,7 +308,7 @@ export default function EmployeePerformanceDetails() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Feedback */}
-        <div className="bg-white rounded-lg shadow-sm border">
+        <div className="talora-modal-panel shadow-sm border">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h3 className="text-lg font-medium text-gray-900">Recent Feedback</h3>
             <span className="text-sm text-gray-500">{metrics?.feedbackCount || 0} total</span>
@@ -369,7 +369,7 @@ export default function EmployeePerformanceDetails() {
         </div>
 
         {/* Current OKRs */}
-        <div className="bg-white rounded-lg shadow-sm border">
+        <div className="talora-modal-panel shadow-sm border">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h3 className="text-lg font-medium text-gray-900">Current OKRs</h3>
             <button
@@ -444,8 +444,8 @@ export default function EmployeePerformanceDetails() {
 
       {/* Assign OKR Modal */}
       {showOkrModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="talora-modal-overlay flex items-center justify-center z-50 p-4">
+          <div className="talora-modal-panel max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b flex justify-between items-center">
               <h2 className="text-lg font-semibold">Assign OKR to {employee.user?.name}</h2>
               <button onClick={() => setShowOkrModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>

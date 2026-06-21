@@ -121,8 +121,8 @@ export default function AdminInterviewDetailModal({
   const isUpcoming = scheduled > new Date() && interview.status === 'scheduled';
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="talora-modal-overlay flex items-center justify-center z-50 p-4">
+      <div className="talora-modal-panel max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold text-gray-900">{title}</h2>

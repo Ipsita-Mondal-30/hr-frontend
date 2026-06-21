@@ -443,7 +443,7 @@ function InterviewCard({
   const hireApproved = interview.hireApproval?.status === 'approved';
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border p-6 ${isToday ? 'border-orange-300 bg-orange-50' : ''}`}>
+    <div className={`talora-modal-panel shadow-sm border p-6 ${isToday ? 'border-orange-300 bg-orange-50' : ''}`}>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
         <div className="flex-1">
           <div className="flex items-center space-x-3 mb-2">
@@ -643,8 +643,8 @@ function ScheduleInterviewModal({ isOpen, onClose, onSchedule, applications }: S
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+    <div className="talora-modal-overlay flex items-center justify-center z-50 p-4">
+      <div className="talora-modal-panel p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Schedule Interview</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -797,8 +797,8 @@ function ScorecardModal({ isOpen, onClose, interview, onSubmit }: ScorecardModal
   if (!isOpen || !interview) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="talora-modal-overlay flex items-center justify-center z-50 p-4">
+      <div className="talora-modal-panel p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Interview Scorecard</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">

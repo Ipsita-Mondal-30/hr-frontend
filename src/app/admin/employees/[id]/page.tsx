@@ -475,11 +475,11 @@ export default function EmployeeDetailPage() {
 
         {activeTab === 'projects' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="talora-modal-panel shadow p-6">
               <h2 className="text-lg font-semibold mb-4">Current Projects ({activeProjects.length})</h2>
               <ProjectTable projects={activeProjects} emptyMessage="No active projects assigned" />
             </div>
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="talora-modal-panel shadow p-6">
               <h2 className="text-lg font-semibold mb-4">Previous / Completed Projects ({completedProjects.length})</h2>
               <ProjectTable projects={completedProjects} emptyMessage="No completed projects yet" />
             </div>
@@ -487,7 +487,7 @@ export default function EmployeeDetailPage() {
         )}
 
         {activeTab === 'ai' && (
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="talora-modal-panel shadow p-6">
             {employee.aiInsights?.lastAnalyzed ? (
               <EmployeeAIInsightsPanel insights={employee.aiInsights} />
             ) : (
@@ -587,8 +587,8 @@ export default function EmployeeDetailPage() {
       </div>
 
       {showAssignModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
+        <div className="talora-modal-overlay flex items-center justify-center z-50 p-4">
+          <div className="talora-modal-panel max-w-md w-full p-6">
             <h3 className="text-lg font-semibold mb-4">Assign Department & Manager</h3>
             <div className="space-y-4">
               <div>

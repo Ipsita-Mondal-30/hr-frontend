@@ -106,7 +106,7 @@ export default function AdminEmployeesPage() {
         </Link>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border p-4 flex flex-col md:flex-row gap-4">
+      <div className="talora-modal-panel shadow-sm border p-4 flex flex-col md:flex-row gap-4">
         <input
           type="text"
           placeholder="Search by name, email, position, or ID..."
@@ -132,7 +132,7 @@ export default function AdminEmployeesPage() {
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className="talora-modal-panel shadow-sm border overflow-hidden">
         <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -208,8 +208,8 @@ export default function AdminEmployeesPage() {
       </div>
 
       {aiModalEmployee?.aiInsights && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6">
+        <div className="talora-modal-overlay flex items-center justify-center z-50 p-4">
+          <div className="talora-modal-panel max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6">
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h2 className="text-xl font-semibold">{aiModalEmployee.user?.name}</h2>

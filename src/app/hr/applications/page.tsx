@@ -508,7 +508,7 @@ export default function ApplicationsPage() {
           <p className="text-gray-500">Try adjusting filters or check back later for new applications.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+        <div className="talora-modal-panel shadow-sm border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -726,8 +726,8 @@ function MessageModal({ isOpen, applicationId, onClose, applications }: MessageM
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+    <div className="talora-modal-overlay flex items-center justify-center z-50 p-4">
+      <div className="talora-modal-panel p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Send Message</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -826,8 +826,8 @@ function NotesModal({ isOpen, applicationId, onClose, onSave, applications }: No
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+    <div className="talora-modal-overlay flex items-center justify-center z-50 p-4">
+      <div className="talora-modal-panel p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">HR Notes</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
