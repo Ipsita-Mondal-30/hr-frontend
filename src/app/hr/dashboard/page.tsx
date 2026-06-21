@@ -92,6 +92,24 @@ function isAxiosError(e: unknown): e is { response?: { data?: unknown; status?: 
   return typeof e === "object" && e !== null && "response" in e;
 }
 
+const API_TIMEOUT_MS = 35000;
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-8 animate-pulse">
+      <div className="bg-white rounded-xl border border-slate-200 p-6 h-36" />
+      <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <div className="h-6 w-48 bg-slate-200 rounded mb-6" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-32 bg-slate-100 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const HR_QUICK_ACTIONS = [
   { title: 'Post New Job', description: 'Create a job listing', href: '/hr/jobs', icon: Briefcase },
   { title: 'Review Applications', description: 'Manage candidate applications', href: '/hr/applications', icon: ClipboardList },
@@ -210,15 +228,17 @@ export default function HRDashboardPage() {
   useEffect(() => {
     const fetchEmployeeData = async () => {
       try {
-        const [employeesRes, projectsRes, topPerformersRes, feedbackRes] = await Promise.all([
-          api.get<ApiEmployeesRes>("/employees?limit=1000"),
-          api.get<ApiProjectsRes>("/projects?limit=1000"),
-          api.get<ApiTopPerformersRes>("/admin/employees/top-performers?limit=5"),
-          api.get<ApiFeedbackRes>("/feedback?limit=10"),
+        const [statsRes, projectsRes, topPerformersRes, feedbackRes] = await Promise.all([
+          api.get<{ totalEmployees?: number; avgPerformanceScore?: number }>('/employees/stats', {
+            timeout: API_TIMEOUT_MS,
+          }),
+          api.get<ApiProjectsRes>('/projects?limit=100', { timeout: API_TIMEOUT_MS }),
+          api.get<ApiTopPerformersRes>('/admin/employees/top-performers?limit=5', {
+            timeout: API_TIMEOUT_MS,
+          }),
+          api.get<ApiFeedbackRes>('/feedback?limit=10', { timeout: API_TIMEOUT_MS }),
         ]);
 
-        const employeesArr =
-          Array.isArray(employeesRes.data) ? employeesRes.data : employeesRes.data?.employees || [];
         const projectsArr =
           Array.isArray(projectsRes.data) ? projectsRes.data : projectsRes.data?.projects || [];
         const topPerformersArr =
@@ -229,18 +249,15 @@ export default function HRDashboardPage() {
           Array.isArray(feedbackRes.data) ? feedbackRes.data : feedbackRes.data?.feedback || [];
 
         setEmployeeData({
-          totalEmployees: employeesArr.length,
-          activeProjects: projectsArr.filter((p) => p.status === "active" && !isProjectCompleted(p)).length,
+          totalEmployees: statsRes.data?.totalEmployees ?? 0,
+          activeProjects: projectsArr.filter((p) => p.status === 'active' && !isProjectCompleted(p)).length,
           completedProjects: projectsArr.filter((p) => isProjectCompleted(p)).length,
-          averagePerformance:
-            employeesArr.length > 0
-              ? employeesArr.reduce((sum, emp) => sum + (emp.performanceScore || 0), 0) / employeesArr.length
-              : 0,
+          averagePerformance: statsRes.data?.avgPerformanceScore ?? 0,
           topPerformers: topPerformersArr,
           recentFeedback: feedbackArr,
         });
       } catch (empErr: unknown) {
-        console.warn("⚠️ Could not fetch employee data:", empErr);
+        console.warn('⚠️ Could not fetch employee data:', empErr);
         setEmployeeData({
           totalEmployees: 0,
           activeProjects: 0,
@@ -256,28 +273,27 @@ export default function HRDashboardPage() {
 
     const fetchDashboardData = async () => {
       try {
-        const res = await api.get<DashboardData>("/admin/dashboard");
+        const res = await api.get<DashboardData>('/admin/dashboard', { timeout: API_TIMEOUT_MS });
         setData(res.data);
         setError(null);
-        setLoading(false);
-        void fetchEmployeeData();
       } catch (err: unknown) {
-        console.error("❌ Error fetching HR dashboard data:", err);
+        console.error('❌ Error fetching HR dashboard data:', err);
         if (isAxiosError(err)) {
           const respData = err.response?.data as { message?: string; error?: string } | undefined;
-          const msg = respData?.message || respData?.error || "Failed to load dashboard data";
+          const msg = respData?.message || respData?.error || 'Failed to load dashboard data';
           setError(msg);
         } else if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError("Failed to load dashboard data");
+          setError('Failed to load dashboard data');
         }
+      } finally {
         setLoading(false);
-        setEmployeeLoading(false);
       }
     };
 
-    fetchDashboardData();
+    void fetchDashboardData();
+    void fetchEmployeeData();
   }, []);
 
   useEffect(() => {
@@ -323,7 +339,7 @@ export default function HRDashboardPage() {
   };
 
   if (loading) {
-    return <TaloraLoader message="Loading dashboard..." className="min-h-[60vh]" />;
+    return <DashboardSkeleton />;
   }
 
   if (error) {

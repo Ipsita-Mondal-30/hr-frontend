@@ -90,7 +90,6 @@ export default function HRLayout({ children }: { children: ReactNode }) {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [isAuthorized, setIsAuthorized] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -103,17 +102,23 @@ export default function HRLayout({ children }: { children: ReactNode }) {
 
     if (user.role !== 'hr' && user.role !== 'admin') {
       router.replace('/');
-      return;
     }
-
-    setIsAuthorized(true);
   }, [user, loading, router]);
 
-  if (loading || !isAuthorized) {
+  if (loading && !user) {
     return (
       <TaloraLoader
         fullScreen
-        message={loading ? 'Loading Talora...' : 'Redirecting...'}
+        message="Loading Talora..."
+      />
+    );
+  }
+
+  if (!user || (user.role !== 'hr' && user.role !== 'admin')) {
+    return (
+      <TaloraLoader
+        fullScreen
+        message="Redirecting..."
       />
     );
   }

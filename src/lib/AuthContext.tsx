@@ -2,10 +2,13 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from './api';
+import { clearCachedUser, getCachedUser, setCachedUser } from './authCache';
 import { clearAllAuthTokens, getAuthToken, setAuthToken } from './cookies';
 import { getDashboardPath } from './dashboardRoutes';
-// import User from '@/'; // Adjust the import path as necessary
-function isAxiosError(err: unknown): err is { response?: { status?: number }; message?: string } {
+
+const AUTH_ME_TIMEOUT_MS = 20000;
+
+function isAxiosError(err: unknown): err is { response?: { status?: number }; message?: string; code?: string } {
   return typeof err === 'object' && err !== null && 'response' in err;
 }
 
@@ -48,8 +51,15 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(() =>
+    typeof window !== 'undefined' ? getCachedUser() : null
+  );
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const token = getAuthToken();
+    const cached = getCachedUser();
+    return !(token && cached);
+  });
 
   const logout = async () => {
     try {
@@ -60,6 +70,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     setUser(null);
     setLoading(false);
+    clearCachedUser();
     clearAllAuthTokens();
 
     window.location.href = '/';
@@ -67,11 +78,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateUser = (userData: User) => {
     setUser(userData);
+    setCachedUser(userData);
   };
 
   const fetchUser = async () => {
-    // Capture OAuth token from URL (cross-domain: backend cookie is on Render, not Vercel)
     if (typeof window !== 'undefined') {
+      api.get('/health', { timeout: 8000 }).catch(() => {});
+
       const urlToken = new URLSearchParams(window.location.search).get('token');
       if (urlToken) {
         console.log('🔑 OAuth token found in URL, saving to cookies');
@@ -83,29 +96,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const token = getAuthToken();
     console.log('🔍 AuthContext fetchUser - token:', token ? 'Present (' + token.substring(0, 20) + '...)' : 'Missing');
 
-    // Always allow access to public pages without redirects
     const publicPages = ['/', '/debug', '/select-role', '/role-select', '/auth/callback', '/login'];
-    const currentPath = window.location.pathname;
-    
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+
     if (!token) {
       console.log('❌ No token found, user not authenticated');
       setUser(null);
+      clearCachedUser();
       setLoading(false);
       return;
     }
 
+    const cachedUser = getCachedUser();
+    if (cachedUser) {
+      setUser(cachedUser);
+      setLoading(false);
+    }
+
     try {
       console.log('📡 Fetching user data from /auth/me...');
-      const res = await api.get('/auth/me');
-      const userData = res.data;
+      const res = await api.get('/auth/me', { timeout: AUTH_ME_TIMEOUT_MS });
+      const userData = res.data as User;
       console.log('✅ User data received:', {
         name: userData.name,
         email: userData.email,
         role: userData.role,
-        _id: userData._id
+        _id: userData._id,
       });
-      
+
       setUser(userData);
+      setCachedUser(userData);
       console.log('✅ User state updated in AuthContext');
 
       // Fetch candidate profile completeness in the background — don't block initial render
@@ -145,10 +165,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         window.location.replace('/role-select');
       }
     } catch (err: unknown) {
-      console.error('❌ Auth check failed:', isAxiosError(err) ? err.response?.status : undefined, err instanceof Error ? err.message : err);
+      console.error(
+        '❌ Auth check failed:',
+        isAxiosError(err) ? err.response?.status : undefined,
+        err instanceof Error ? err.message : err
+      );
       if (isAxiosError(err) && err.response?.status === 401) {
         console.log('🔄 Token invalid, clearing auth state');
         clearAllAuthTokens();
+        clearCachedUser();
+        setUser(null);
+      } else if (!cachedUser) {
         setUser(null);
       }
     } finally {
