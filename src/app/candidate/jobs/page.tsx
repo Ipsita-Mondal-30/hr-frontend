@@ -275,12 +275,20 @@ export default function JobsPage() {
       </div>
 
       {/* Jobs List */}
-      {filteredJobs.length === 0 ? (
+      {jobs.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
+          <div className="text-gray-400 text-6xl mb-4">💼</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No open positions yet</h3>
+          <p className="text-gray-500 max-w-md mx-auto">
+            HR teams are posting roles — check back soon. New jobs appear here once verified HR users publish them.
+          </p>
+        </div>
+      ) : filteredJobs.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-gray-400 text-6xl mb-4">🔍</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No jobs found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No jobs match your filters</h3>
           <p className="text-gray-500">
-            Try adjusting your search criteria or check back later for new opportunities.
+            Try adjusting your search criteria or clear filters to see all {jobs.length} available jobs.
           </p>
         </div>
       ) : (
