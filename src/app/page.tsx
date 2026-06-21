@@ -4,7 +4,6 @@ import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { getAuthToken } from '@/lib/cookies';
 import { getDashboardPath, getRoleDescription } from '@/lib/dashboardRoutes';
 import TaloraLoader from '@/components/TaloraLoader';
 import { RoleCards3D } from '../components/RoleCards3D';

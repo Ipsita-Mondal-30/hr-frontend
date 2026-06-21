@@ -65,22 +65,23 @@ export default function HRProfilePage() {
 
   useEffect(() => {
     api.get('/health', { timeout: 8000 }).catch(() => {});
-    fetchProfile();
-  }, []);
 
-  const fetchProfile = async () => {
-    try {
-      const res = await api.get<HRProfile>('/auth/hr-profile', { timeout: API_TIMEOUT_MS });
-      setProfile(res.data);
-      setPhone(res.data.phone || '');
-      setPosition(res.data.position || '');
-    } catch (err) {
-      console.error('Failed to load HR profile:', err);
-      if (!user) notify(getApiErrorMessage(err, 'Failed to load profile'));
-    } finally {
-      setLoading(false);
-    }
-  };
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get<HRProfile>('/auth/hr-profile', { timeout: API_TIMEOUT_MS });
+        setProfile(res.data);
+        setPhone(res.data.phone || '');
+        setPosition(res.data.position || '');
+      } catch (err) {
+        console.error('Failed to load HR profile:', err);
+        if (!user) notify(getApiErrorMessage(err, 'Failed to load profile'));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchProfile();
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

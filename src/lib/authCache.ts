@@ -19,7 +19,7 @@ export function getCachedUser(): CachedUser | null {
   try {
     const raw = localStorage.getItem(USER_CACHE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as User;
+    return JSON.parse(raw) as CachedUser;
   } catch {
     return null;
   }

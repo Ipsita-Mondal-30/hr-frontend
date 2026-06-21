@@ -38,13 +38,6 @@ interface DashboardData {
   }[];
 }
 
-interface EmployeeLite {
-  _id: string;
-  user: { name: string };
-  position: string;
-  performanceScore?: number;
-}
-
 interface ProjectLite {
   _id: string;
   name: string;
@@ -83,7 +76,6 @@ interface EmployeeData {
   recentFeedback: FeedbackLite[];
 }
 
-type ApiEmployeesRes = { employees?: EmployeeLite[] } | EmployeeLite[];
 type ApiProjectsRes = { projects?: ProjectLite[] } | ProjectLite[];
 type ApiTopPerformersRes = { topPerformers?: TopPerformer[] } | TopPerformer[];
 type ApiFeedbackRes = { feedback?: FeedbackLite[] } | FeedbackLite[];
