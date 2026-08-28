@@ -24,7 +24,7 @@ export default function GiveFeedbackPage() {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    type: 'performance',
+    type: 'performance-review',
     content: '',
     ratings: {
       technical: 5,
@@ -67,9 +67,14 @@ export default function GiveFeedbackPage() {
       
       notify('Feedback submitted successfully!');
       router.push('/hr/employees');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error submitting feedback:', error);
-      notify('Error submitting feedback');
+      const axiosError = error as { response?: { data?: { error?: string; message?: string } } };
+      notify(
+        axiosError.response?.data?.error ||
+          axiosError.response?.data?.message ||
+          'Error submitting feedback'
+      );
     } finally {
       setLoading(false);
     }
@@ -120,10 +125,10 @@ export default function GiveFeedbackPage() {
               onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="performance">Performance Review</option>
-              <option value="project">Project Feedback</option>
+              <option value="performance-review">Performance Review</option>
+              <option value="project-feedback">Project Feedback</option>
+              <option value="peer-feedback">Peer Feedback</option>
               <option value="general">General Feedback</option>
-              <option value="improvement">Areas for Improvement</option>
             </select>
           </div>
 

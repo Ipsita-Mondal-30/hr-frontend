@@ -18,7 +18,7 @@ interface Employee {
   };
 }
 
-type FeedbackType = 'performance' | 'peer' | 'self';
+type FeedbackType = 'performance-review' | 'peer-feedback' | 'self-assessment';
 
 function isAxiosLikeError(e: unknown): e is { response?: { data?: unknown } } {
   return typeof e === 'object' && e !== null && 'response' in e;
@@ -41,7 +41,7 @@ export default function GiveFeedbackPage() {
       leadership: 5,
       initiative: 5,
     },
-    type: 'performance' as FeedbackType,
+    type: 'performance-review' as FeedbackType,
     isAnonymous: false,
   });
 
@@ -94,7 +94,12 @@ export default function GiveFeedbackPage() {
       router.push('/hr/performance');
     } catch (error: unknown) {
       console.error('Error submitting feedback:', error);
-      notify('Failed to submit feedback. Please try again.');
+      const axiosError = error as { response?: { data?: { error?: string; message?: string } } };
+      notify(
+        axiosError.response?.data?.error ||
+          axiosError.response?.data?.message ||
+          'Failed to submit feedback. Please try again.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -162,9 +167,9 @@ export default function GiveFeedbackPage() {
           <h3 className="text-lg font-medium text-gray-900 mb-4">Feedback Type</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { value: 'performance', label: 'Performance Review', description: 'Formal performance evaluation' },
-              { value: 'peer', label: 'Peer Feedback', description: 'Colleague-to-colleague feedback' },
-              { value: 'self', label: 'Self Assessment', description: 'Employee self-evaluation' },
+              { value: 'performance-review', label: 'Performance Review', description: 'Formal performance evaluation' },
+              { value: 'peer-feedback', label: 'Peer Feedback', description: 'Colleague-to-colleague feedback' },
+              { value: 'self-assessment', label: 'Self Assessment', description: 'Employee self-evaluation' },
             ].map((type) => (
               <label key={type.value} className="relative">
                 <input
