@@ -1,124 +1,130 @@
+'use client';
+
 import { useState } from 'react';
-import Image from 'next/image';
+import { motion, AnimatePresence } from 'motion/react';
+import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const testimonials = [
+  {
+    quote:
+      'Talora transformed our hiring process. AI matching is incredibly accurate and we reduced time-to-hire by 60%.',
+    author: 'Sarah Chen',
+    position: 'Head of Talent Acquisition',
+    company: 'TechFlow Solutions',
+    role: 'HR',
+    initials: 'SC',
+    color: 'from-indigo-500 to-violet-500',
+  },
+  {
+    quote:
+      'The analytics dashboard gives us insights we never had. We can predict hiring trends and make data-driven decisions.',
+    author: 'Marcus Rodriguez',
+    position: 'VP of Human Resources',
+    company: 'Innovation Labs',
+    role: 'Admin',
+    initials: 'MR',
+    color: 'from-sky-500 to-blue-500',
+  },
+  {
+    quote:
+      'As a candidate, the experience was exceptional. Smooth applications, transparent communication, and great interview prep tools.',
+    author: 'Emily Watson',
+    position: 'Software Engineer',
+    company: 'CloudTech Inc',
+    role: 'Candidate',
+    initials: 'EW',
+    color: 'from-emerald-500 to-teal-500',
+  },
+];
 
 export function TestimonialsSection() {
-  const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [active, setActive] = useState(0);
 
-  const testimonials = [
-    {
-      quote:
-        'Talora transformed our hiring process completely. The AI matching is incredibly accurate, and we\'ve reduced our time-to-hire by 60%. The platform is intuitive and our team adopted it seamlessly.',
-      author: 'Sarah Chen',
-      position: 'Head of Talent Acquisition',
-      company: 'TechFlow Solutions',
-      image:
-        'https://randomuser.me/api/portraits/women/44.jpg',
-      rating: 5,
-    },
-    {
-      quote:
-        'The analytics dashboard gives us insights we never had before. We can now predict hiring trends and make data-driven decisions. It\'s been a game-changer for our recruitment strategy.',
-      author: 'Marcus Rodriguez',
-      position: 'VP of Human Resources',
-      company: 'Innovation Labs',
-      image:
-        'https://randomuser.me/api/portraits/men/32.jpg',
-      rating: 5,
-    },
-    {
-      quote:
-        'As a candidate, the experience was exceptional. The application process was smooth, communication was transparent, and I felt valued throughout. It\'s clear why companies choose Talora.',
-      author: 'Emily Watson',
-      position: 'Software Engineer',
-      company: 'CloudTech Inc',
-      image:
-        'https://randomuser.me/api/portraits/women/68.jpg',
-      rating: 5,
-    },
-  ];
+  const prev = () => setActive((i) => (i === 0 ? testimonials.length - 1 : i - 1));
+  const next = () => setActive((i) => (i === testimonials.length - 1 ? 0 : i + 1));
 
   return (
-    <section className="py-24 bg-gradient-to-br from-purple-50 via-white to-cyan-50">
+    <section className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center mb-20">
-          <div className="inline-flex items-center px-4 py-2 rounded-full bg-purple-100 text-purple-700 text-sm font-medium mb-6">
-            <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 text-indigo-700 text-sm font-medium mb-6">
+            <span className="w-2 h-2 rounded-full bg-indigo-500" />
             Testimonials
           </div>
-
-          <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-            Here&apos;s what people say about
-            <br />
-            <span className="bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
-              our work
-            </span>
+          <h2 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">
+            Loved by teams everywhere
           </h2>
-
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Don&apos;t just take our word for it. See what our clients and candidates have to say about their
-            experience with Talora.
+          <p className="text-lg text-slate-500 max-w-2xl mx-auto">
+            See what HR leaders, admins, and candidates say about Talora.
           </p>
         </div>
 
-        {/* Main Testimonial Card */}
-        <div className="relative max-w-4xl mx-auto">
-          <div className="bg-white rounded-3xl shadow-2xl p-12 relative overflow-hidden">
-            {/* Background Pattern */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-100 to-cyan-100 rounded-full -mr-32 -mt-32 opacity-50"></div>
+        <div className="relative max-w-3xl mx-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={active}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.3 }}
+              className="bg-slate-50 rounded-2xl border border-slate-100 p-10 md:p-12"
+            >
+              <div className="flex gap-1 mb-6">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-5 h-5 text-amber-400 fill-amber-400" />
+                ))}
+              </div>
 
-            {/* Quote Icon */}
-            <div className="absolute top-8 left-8 text-6xl text-purple-200 font-serif">&quot;</div>
+              <p className="text-xl text-slate-700 leading-relaxed mb-8">
+                &ldquo;{testimonials[active].quote}&rdquo;
+              </p>
 
-            <div className="relative z-10">
-              {/* Testimonial Content */}
-              <div className="text-center mb-12">
-                <p className="text-2xl text-gray-700 leading-relaxed mb-8 font-light">
-                  {testimonials[activeTestimonial].quote}
-                </p>
-
-                {/* Rating Stars */}
-                <div className="flex justify-center mb-6">
-                  {[...Array(testimonials[activeTestimonial].rating)].map((_, i) => (
-                    <svg key={i} className="w-6 h-6 text-yellow-400 fill-current" viewBox="0 0 24 24">
-                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                    </svg>
-                  ))}
+              <div className="flex items-center gap-4">
+                <div
+                  className={`w-12 h-12 rounded-full bg-gradient-to-br ${testimonials[active].color} flex items-center justify-center text-white font-bold text-sm`}
+                >
+                  {testimonials[active].initials}
                 </div>
-
-                {/* Author Info */}
-                <div className="flex items-center justify-center space-x-4">
-                  <Image
-                    src={testimonials[activeTestimonial].image}
-                    alt={testimonials[activeTestimonial].author}
-                    width={64}
-                    height={64}
-                    unoptimized
-                    className="w-16 h-16 rounded-full object-cover ring-4 ring-white shadow-lg"
-                  />
-                  <div className="text-left">
-                    <div className="font-semibold text-gray-900 text-lg">
-                      {testimonials[activeTestimonial].author}
-                    </div>
-                    <div className="text-gray-600">{testimonials[activeTestimonial].position}</div>
-                    <div className="text-purple-600 font-medium">{testimonials[activeTestimonial].company}</div>
+                <div>
+                  <div className="font-semibold text-slate-900">{testimonials[active].author}</div>
+                  <div className="text-sm text-slate-500">
+                    {testimonials[active].position} · {testimonials[active].company}
                   </div>
                 </div>
+                <span className="ml-auto px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-medium">
+                  {testimonials[active].role}
+                </span>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </AnimatePresence>
 
-          {/* Navigation Dots */}
-          <div className="flex justify-center mt-8 space-x-3">
-            {testimonials.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setActiveTestimonial(index)}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index === activeTestimonial ? 'bg-purple-600 scale-125' : 'bg-gray-300 hover:bg-purple-400'
-                }`}
-              />
-            ))}
+          <div className="flex items-center justify-center gap-4 mt-8">
+            <button
+              onClick={prev}
+              className="p-2 rounded-full border border-slate-200 hover:bg-slate-50 transition-colors"
+              aria-label="Previous testimonial"
+            >
+              <ChevronLeft className="w-5 h-5 text-slate-600" />
+            </button>
+            <div className="flex gap-2">
+              {testimonials.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActive(i)}
+                  className={`w-2.5 h-2.5 rounded-full transition-all ${
+                    i === active ? 'bg-indigo-600 scale-125' : 'bg-slate-300 hover:bg-indigo-300'
+                  }`}
+                  aria-label={`Go to testimonial ${i + 1}`}
+                />
+              ))}
+            </div>
+            <button
+              onClick={next}
+              className="p-2 rounded-full border border-slate-200 hover:bg-slate-50 transition-colors"
+              aria-label="Next testimonial"
+            >
+              <ChevronRight className="w-5 h-5 text-slate-600" />
+            </button>
           </div>
         </div>
       </div>

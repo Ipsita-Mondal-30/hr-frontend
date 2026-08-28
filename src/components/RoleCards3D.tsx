@@ -1,157 +1,98 @@
-"use client";
-import React from "react";
-import { CardBody, CardContainer, CardItem } from "@/components/Custom3DCard";
-import Link from "next/link";
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import { motion } from 'motion/react';
+import { Search, Briefcase, Shield, Users, ArrowRight } from 'lucide-react';
 
 const roleData = [
   {
-    title: "Candidate (Job Seeker)",
-    description: "Find your dream job with advanced search and tracking features",
-    icon: "🎯",
-    color: "from-blue-500 to-blue-600",
-    features: [
-      "Create & manage profile with skills and resume",
-      "Advanced job search with multiple filters",
-      "Apply to jobs directly from dashboard",
-      "Track application status in real-time",
-      "Get salary insights by role & location",
-      "Save jobs and ask for referrals"
-    ],
-    ctaText: "Start Job Search",
-    ctaLink: "/login",
-    bgImage: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&auto=format&fit=crop"
+    title: 'Candidate',
+    subtitle: 'Job Seeker',
+    description: 'Find roles, apply, track applications, and prep for interviews.',
+    icon: Search,
+    color: 'from-sky-500 to-blue-600',
+    borderHover: 'hover:border-sky-200',
+    features: ['AI job matching', 'Application tracking', 'Interview prep'],
+    ctaText: 'Sign in as Candidate',
+    ctaLink: '/login',
   },
   {
-    title: "HR (Recruiter)",
-    description: "Streamline your hiring process with powerful recruitment tools",
-    icon: "👔",
-    color: "from-green-500 to-green-600",
-    features: [
-      "Post detailed job descriptions easily",
-      "Manage and update job postings",
-      "View and review candidate applications",
-      "Shortlist or reject candidates efficiently",
-      "Schedule interviews and provide feedback",
-      "Track job performance analytics"
-    ],
-    ctaText: "Post Jobs",
-    ctaLink: "/login",
-    bgImage: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&auto=format&fit=crop"
+    title: 'HR',
+    subtitle: 'Recruiter',
+    description: 'Post jobs, review applications, schedule interviews, and run analytics.',
+    icon: Briefcase,
+    color: 'from-emerald-500 to-teal-600',
+    borderHover: 'hover:border-emerald-200',
+    features: ['Job posting', 'Candidate pipeline', 'Interview scheduling'],
+    ctaText: 'Sign in as HR',
+    ctaLink: '/login',
   },
   {
-    title: "Admin (Platform Owner)",
-    description: "Complete platform control with advanced management features",
-    icon: "⚙️",
-    color: "from-purple-500 to-purple-600",
-    features: [
-      "Manage entire platform ecosystem",
-      "Approve HR registrations and job postings",
-      "Manage all users across roles",
-      "Access comprehensive analytics",
-      "Handle disputes and configure system",
-      "Assign roles and permissions"
-    ],
-    ctaText: "Admin Panel",
-    ctaLink: "/login",
-    bgImage: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop"
+    title: 'Admin',
+    subtitle: 'Platform Owner',
+    description: 'Verify HR accounts, approve jobs, and manage the entire platform.',
+    icon: Shield,
+    color: 'from-indigo-500 to-violet-600',
+    borderHover: 'hover:border-indigo-200',
+    features: ['User management', 'Job approvals', 'System analytics'],
+    ctaText: 'Sign in as Admin',
+    ctaLink: '/login',
   },
   {
-    title: "Employee (Support Staff)",
-    description: "Provide internal support and maintain platform quality",
-    icon: "🤝",
-    color: "from-orange-500 to-orange-600",
-    features: [
-      "Assist HR with job posting processes",
-      "Moderate and quality-check job listings",
-      "Support candidates with technical issues",
-      "Generate reports for admin review",
-      "Manage expired jobs and housekeeping",
-      "Handle internal communications"
-    ],
-    ctaText: "Support Center",
-    ctaLink: "/login",
-    bgImage: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&auto=format&fit=crop"
-  }
+    title: 'Employee',
+    subtitle: 'Team Member',
+    description: 'Access projects, performance reviews, payroll, and team collaboration.',
+    icon: Users,
+    color: 'from-orange-500 to-amber-600',
+    borderHover: 'hover:border-orange-200',
+    features: ['Project tracking', 'Performance reviews', 'Payroll access'],
+    ctaText: 'Sign in as Employee',
+    ctaLink: '/login',
+  },
 ];
 
 export function RoleCards3D() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {roleData.map((role, index) => (
-        <CardContainer key={index} className="inter-var">
-          <CardBody className="bg-gray-50 relative group/card dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-full h-auto rounded-xl p-6 border hover:shadow-xl transition-all duration-300">
-            <CardItem
-              translateZ="50"
-              className="text-xl font-bold text-neutral-600 dark:text-white flex items-center gap-3 mb-2"
-            >
-              <span className="text-2xl">{role.icon}</span>
-              {role.title}
-            </CardItem>
-
-            <CardItem
-              as="p"
-              translateZ="60"
-              className="text-neutral-500 text-sm mt-2 dark:text-neutral-300 mb-4"
-            >
-              {role.description}
-            </CardItem>
-
-            <CardItem translateZ="100" className="w-full mb-4">
-              <div
-                className={`h-32 w-full bg-gradient-to-r ${role.color} rounded-xl relative overflow-hidden group-hover/card:shadow-xl transition-all duration-300`}
-                style={{
-                  backgroundImage: `linear-gradient(135deg, rgba(0,0,0,0.1), rgba(0,0,0,0.3)), url(${role.bgImage})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }}
-              >
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-white text-4xl font-bold opacity-80">
-                    {role.icon}
-                  </span>
-                </div>
-              </div>
-            </CardItem>
-
-            <CardItem translateZ="80" className="mb-6">
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200 mb-3">
-                  Key Features:
-                </h4>
-                <div className="grid grid-cols-1 gap-1">
-                  {role.features.slice(0, 3).map((feature, idx) => (
-                    <div key={idx} className="flex items-start gap-2">
-                      <span className="text-green-500 text-xs mt-1">✓</span>
-                      <span className="text-xs text-neutral-600 dark:text-neutral-300">
-                        {feature}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className="text-xs text-neutral-500 mt-2">
-                  +{role.features.length - 3} more features...
-                </div>
-              </div>
-            </CardItem>
-
-            <div className="flex justify-between items-center">
-              <CardItem
-                translateZ={20}
-                className="px-4 py-2 rounded-xl text-xs font-normal dark:text-white text-neutral-600"
-              >
-                Learn more →
-              </CardItem>
-              <CardItem
-                translateZ={20}
-                as={Link}
-                href={role.ctaLink}
-                className={`px-6 py-2 rounded-xl bg-gradient-to-r ${role.color} text-white text-xs font-bold hover:shadow-lg transition-all duration-300`}
-              >
-                {role.ctaText}
-              </CardItem>
+        <motion.div
+          key={role.title}
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.5, delay: index * 0.1 }}
+          className={`group relative rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm p-8 ${role.borderHover} hover:shadow-lg hover:-translate-y-1 transition-all duration-300`}
+        >
+          <div className="flex items-start justify-between mb-6">
+            <div className={`p-3 rounded-xl bg-gradient-to-br ${role.color}`}>
+              <role.icon className="w-6 h-6 text-white" />
             </div>
-          </CardBody>
-        </CardContainer>
+            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+              {role.subtitle}
+            </span>
+          </div>
+
+          <h3 className="text-2xl font-bold text-slate-900 mb-2">{role.title}</h3>
+          <p className="text-slate-500 mb-6 leading-relaxed">{role.description}</p>
+
+          <ul className="space-y-2 mb-8">
+            {role.features.map((feature) => (
+              <li key={feature} className="flex items-center gap-2 text-sm text-slate-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                {feature}
+              </li>
+            ))}
+          </ul>
+
+          <Link
+            href={role.ctaLink}
+            className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r ${role.color} text-white text-sm font-semibold hover:shadow-lg transition-all duration-300`}
+          >
+            {role.ctaText}
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </motion.div>
       ))}
     </div>
   );

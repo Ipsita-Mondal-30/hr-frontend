@@ -8,10 +8,13 @@ import { getDashboardPath, getRoleDescription } from '@/lib/dashboardRoutes';
 import TaloraLoader from '@/components/TaloraLoader';
 import { RoleCards3D } from '../components/RoleCards3D';
 import { HeroSection } from '../components/HeroSection';
+import { StatsSection } from '../components/StatsSection';
+import { FeaturesSection } from '../components/FeaturesSection';
 import { AboutSection } from '../components/AboutSection';
 import { ProcessSection } from '../components/ProcessSection';
 import { TestimonialsSection } from '../components/TestimonialsSection';
 import { CTASection } from '../components/CTASection';
+import Footer from '../components/Footer';
 import { 
   Clock, 
   Users, 
@@ -181,44 +184,35 @@ function UserDashboard({ user }: { user: DashboardUser }) {
 function PublicHomePage() {
   return (
     <div className="overflow-x-hidden">
-      {/* Modern Hero Section */}
       <HeroSection />
-
-      {/* About Section */}
+      <StatsSection />
+      <FeaturesSection />
       <AboutSection />
 
-      {/* Services Section */}
-      {/* <ServicesSection /> */}
-
-      {/* 3D Role Cards Section */}
-      <div className="py-24 bg-gradient-to-br from-gray-50 to-white">
+      <div className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 rounded-full bg-purple-100 text-purple-700 text-sm font-medium mb-6">
-              <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 text-indigo-700 text-sm font-medium mb-6">
+              <span className="w-2 h-2 rounded-full bg-indigo-500" />
               Choose Your Role
             </div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-              Discover the perfect tools and features
-              <br />
-              <span className="text-purple-600">designed for your role</span>
+            <h2 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">
+              Tools built for
+              <span className="text-indigo-600"> every role</span>
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Whether you&apos;re an HR professional, admin, or job candidate, Talora provides
-              specialized experiences tailored to your unique needs in the hiring ecosystem.
+            <p className="text-lg text-slate-500 max-w-2xl mx-auto">
+              Whether you&apos;re hiring, applying, managing, or supporting — Talora has a
+              tailored experience for you.
             </p>
           </div>
           <RoleCards3D />
-          {/* Process Section */}
-          <ProcessSection />
         </div>
       </div>
 
-      {/* Testimonials Section */}
+      <ProcessSection />
       <TestimonialsSection />
-
-      {/* Final CTA Section */}
       <CTASection />
+      <Footer />
     </div>
   );
 }

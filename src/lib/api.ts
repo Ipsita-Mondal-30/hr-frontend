@@ -32,7 +32,6 @@ api.interceptors.request.use((config) => {
     
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    console.log('🔐 API request with token:', token.substring(0, 20) + '...');
   } else {
     console.warn('⚠️ No auth token found for API request');
   }

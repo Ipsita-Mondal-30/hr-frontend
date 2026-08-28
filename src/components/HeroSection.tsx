@@ -1,135 +1,147 @@
-import Link from "next/link";
-import { useState, useEffect } from 'react';
+'use client';
+
+import Link from 'next/link';
+import { motion } from 'motion/react';
+import { ArrowRight, Sparkles, BarChart3, Mic, Wallet } from 'lucide-react';
+
+const trustItems = [
+  { icon: Sparkles, label: 'AI Matching' },
+  { icon: Mic, label: 'Interview Prep' },
+  { icon: BarChart3, label: 'HR Analytics' },
+  { icon: Wallet, label: 'Payroll' },
+];
 
 export function HeroSection() {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [showScrollIndicator, setShowScrollIndicator] = useState(true);
-
-  const images = [
-    "https://images.unsplash.com/photo-1497032205916-ac775f0649ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-    "https://images.unsplash.com/photo-1559136555-9303baea8ebd?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-    "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-    "https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?ixlib=rb-4.0.3&auto=format&fit=crop&w=2069&q=80",
-  ];
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % images.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [images.length]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 100) {
-        setShowScrollIndicator(false);
-      } else {
-        setShowScrollIndicator(true);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   return (
-    <section className="relative min-h-screen pt-20 pb-12 overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Background Images with Parallax Effect */}
+    <section className="relative min-h-screen pt-24 pb-16 overflow-hidden bg-slate-950">
+      {/* Animated gradient mesh */}
       <div className="absolute inset-0">
-        {images.map((image, index) => (
-          <div
-            key={index}
-            className={`absolute inset-0 transition-opacity duration-1000 ${
-              index === currentSlide ? 'opacity-30' : 'opacity-0'
-            }`}
-          >
-            <div
-              className="w-full h-full bg-cover bg-center bg-no-repeat transform scale-110 transition-transform duration-[10s] ease-out"
-              style={{ backgroundImage: `url(${image})` }}
-            />
-          </div>
-        ))}
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-indigo-600/30 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-violet-600/20 rounded-full blur-[100px] animate-pulse delay-1000" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-sky-600/10 rounded-full blur-[140px]" />
       </div>
 
-      {/* Gradient Overlays */}
-      <div className="absolute inset-0 bg-gradient-to-r from-purple-900/80 via-slate-900/60 to-indigo-900/80" />
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-slate-900/30" />
+      {/* Grid overlay */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: '64px 64px',
+        }}
+      />
 
-      {/* Content Container */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full min-h-[90vh] flex items-center">
-        <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
-          <div className="text-white space-y-8 animate-in slide-in-from-left duration-1000">
-            <div className="space-y-2">
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-sm font-medium text-white/90 mb-4"></div>
-
-              <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
-                WE CRAFT{' '}
-                <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                  CAREERS
-                </span>
-                <br />
-                & DIGITAL<br />
-                <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-                  OPPORTUNITIES
-                </span>
-              </h1>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center min-h-[80vh]">
+          {/* Left */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            className="space-y-8"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-slate-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              All-in-one recruitment platform
             </div>
 
-            <p className="text-xl text-gray-300 leading-relaxed max-w-2xl">
-              Redefining the way candidates, HRs, employees, and admins connect in one seamless ecosystem.
-              From smart job discovery to streamlined hiring workflows, we’re building a platform where talent meets opportunity effortlessly.
+            <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-[1.1] tracking-tight">
+              Hire smarter.
+              <br />
+              <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-sky-400 bg-clip-text text-transparent">
+                Grow faster.
+              </span>
+            </h1>
+
+            <p className="text-lg text-slate-400 leading-relaxed max-w-lg">
+              Talora connects candidates, HR teams, employees, and admins in one intelligent
+              ecosystem — from AI resume matching to interview prep and payroll.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 href="/login"
-                className="px-8 py-4 border-2 border-white/20 rounded-2xl text-white font-semibold text-lg hover:bg-white/10 hover:border-white/30 transition-all duration-300 backdrop-blur-sm"
+                className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-indigo-600/25 hover:shadow-indigo-500/40"
               >
-                <span className="relative z-10 flex items-center">
-                  The Future of Hiring, Built Today.
-                  <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
+                Get Started Free
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link
+                href="/jobs"
+                className="inline-flex items-center justify-center px-8 py-4 border border-white/15 text-white font-semibold rounded-xl hover:bg-white/5 transition-all duration-300"
+              >
+                Browse Jobs
               </Link>
             </div>
 
-            {/* Trust Indicators */}
-            <div className="flex items-center space-x-8 pt-8 opacity-80">
-              <div className="text-center"></div>
-              <div className="text-center"></div>
-              <div className="text-center"></div>
+            {/* Trust strip */}
+            <div className="flex flex-wrap gap-4 pt-4">
+              {trustItems.map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-center gap-2 text-sm text-slate-400"
+                >
+                  <item.icon className="w-4 h-4 text-indigo-400" />
+                  {item.label}
+                </div>
+              ))}
             </div>
-          </div>
+          </motion.div>
 
+          {/* Right — floating product mockup */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="relative hidden lg:block"
+          >
+            <div className="relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-2xl">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-3 h-3 rounded-full bg-red-400/80" />
+                <div className="w-3 h-3 rounded-full bg-yellow-400/80" />
+                <div className="w-3 h-3 rounded-full bg-green-400/80" />
+                <span className="ml-3 text-xs text-slate-500">Talora Dashboard</span>
+              </div>
 
-        </div>
-      </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  {['Applications', 'Interviews', 'Hires'].map((label, i) => (
+                    <div key={label} className="rounded-xl bg-white/5 border border-white/10 p-4">
+                      <div className="text-2xl font-bold text-white">{[128, 34, 12][i]}</div>
+                      <div className="text-xs text-slate-400 mt-1">{label}</div>
+                    </div>
+                  ))}
+                </div>
 
-      {/* Slide Indicators */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
-        {images.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentSlide(index)}
-            className={`w-3 h-3 rounded-full transition-all duration-300 ${
-              index === currentSlide ? 'bg-white shadow-lg' : 'bg-white/30 hover:bg-white/50'
-            }`}
-          />
-        ))}
-      </div>
+                <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-3">
+                  <div className="text-sm font-medium text-slate-300">Recent Applications</div>
+                  {['Senior React Developer', 'Product Designer', 'Data Analyst'].map((role, i) => (
+                    <div key={role} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-xs text-white font-bold">
+                          {['JD', 'SK', 'AM'][i]}
+                        </div>
+                        <span className="text-sm text-slate-300">{role}</span>
+                      </div>
+                      <span className="text-xs font-medium text-emerald-400">{[92, 87, 78][i]}% match</span>
+                    </div>
+                  ))}
+                </div>
 
-      {/* Scroll Indicator */}
-      <div className={`absolute bottom-8 right-8 z-10 transition-opacity duration-500 ${
-        showScrollIndicator ? 'opacity-100' : 'opacity-0 pointer-events-none'
-      }`}>
-        <div className="flex flex-col items-center text-white/60 animate-bounce">
-          <span className="text-xs mb-2 rotate-90 origin-center whitespace-nowrap">Scroll down</span>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-          </svg>
+                <div className="h-24 rounded-xl bg-gradient-to-r from-indigo-600/20 to-violet-600/20 border border-indigo-500/20 flex items-center justify-center">
+                  <span className="text-sm text-indigo-300 font-medium">AI Match Score Active</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating badge */}
+            <motion.div
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute -top-4 -right-4 px-4 py-2 rounded-xl bg-emerald-500/90 text-white text-sm font-semibold shadow-lg"
+            >
+              94% Match Rate
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     </section>

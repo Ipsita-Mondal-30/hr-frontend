@@ -1,81 +1,72 @@
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
+import { CheckCircle2 } from 'lucide-react';
+
+const highlights = [
+  'AI-powered candidate matching',
+  'End-to-end hiring workflow',
+  'Role-based dashboards for every user',
+  'Interview prep and voice practice',
+];
 
 export function AboutSection() {
   const [videoError, setVideoError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    // Try to play the video when component mounts
     if (videoRef.current) {
-      videoRef.current.play().catch((error) => {
-        console.error('Video autoplay failed:', error);
-        // Autoplay might be blocked, but video can still be played on user interaction
-      });
+      videoRef.current.play().catch(() => {});
     }
   }, []);
 
   return (
-    <section className="py-24 bg-gradient-to-b from-gray-50 to-white">
+    <section className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          {/* Left Content */}
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <div className="inline-flex items-center px-4 py-2 rounded-full bg-purple-100 text-purple-700 text-sm font-medium">
-                <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
-                About us
-              </div>
-
-              <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-                Meet Talora: Your Design
-                <br />
-                <span className="text-purple-600">Partners</span>
-              </h2>
-
-              <p className="text-lg text-gray-600 leading-relaxed">
-                We’re not just building a hiring platform; we’re crafting a complete ecosystem for candidates, HRs, employees, and admins. Since day one, our focus has been clear: to redefine recruitment through innovation, transparency, and seamless digital experiences.
-                <br />
-                <br />
-                Our approach blends deep insights into career journeys with cutting-edge technology, ensuring that opportunities are not just discovered but truly aligned with aspirations. Whether it’s a candidate seeking the right role, an HR managing applications, or an admin driving growth—we make careers thrive.
-              </p>
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="space-y-8"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 text-indigo-700 text-sm font-medium">
+              <span className="w-2 h-2 rounded-full bg-indigo-500" />
+              About Talora
             </div>
 
-            {/* Stats Card */}
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 text-white relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/20 to-transparent rounded-full -mr-16 -mt-16"></div>
+            <h2 className="text-4xl lg:text-5xl font-bold text-slate-900 leading-tight">
+              Built for the entire
+              <br />
+              <span className="text-indigo-600">hiring ecosystem</span>
+            </h2>
 
-              <div className="relative z-10">
-                <div className="text-5xl font-bold mb-2">40%</div>
-                <div className="text-gray-300 mb-4">Where Talent Meets the Right Opportunity.</div>
+            <p className="text-lg text-slate-500 leading-relaxed">
+              Talora isn&apos;t just another job board. It&apos;s a complete platform where candidates
+              discover opportunities, HR teams manage the full hiring pipeline, employees track
+              performance, and admins maintain platform quality — all in one place.
+            </p>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className="bg-white/10 backdrop-blur-sm rounded-xl py-3 px-4">
-                      <div className="text-sm font-medium">Seamless Collaboration Between HR &amp; Candidates</div>
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="bg-white/10 backdrop-blur-sm rounded-xl py-3 px-4">
-                      <div className="text-sm font-medium">Career Growth Tools for Employees</div>
-                    </div>
-                  </div>
-                  <div className="text-center"></div>
-                </div>
-              </div>
+            <ul className="space-y-3">
+              {highlights.map((item) => (
+                <li key={item} className="flex items-center gap-3 text-slate-600">
+                  <CheckCircle2 className="w-5 h-5 text-indigo-500 flex-shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </motion.div>
 
-              {/* Team Photos (decorative circles) */}
-              <div className="absolute bottom-4 right-4 flex -space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full border-2 border-white"></div>
-                <div className="w-12 h-12 bg-gradient-to-br from-cyan-400 to-blue-400 rounded-full border-2 border-white"></div>
-                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-400 rounded-full border-2 border-white"></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Content - Video */}
-          <div className="relative">
-            {/* Video Container */}
-            <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-purple-900 to-indigo-900">
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+            className="relative"
+          >
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-200 bg-slate-900">
               {!videoError ? (
                 <video
                   ref={videoRef}
@@ -84,59 +75,27 @@ export function AboutSection() {
                   muted
                   playsInline
                   preload="auto"
-                  className="w-full h-auto rounded-3xl"
-                  onError={() => {
-                    console.error('Video failed to load');
-                    setVideoError(true);
-                  }}
-                  onLoadedData={() => {
-                    console.log('Video loaded successfully');
-                  }}
+                  className="w-full h-auto"
+                  onError={() => setVideoError(true)}
                 >
                   <source src="/Talora.mp4" type="video/mp4" />
-                  Your browser does not support the video tag.
                 </video>
               ) : (
-                /* Fallback content if video fails */
-                <div className="aspect-video flex items-center justify-center p-12">
-                  <div className="text-white text-center">
-                    <svg className="w-24 h-24 mx-auto mb-6 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h3 className="text-2xl font-bold mb-2">Talora Platform</h3>
-                    <p className="text-lg text-purple-200">Transforming Recruitment</p>
-                    <p className="text-sm text-purple-300 mt-4">Where Talent Meets Opportunity</p>
+                <div className="aspect-video flex items-center justify-center bg-gradient-to-br from-indigo-900 to-slate-900 p-12">
+                  <div className="text-center text-white">
+                    <div className="text-5xl font-bold mb-2">Talora</div>
+                    <p className="text-indigo-200">Where talent meets opportunity</p>
                   </div>
                 </div>
               )}
-
-              {/* Video Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 via-transparent to-transparent pointer-events-none rounded-3xl"></div>
-
-              {/* Play Icon Overlay (decorative) */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
-                <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </div>
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent pointer-events-none" />
             </div>
 
-            {/* Floating Elements */}
-            <div className="absolute -top-6 -right-6 w-20 h-20 bg-purple-100 rounded-2xl rotate-12 flex items-center justify-center shadow-lg">
-              <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
+            <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl shadow-xl border border-slate-100 p-5">
+              <div className="text-3xl font-bold text-indigo-600">40%</div>
+              <div className="text-sm text-slate-500">Faster time-to-hire</div>
             </div>
-
-            <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-yellow-100 rounded-2xl -rotate-12 flex items-center justify-center shadow-lg">
-              <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-            </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

@@ -87,20 +87,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       const urlToken = new URLSearchParams(window.location.search).get('token');
       if (urlToken) {
-        console.log('🔑 OAuth token found in URL, saving to cookies');
         setAuthToken(urlToken);
         window.history.replaceState({}, '', window.location.pathname);
       }
     }
 
     const token = getAuthToken();
-    console.log('🔍 AuthContext fetchUser - token:', token ? 'Present (' + token.substring(0, 20) + '...)' : 'Missing');
 
     const publicPages = ['/', '/debug', '/select-role', '/role-select', '/auth/callback', '/login'];
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
 
     if (!token) {
-      console.log('❌ No token found, user not authenticated');
       setUser(null);
       clearCachedUser();
       setLoading(false);
@@ -114,19 +111,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     try {
-      console.log('📡 Fetching user data from /auth/me...');
       const res = await api.get('/auth/me', { timeout: AUTH_ME_TIMEOUT_MS });
       const userData = res.data as User;
-      console.log('✅ User data received:', {
-        name: userData.name,
-        email: userData.email,
-        role: userData.role,
-        _id: userData._id,
-      });
 
       setUser(userData);
       setCachedUser(userData);
-      console.log('✅ User state updated in AuthContext');
 
       // Fetch candidate profile completeness in the background — don't block initial render
       if (userData.role === 'candidate') {
@@ -148,20 +137,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (isRoleSelectPage && userData.role) {
         const dashboardPath = getDashboardPath(userData.role);
         if (dashboardPath) {
-          console.log('✅ Role already set, leaving role-select for', dashboardPath);
           window.location.replace(dashboardPath);
           return;
         }
       }
 
       if (isPublicPage) {
-        console.log('ℹ️ On public page, no redirect needed');
         return;
       }
 
       // Only redirect to role selection if user has no role and is on a protected page
       if (!userData.role) {
-        console.log('⚠️ User has no role, redirecting to role selection');
         window.location.replace('/role-select');
       }
     } catch (err: unknown) {
@@ -171,7 +157,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         err instanceof Error ? err.message : err
       );
       if (isAxiosError(err) && err.response?.status === 401) {
-        console.log('🔄 Token invalid, clearing auth state');
         clearAllAuthTokens();
         clearCachedUser();
         setUser(null);
