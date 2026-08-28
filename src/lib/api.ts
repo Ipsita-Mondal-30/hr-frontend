@@ -15,6 +15,11 @@ function resolveApiRoot(): string {
 
 const API_ROOT = resolveApiRoot();
 
+/** Public API host without `/api` — use for OAuth redirects and absolute backend URLs. */
+export function getApiRoot(): string {
+  return API_ROOT;
+}
+
 const api = axios.create({
   baseURL: `${API_ROOT}/api`,
   withCredentials: true, // 👈 SEND cookies

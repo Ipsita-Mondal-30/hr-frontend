@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
-import { setAuthToken } from '@/lib/cookies';
+import { getAuthToken, setAuthToken } from '@/lib/cookies';
 import { getDashboardPath } from '@/lib/dashboardRoutes';
 
 interface DecodedToken {
@@ -17,47 +17,44 @@ export default function AuthCallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Get token from URL manually to avoid useSearchParams issues
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+    const oauthError = urlParams.get('error');
+    const oauthMessage = urlParams.get('message');
 
-    console.log('Auth callback received token:', token);
-    console.log('Full URL:', window.location.href);
+    if (oauthError) {
+      const qs = new URLSearchParams({ error: oauthError });
+      if (oauthMessage) qs.set('message', oauthMessage);
+      router.replace(`/login?${qs.toString()}`);
+      return;
+    }
+
+    const token = urlParams.get('token') || getAuthToken();
 
     if (!token) {
-      console.error('No token in callback URL');
-      router.push('/');
+      router.replace('/login?error=no_token&message=Sign-in%20did%20not%20return%20a%20token.%20Try%20again.');
       return;
     }
 
     try {
-      // Set token in cookies immediately
       setAuthToken(token);
-      console.log('Token set in cookies');
+      window.history.replaceState({}, '', window.location.pathname);
 
       const decoded: DecodedToken = jwtDecode(token);
-      console.log('Decoded token:', decoded);
+      const dashboardPath = getDashboardPath(decoded.role);
 
-      // Add a small delay to ensure token is properly set
-      setTimeout(() => {
-        const dashboardPath = getDashboardPath(decoded.role);
-        if (dashboardPath) {
-          console.log('Role found:', decoded.role, 'redirecting to dashboard');
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('dashboardCache');
-            sessionStorage.removeItem('userCache');
-          }
-          window.location.replace(dashboardPath);
-          return;
-        }
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('dashboardCache');
+        sessionStorage.removeItem('userCache');
+      }
 
-        console.log('No role found, redirecting to role-select');
-        window.location.replace('/role-select');
-      }, 100);
+      if (dashboardPath) {
+        window.location.replace(dashboardPath);
+        return;
+      }
 
-    } catch (err) {
-      console.error('Token decode error:', err);
-      router.push('/');
+      window.location.replace('/role-select');
+    } catch {
+      router.replace('/login?error=token_failed&message=Invalid%20sign-in%20token');
     }
   }, [router]);
 

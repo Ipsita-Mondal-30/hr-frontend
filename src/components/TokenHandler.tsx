@@ -8,6 +8,9 @@ export default function TokenHandler() {
   const { refreshUser } = useAuth();
 
   useEffect(() => {
+    // /auth/callback owns the full OAuth handoff (token + redirect)
+    if (window.location.pathname === '/auth/callback') return;
+
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
 

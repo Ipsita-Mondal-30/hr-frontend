@@ -85,10 +85,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (typeof window !== 'undefined') {
       api.get('/health', { timeout: 8000 }).catch(() => {});
 
-      const urlToken = new URLSearchParams(window.location.search).get('token');
-      if (urlToken) {
-        setAuthToken(urlToken);
-        window.history.replaceState({}, '', window.location.pathname);
+      const currentPath = window.location.pathname;
+      const isAuthCallback = currentPath === '/auth/callback';
+
+      // Let /auth/callback handle the OAuth token — avoid stripping ?token= before that page runs
+      if (!isAuthCallback) {
+        const urlToken = new URLSearchParams(window.location.search).get('token');
+        if (urlToken) {
+          setAuthToken(urlToken);
+          window.history.replaceState({}, '', window.location.pathname);
+        }
       }
     }
 

@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { motion } from 'motion/react';
 import { ArrowLeft, Shield, Sparkles, Users } from 'lucide-react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+import { getApiRoot } from '@/lib/api';
 
 const features = [
   { icon: Users, label: 'One platform for every role' },
@@ -26,13 +26,15 @@ export default function LoginContent() {
     if (errorParam) {
       if (errorParam === 'oauth_failed') {
         setError(`OAuth Login Failed: ${messageParam || 'Unknown error'}`);
+      } else if (errorParam === 'no_token') {
+        setError(messageParam || 'Sign-in did not complete. Please try Google login again.');
       } else {
         setError(`Login Error: ${messageParam || errorParam}`);
       }
     }
   }, [searchParams]);
 
-  const googleAuthUrl = `${API_BASE_URL}/api/auth/google?frontend=${encodeURIComponent(
+  const googleAuthUrl = `${getApiRoot()}/api/auth/google?frontend=${encodeURIComponent(
     typeof window !== 'undefined' ? window.location.origin : 'https://hr-frontend-54b2.vercel.app'
   )}`;
 
