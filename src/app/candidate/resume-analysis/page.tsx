@@ -88,11 +88,23 @@ export default function ResumeAnalysisPage() {
         setHistory((prev) => [result.history, ...prev]);
       }
     } catch (err: unknown) {
-      const msg =
-        err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-          : 'Analysis failed';
-      setError(msg || 'Analysis failed');
+      const axiosErr = err as {
+        response?: { status?: number; data?: { error?: string } };
+        message?: string;
+      };
+      const status = axiosErr.response?.status;
+      const backendError = axiosErr.response?.data?.error;
+      let msg = backendError || axiosErr.message || 'Analysis failed';
+
+      if (status === 404) {
+        msg =
+          backendError ||
+          'Resume analysis endpoint not found. Check that NEXT_PUBLIC_API_BASE_URL points to your backend host without a trailing /api.';
+      } else if (status === 401) {
+        msg = 'Please sign in again to analyze your resume.';
+      }
+
+      setError(msg);
     } finally {
       setLoading(false);
     }

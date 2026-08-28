@@ -6,10 +6,17 @@ export type ApiRequestConfig = InternalAxiosRequestConfig & {
   skipAuthRedirect?: boolean;
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+/** Strip trailing slashes and a duplicate `/api` suffix so baseURL is always `{host}/api`. */
+function resolveApiRoot(): string {
+  const raw = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080').trim();
+  const withoutApi = raw.replace(/\/api\/?$/i, '');
+  return withoutApi.replace(/\/$/, '');
+}
+
+const API_ROOT = resolveApiRoot();
 
 const api = axios.create({
-  baseURL: `${API_BASE_URL}/api`,
+  baseURL: `${API_ROOT}/api`,
   withCredentials: true, // 👈 SEND cookies
   headers: {
     'Content-Type': 'application/json',
