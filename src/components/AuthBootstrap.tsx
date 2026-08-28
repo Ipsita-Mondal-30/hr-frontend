@@ -1,12 +1,13 @@
 'use client';
 
+import { useEffect } from 'react';
 import TokenHandler from '@/components/TokenHandler';
 import { runAuthResetIfNeeded } from '@/lib/cookies';
 
-if (typeof window !== 'undefined') {
-  runAuthResetIfNeeded();
-}
-
 export default function AuthBootstrap() {
+  useEffect(() => {
+    runAuthResetIfNeeded();
+  }, []);
+
   return <TokenHandler />;
 }

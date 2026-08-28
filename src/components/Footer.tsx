@@ -34,7 +34,7 @@ export default function Footer() {
         </div>
 
         <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500" suppressHydrationWarning>
             &copy; {new Date().getFullYear()} Talora. All rights reserved.
           </p>
           <p className="text-sm text-slate-600">Built with care for better hiring.</p>

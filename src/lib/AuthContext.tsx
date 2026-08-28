@@ -8,8 +8,31 @@ import { getDashboardPath } from './dashboardRoutes';
 
 const AUTH_ME_TIMEOUT_MS = 20000;
 
-function isAxiosError(err: unknown): err is { response?: { status?: number }; message?: string; code?: string } {
+function isAxiosError(err: unknown): err is {
+  response?: { status?: number };
+  message?: string;
+  code?: string;
+} {
   return typeof err === 'object' && err !== null && 'response' in err;
+}
+
+function isTimeoutError(err: unknown): boolean {
+  if (typeof err !== 'object' || err === null) return false;
+  const e = err as { code?: string; message?: string };
+  return e.code === 'ECONNABORTED' || (e.message?.includes('timeout') ?? false);
+}
+
+async function wakeBackend(): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await api.get('/health', { timeout: 15000 });
+      return;
+    } catch {
+      if (attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+    }
+  }
 }
 
 export type User = {
@@ -51,15 +74,9 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(() =>
-    typeof window !== 'undefined' ? getCachedUser() : null
-  );
-  const [loading, setLoading] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    const token = getAuthToken();
-    const cached = getCachedUser();
-    return !(token && cached);
-  });
+  // Always match server HTML on first render — hydrate from cache only in useEffect
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const logout = async () => {
     try {
@@ -83,8 +100,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUser = async () => {
     if (typeof window !== 'undefined') {
-      api.get('/health', { timeout: 8000 }).catch(() => {});
-
       const currentPath = window.location.pathname;
       const isAuthCallback = currentPath === '/auth/callback';
 
@@ -113,10 +128,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const cachedUser = getCachedUser();
     if (cachedUser) {
       setUser(cachedUser);
-      setLoading(false);
     }
 
     try {
+      await wakeBackend();
       const res = await api.get('/auth/me', { timeout: AUTH_ME_TIMEOUT_MS });
       const userData = res.data as User;
 
@@ -157,6 +172,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         window.location.replace('/role-select');
       }
     } catch (err: unknown) {
+      if (isTimeoutError(err) && cachedUser) {
+        // Render cold starts can exceed 20s — keep cached session until backend wakes up
+        setUser(cachedUser);
+        return;
+      }
+
       console.error(
         '❌ Auth check failed:',
         isAxiosError(err) ? err.response?.status : undefined,
