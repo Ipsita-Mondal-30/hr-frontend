@@ -89,19 +89,25 @@ export default function ResumeAnalysisPage() {
       }
     } catch (err: unknown) {
       const axiosErr = err as {
-        response?: { status?: number; data?: { error?: string } };
+        response?: { status?: number; data?: { error?: string; message?: string } };
         message?: string;
       };
       const status = axiosErr.response?.status;
-      const backendError = axiosErr.response?.data?.error;
+      const backendError = axiosErr.response?.data?.error || axiosErr.response?.data?.message;
       let msg = backendError || axiosErr.message || 'Analysis failed';
 
-      if (status === 404) {
+      if (/model_not_found|does not exist|GROQ_MODEL|Groq model/i.test(msg)) {
+        msg =
+          'ATS AI model is misconfigured on the server. Ask an admin to set GROQ_MODEL (e.g. openai/gpt-oss-20b) and restart the backend.';
+      } else if (status === 404) {
         msg =
           backendError ||
           'Resume analysis endpoint not found. Check that NEXT_PUBLIC_API_BASE_URL points to your backend host without a trailing /api.';
       } else if (status === 401) {
         msg = 'Please sign in again to analyze your resume.';
+      } else if (status === 500 && /Request failed with status code 404/i.test(msg)) {
+        msg =
+          'Resume analysis failed because the AI model is unavailable. Update GROQ_MODEL on the backend (openai/gpt-oss-20b) and try again.';
       }
 
       setError(msg);

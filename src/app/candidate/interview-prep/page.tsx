@@ -75,15 +75,25 @@ interface Job {
 interface FinalResults {
   sessionId?: string;
   jobRole?: string;
+  companyName?: string;
   prepScore: number;
   status: string;
   strengths: string[];
   weaknesses: string[];
   improvementTips: string[];
+  actionPlan?: string[];
+  skillsDemonstrated?: string[];
+  skillsToPractice?: string[];
+  questionFeedback?: {
+    question: string;
+    whatWentWell?: string;
+    whatToImprove?: string;
+    betterAnswer?: string;
+  }[];
   summary?: string;
   resources?: { title?: string; url?: string; type?: string }[];
   courses?: { title?: string; url?: string; platform?: string }[];
-  questions?: { number: number; question: string; answer: string; evaluation?: string }[];
+  questions?: { number: number; question: string; answer: string; evaluation?: string; reason?: string }[];
   completedAt?: string;
   emailSent?: boolean;
 }
@@ -690,7 +700,7 @@ export default function VoiceInterviewPrepPage() {
         jobRole: finalResults.jobRole || selectedJob?.title || 'Interview Prep',
       },
       user?.name,
-      selectedJob?.companyName
+      selectedJob?.companyName || finalResults.companyName
     );
   };
 
@@ -737,7 +747,9 @@ export default function VoiceInterviewPrepPage() {
                 {(finalResults.jobRole || selectedJob) && (
                   <p className="mt-3 text-sm text-gray-500">
                     {finalResults.jobRole || selectedJob?.title}
-                    {selectedJob?.companyName ? ` at ${selectedJob.companyName}` : ''}
+                    {(selectedJob?.companyName || finalResults.companyName)
+                      ? ` at ${selectedJob?.companyName || finalResults.companyName}`
+                      : ''}
                   </p>
                 )}
               </div>
@@ -771,13 +783,83 @@ export default function VoiceInterviewPrepPage() {
             </div>
 
             <div className="bg-blue-50 rounded-lg p-6 mb-6">
-              <h3 className="font-semibold text-blue-800 mb-3">💡 Learning Suggestions</h3>
+              <h3 className="font-semibold text-blue-800 mb-3">💡 What to practice for this role</h3>
               <ul className="space-y-2">
                 {finalResults.improvementTips.map((tip: string, idx: number) => (
                   <li key={idx} className="text-sm text-gray-700">• {tip}</li>
                 ))}
               </ul>
             </div>
+
+            {finalResults.skillsToPractice && finalResults.skillsToPractice.length > 0 && (
+              <div className="bg-amber-50 rounded-lg p-6 mb-6">
+                <h3 className="font-semibold text-amber-900 mb-2">Skills this job still needs from you</h3>
+                <p className="text-sm text-gray-700">{finalResults.skillsToPractice.join(', ')}</p>
+              </div>
+            )}
+
+            {finalResults.actionPlan && finalResults.actionPlan.length > 0 && (
+              <div className="bg-slate-50 rounded-lg p-6 mb-6 border border-slate-200">
+                <h3 className="font-semibold text-slate-800 mb-3">This week’s action plan</h3>
+                <ol className="list-decimal list-inside space-y-2">
+                  {finalResults.actionPlan.map((step, idx) => (
+                    <li key={idx} className="text-sm text-gray-700">{step}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {finalResults.questionFeedback && finalResults.questionFeedback.length > 0 && (
+              <div className="mb-6">
+                <h3 className="font-semibold text-gray-900 mb-3">Question-by-question coaching</h3>
+                <div className="space-y-3">
+                  {finalResults.questionFeedback.map((qf, idx) => (
+                    <div key={idx} className="border border-indigo-100 rounded-lg p-4 bg-white">
+                      <p className="text-sm font-semibold text-gray-900 mb-2">
+                        Q{idx + 1}. {qf.question}
+                      </p>
+                      {qf.whatWentWell && (
+                        <p className="text-sm text-green-800 mb-1">
+                          <strong>What worked:</strong> {qf.whatWentWell}
+                        </p>
+                      )}
+                      {qf.whatToImprove && (
+                        <p className="text-sm text-amber-800 mb-1">
+                          <strong>Improve:</strong> {qf.whatToImprove}
+                        </p>
+                      )}
+                      {qf.betterAnswer && (
+                        <p className="text-sm text-gray-700">
+                          <strong>Stronger sample answer:</strong> {qf.betterAnswer}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {finalResults.questions && finalResults.questions.length > 0 && (
+              <div className="mb-6">
+                <h3 className="font-semibold text-gray-900 mb-3">Your answers</h3>
+                <div className="space-y-3">
+                  {finalResults.questions.map((q) => (
+                    <div key={q.number} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                      <p className="text-sm font-medium text-gray-900">Q{q.number}. {q.question}</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {q.answer || 'No answer recorded'}
+                      </p>
+                      {q.evaluation && (
+                        <p className="text-xs text-gray-400 mt-1">
+                          Score: {q.evaluation}
+                          {q.reason ? ` — ${q.reason}` : ''}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-3 mb-6">
               <button

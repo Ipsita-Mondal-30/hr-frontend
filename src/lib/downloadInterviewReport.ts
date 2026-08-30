@@ -1,15 +1,24 @@
 export interface InterviewReport {
   sessionId?: string;
   jobRole: string;
+  companyName?: string;
   prepScore: number;
   status: string;
   strengths: string[];
   weaknesses: string[];
   improvementTips: string[];
+  actionPlan?: string[];
+  skillsToPractice?: string[];
+  questionFeedback?: {
+    question: string;
+    whatWentWell?: string;
+    whatToImprove?: string;
+    betterAnswer?: string;
+  }[];
   summary?: string;
   resources?: { title?: string; url?: string; type?: string }[];
   courses?: { title?: string; url?: string; platform?: string }[];
-  questions?: { number: number; question: string; answer: string; evaluation?: string }[];
+  questions?: { number: number; question: string; answer: string; evaluation?: string; reason?: string }[];
   completedAt?: string;
   emailSent?: boolean;
 }
@@ -57,7 +66,26 @@ export function generateReportHtml(
         <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin: 12px 0; border-left: 4px solid #667eea;">
           <p style="margin: 0 0 8px; font-weight: bold; color: #374151;">Q${q.number}: ${escapeHtml(q.question)}</p>
           <p style="margin: 0; color: #6b7280;"><strong>Your answer:</strong> ${escapeHtml(q.answer || 'No answer recorded')}</p>
-          ${q.evaluation ? `<p style="margin: 8px 0 0; font-size: 13px; color: #9ca3af;">Evaluation: ${escapeHtml(q.evaluation)}</p>` : ''}
+          ${q.evaluation ? `<p style="margin: 8px 0 0; font-size: 13px; color: #9ca3af;">Evaluation: ${escapeHtml(q.evaluation)}${q.reason ? ` — ${escapeHtml(q.reason)}` : ''}</p>` : ''}
+        </div>`
+        )
+        .join('')}
+    </div>`
+      : '';
+
+  const coachingSection =
+    report.questionFeedback && report.questionFeedback.length > 0
+      ? `
+    <div style="margin: 25px 0;">
+      <h3 style="color: #4f46e5; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Question-by-question coaching</h3>
+      ${report.questionFeedback
+        .map(
+          (qf, i) => `
+        <div style="background: #eef2ff; padding: 16px; border-radius: 8px; margin: 12px 0;">
+          <p style="margin: 0 0 8px; font-weight: bold;">Q${i + 1}: ${escapeHtml(qf.question || '')}</p>
+          ${qf.whatWentWell ? `<p style="margin: 0 0 6px; color: #059669;"><strong>What worked:</strong> ${escapeHtml(qf.whatWentWell)}</p>` : ''}
+          ${qf.whatToImprove ? `<p style="margin: 0 0 6px; color: #d97706;"><strong>Improve:</strong> ${escapeHtml(qf.whatToImprove)}</p>` : ''}
+          ${qf.betterAnswer ? `<p style="margin: 0; color: #374151;"><strong>Stronger sample answer:</strong> ${escapeHtml(qf.betterAnswer)}</p>` : ''}
         </div>`
         )
         .join('')}
@@ -126,6 +154,19 @@ export function generateReportHtml(
     <ul style="line-height: 1.8;">${listItems(report.improvementTips)}</ul>
   </div>
 
+  ${
+    report.skillsToPractice && report.skillsToPractice.length
+      ? `<div style="background: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0;"><strong>Skills to evidence next:</strong> ${escapeHtml(report.skillsToPractice.join(', '))}</div>`
+      : ''
+  }
+
+  ${
+    report.actionPlan && report.actionPlan.length
+      ? `<div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;"><h3 style="margin-top:0;">This week’s action plan</h3><ol>${report.actionPlan.map((s) => `<li>${escapeHtml(s)}</li>`).join('')}</ol></div>`
+      : ''
+  }
+
+  ${coachingSection}
   ${qaSection}
   ${resourcesSection}
   ${coursesSection}

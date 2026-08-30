@@ -7,6 +7,8 @@ import api from '@/lib/api';
 import ResumeAnalysisPanel, {
   type AnalysisHistoryItem,
 } from '@/components/applications/ResumeAnalysisPanel';
+import { toResumeAnalysisData } from '@/lib/applicationAnalysis';
+import type { Application } from '@/types';
 
 interface ApplicationDetail {
   _id: string;
@@ -92,6 +94,7 @@ export default function ApplicationDetailPage() {
   const [savingNotes, setSavingNotes] = useState(false);
   const [analysisHistory, setAnalysisHistory] = useState<AnalysisHistoryItem[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState('');
 
   const fetchApplication = useCallback(
     async (id: string) => {
@@ -154,12 +157,23 @@ export default function ApplicationDetailPage() {
   const rerunAnalysis = async () => {
     if (!application) return;
     setAnalyzing(true);
+    setAnalysisError('');
     try {
       await api.post(`/resume-analysis/application/${application._id}/analyze`);
       await fetchApplication(application._id);
       notify('Resume analysis completed');
-    } catch {
-      notify('Failed to run resume analysis');
+    } catch (err: unknown) {
+      const axiosErr = err as {
+        response?: { data?: { error?: string; message?: string } };
+        message?: string;
+      };
+      const msg =
+        axiosErr.response?.data?.error ||
+        axiosErr.response?.data?.message ||
+        axiosErr.message ||
+        'Failed to run resume analysis';
+      setAnalysisError(msg);
+      notify(msg);
     } finally {
       setAnalyzing(false);
     }
@@ -394,34 +408,23 @@ export default function ApplicationDetailPage() {
           </div>
 
           {/* ATS Resume Analysis */}
-          {(application.atsAnalysis || application.matchScore) && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-gray-900">Resume Analysis</h2>
-                <button
-                  onClick={rerunAnalysis}
-                  disabled={analyzing}
-                  className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {analyzing ? 'Analyzing...' : 'Re-run Analysis'}
-                </button>
-              </div>
-              <ResumeAnalysisPanel
-                data={{
-                  atsAnalysis: application.atsAnalysis,
-                  parsedResume: application.parsedResume,
-                  scores: application.atsAnalysis,
-                  missingSkills: application.atsAnalysis?.missingSkills || application.matchInsights?.missingSkills,
-                  strengths: application.atsAnalysis?.strengths || application.matchInsights?.strengths,
-                  weaknesses: application.atsAnalysis?.weaknesses || application.matchInsights?.improvements,
-                  recommendations: application.atsAnalysis?.recommendations || application.matchInsights?.actionPlan,
-                  bulletImprovements: application.atsAnalysis?.bulletImprovements || application.matchInsights?.resumeTips,
-                  improvedBullets: application.atsAnalysis?.improvedBullets,
-                }}
-                history={analysisHistory}
-              />
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-900">Resume Analysis</h2>
+              <button
+                onClick={rerunAnalysis}
+                disabled={analyzing}
+                className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                {analyzing ? 'Analyzing...' : 'Re-run Analysis'}
+              </button>
             </div>
-          )}
+            {analysisError && <p className="text-sm text-red-600">{analysisError}</p>}
+            <ResumeAnalysisPanel
+              data={toResumeAnalysisData(application as unknown as Application)}
+              history={analysisHistory}
+            />
+          </div>
 
           {/* Legacy AI Match Analysis fallback */}
           {!application.atsAnalysis && application.matchInsights && (

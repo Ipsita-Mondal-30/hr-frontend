@@ -150,6 +150,15 @@ export default function ResumeAnalysisPanel({
   const ats = scores.atsScore ?? 0;
 
   const missingSkills = analysis?.missingSkills || data.missingSkills || [];
+  const strengths = analysis?.strengths || data.strengths || [];
+  const weaknesses = analysis?.weaknesses || data.weaknesses || [];
+  const recommendations = analysis?.recommendations || data.recommendations || [];
+  const hasQualitative =
+    missingSkills.length > 0 ||
+    strengths.length > 0 ||
+    weaknesses.length > 0 ||
+    recommendations.length > 0 ||
+    Boolean(data.parsedResume?.name || data.parsedResume?.skills?.length);
   const trend = useMemo(
     () =>
       [...history]
@@ -161,10 +170,10 @@ export default function ResumeAnalysisPanel({
     [history]
   );
 
-  if (!overall && !ats) {
+  if (!overall && !ats && !hasQualitative) {
     return (
       <div className="bg-gray-50 border border-dashed rounded-lg p-6 text-center text-gray-500">
-        No ATS analysis available yet.
+        No ATS analysis available yet. Click Run Analysis to generate scores and feedback.
       </div>
     );
   }

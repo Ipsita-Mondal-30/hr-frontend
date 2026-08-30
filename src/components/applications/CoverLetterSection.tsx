@@ -28,13 +28,29 @@ export default function CoverLetterSection({
     try {
       const res = await api.post<{ generatedCoverLetter: string; coverLetter: string }>(
         `/resume-analysis/application/${applicationId}/cover-letter`,
-        {}
+        {},
+        { timeout: 90000, skipAuthRedirect: true }
       );
       const letter = res.data.generatedCoverLetter || res.data.coverLetter;
+      if (!letter) {
+        notify('Cover letter was empty. Please try again.');
+        return;
+      }
       onGenerated(letter);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Cover letter generation failed:', err);
-      notify('Could not generate cover letter. Make sure your resume is on file and try again.');
+      const axiosErr = err as {
+        response?: { data?: { error?: string; message?: string } };
+        code?: string;
+      };
+      const timedOut = axiosErr.code === 'ECONNABORTED';
+      const backendError = axiosErr.response?.data?.error || axiosErr.response?.data?.message;
+      notify(
+        timedOut
+          ? 'Cover letter generation timed out. Please try again.'
+          : backendError ||
+              'Could not generate cover letter. Upload a resume on your profile or when applying, then try again.'
+      );
     } finally {
       setGenerating(false);
     }

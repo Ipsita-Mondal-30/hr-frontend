@@ -50,9 +50,18 @@ export default function AppliedJobsPage() {
           app._id === applicationId ? { ...app, ...res.data.application } : app
         )
       );
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Resume analysis failed:', err);
-      notify('Could not run resume analysis. Make sure your resume is uploaded and the backend is running.');
+      const axiosErr = err as {
+        response?: { data?: { error?: string; message?: string } };
+        message?: string;
+      };
+      notify(
+        axiosErr.response?.data?.error ||
+          axiosErr.response?.data?.message ||
+          axiosErr.message ||
+          'Could not run resume analysis. Make sure a PDF resume is uploaded and try again.'
+      );
     } finally {
       setAnalyzingId(null);
     }
