@@ -65,26 +65,29 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
       }
 
       // Let axios set multipart boundary automatically (do not set Content-Type manually)
-      const response = await api.post('/candidate/apply-with-resume', submitData);
+      const response = await api.post('/candidate/apply-with-resume', submitData, {
+        timeout: 60000,
+      });
 
       console.log('✅ Application submitted successfully:', response.data);
       notify('Application submitted successfully! You will receive a confirmation email shortly.');
 
-      // Trigger refresh of parent component data
       onSuccess();
       onClose();
-
-      // Refresh the page to update dashboard stats
-      if (typeof window !== 'undefined') {
-        window.location.reload();
-      }
     } catch (err: unknown) {
       console.error('Error applying to job:', err);
-      const errorMessage = isAxiosLikeError(err)
-        ? err.response?.data?.error || err.response?.data?.message || 'Error submitting application'
-        : err instanceof Error
-        ? err.message
-        : 'Error submitting application';
+      const timedOut =
+        typeof err === 'object' &&
+        err !== null &&
+        'code' in err &&
+        (err as { code?: string }).code === 'ECONNABORTED';
+      const errorMessage = timedOut
+        ? 'Request timed out. If your application was saved, check Applied Jobs — otherwise try again.'
+        : isAxiosLikeError(err)
+          ? err.response?.data?.error || err.response?.data?.message || 'Error submitting application'
+          : err instanceof Error
+            ? err.message
+            : 'Error submitting application';
       notify(errorMessage);
     } finally {
       setSubmitting(false);
