@@ -9,6 +9,8 @@ import { ArrowLeft, Shield, Sparkles, Users } from 'lucide-react';
 
 import { getApiRoot } from '@/lib/api';
 
+const GOOGLE_AUTH_PATH = '/api/auth/google';
+
 const features = [
   { icon: Users, label: 'One platform for every role' },
   { icon: Shield, label: 'Secure Google sign-in' },
@@ -34,9 +36,10 @@ export default function LoginContent() {
     }
   }, [searchParams]);
 
-  const googleAuthUrl = `${getApiRoot()}/api/auth/google?frontend=${encodeURIComponent(
-    typeof window !== 'undefined' ? window.location.origin : 'https://hr-frontend-54b2.vercel.app'
-  )}`;
+  // Warm the API so the OAuth callback is less likely to hit a Render cold start.
+  useEffect(() => {
+    void fetch(`${getApiRoot()}/health`, { mode: 'cors', cache: 'no-store' }).catch(() => undefined);
+  }, []);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-950">
@@ -155,7 +158,7 @@ export default function LoginContent() {
               )}
 
               <a
-                href={googleAuthUrl}
+                href={GOOGLE_AUTH_PATH}
                 className="group flex w-full items-center justify-center gap-3 rounded-xl border border-white/15 bg-white px-5 py-3.5 text-sm font-semibold text-slate-800 shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-xl hover:shadow-black/20 active:translate-y-0"
               >
                 <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
