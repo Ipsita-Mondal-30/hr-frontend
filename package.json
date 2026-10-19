@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "clean": "rm -rf .next",
-    "dev": "next dev",
-    "dev:turbo": "next dev --turbopack",
-    "dev:clean": "rm -rf .next && next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node init && next dev",
+    "dev:turbo": "node init && next dev --turbopack",
+    "dev:clean": "node init && rm -rf .next && next dev",
+    "build": "node init && next build",
+    "start": "node init && next start",
     "lint": "next lint"
   },
   "dependencies": {
