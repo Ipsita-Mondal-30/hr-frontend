@@ -21,10 +21,34 @@ function googleClientId() {
 }
 
 /**
+ * The backend must exchange the Google code with the same redirect_uri that was
+ * sent to Google. Only backends that read the X-OAuth-Redirect-Uri header can
+ * complete a code that was returned to this Vercel origin.
+ */
+async function backendSupportsProxiedCallback(backend: string, origin: string) {
+  try {
+    const res = await fetch(`${backend}/api/auth/me`, {
+      method: 'OPTIONS',
+      cache: 'no-store',
+      headers: {
+        Origin: origin,
+        'Access-Control-Request-Method': 'GET',
+        'Access-Control-Request-Headers': 'x-oauth-redirect-uri',
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+    const allowed = (res.headers.get('access-control-allow-headers') || '').toLowerCase();
+    return allowed.includes('x-oauth-redirect-uri');
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Start Google OAuth from the Vercel origin.
  * Chrome Safe Browsing flags top-level navigations to
  * onrender.com/api/auth/google?frontend=https://... as phishing.
- * The browser goes: this app → accounts.google.com → this app callback.
+ * The browser goes: this app → accounts.google.com → callback.
  */
 export async function GET(req: NextRequest) {
   const origin = req.nextUrl.origin;
@@ -38,17 +62,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(login);
   }
 
-  // Wake a sleeping Render instance so the callback is less likely to 502.
-  void fetch(`${backend}/health`, { cache: 'no-store' }).catch(() => undefined);
-
   const isLocal = /localhost|127\.0\.0\.1/.test(origin);
-  // Production: Google returns here so Chrome never opens the flagged onrender.com host.
-  // Add this URI in Google Cloud Console → Authorized redirect URIs:
-  //   https://hr-frontend-54b2.vercel.app/api/auth/google/callback
-  // Local: keep the existing localhost:8080 callback already registered.
-  const redirectUri = isLocal
-    ? `${backend}/api/auth/google/callback`
-    : `${origin}/api/auth/google/callback`;
+  // Vercel callback needs https://hr-frontend-54b2.vercel.app/api/auth/google/callback
+  // in Google Cloud Console; the backend callback URI is already registered.
+  const useProxiedCallback =
+    !isLocal && (await backendSupportsProxiedCallback(backend, origin));
+  const redirectUri = useProxiedCallback
+    ? `${origin}/api/auth/google/callback`
+    : `${backend}/api/auth/google/callback`;
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
